@@ -1,0 +1,6 @@
+{
+  "name": "قضيتي — Qadeyati",
+  "description": "منصة قضيتي: نظام قانوني ذكي وإداري متكامل للمحامين والمكاتب القانونية بمصر.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

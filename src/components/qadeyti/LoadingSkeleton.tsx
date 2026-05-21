@@ -1,0 +1,3 @@
+export function LoadingSkeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-xl bg-secondary/60 ${className}`} aria-hidden />;
+}

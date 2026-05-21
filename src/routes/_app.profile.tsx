@@ -1,0 +1,474 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
+import { PremiumButton } from "@/components/qadeyti/PremiumButton";
+import { PremiumInput } from "@/components/qadeyti/PremiumInput";
+import { toast } from "sonner";
+import { ExternalLink, Copy, Upload, BadgeCheck, Check, X, Loader2 } from "lucide-react";
+
+export const Route = createFileRoute("/_app/profile")({
+  component: Profile,
+});
+
+const BAR_LEVELS = ["تحت التمرين", "ابتدائي", "استئناف", "نقض"];
+const SPECIALIZATIONS = [
+  "مدني",
+  "جنائي",
+  "تجاري",
+  "أحوال شخصية",
+  "عمالي",
+  "إداري",
+  "ضرائب",
+  "عقاري",
+  "ملكية فكرية",
+  "تحكيم",
+];
+
+type Profile = {
+  id?: string;
+  user_id: string;
+  slug: string;
+  full_name: string;
+  title: string | null;
+  bar_level: string | null;
+  office_name: string | null;
+  office_address: string | null;
+  whatsapp: string | null;
+  maps_link: string | null;
+  bio: string | null;
+  specializations: string[];
+  years_experience: number | null;
+  avatar_url: string | null;
+  logo_url: string | null;
+};
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\u0600-\u06FF]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function Profile() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [p, setP] = useState<Profile | null>(null);
+  const [slugStatus, setSlugStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid"
+  >("idle");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("lawyer_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setP(data as Profile);
+      } else {
+        setP({
+          user_id: user.id,
+          slug: `lawyer-${user.id.slice(0, 8)}`,
+          full_name: "",
+          title: "محامٍ",
+          bar_level: "ابتدائي",
+          office_name: "",
+          office_address: "",
+          whatsapp: "",
+          maps_link: "",
+          bio: "",
+          specializations: [],
+          years_experience: null,
+          avatar_url: null,
+          logo_url: null,
+        });
+      }
+      setLoading(false);
+    })();
+  }, [user]);
+
+  // Live slug availability check
+  useEffect(() => {
+    if (!p || !user) return;
+    const raw = p.slug.trim();
+    if (!raw) {
+      setSlugStatus("idle");
+      return;
+    }
+    const cleaned = slugify(raw);
+    if (!cleaned || cleaned.length < 3) {
+      setSlugStatus("invalid");
+      return;
+    }
+    setSlugStatus("checking");
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("lawyer_profiles")
+        .select("user_id")
+        .eq("slug", cleaned)
+        .maybeSingle();
+      if (!data || data.user_id === user.id) setSlugStatus("available");
+      else setSlugStatus("taken");
+    }, 400);
+    return () => clearTimeout(t);
+  }, [p?.slug, user]);
+
+  const update = <K extends keyof Profile>(k: K, v: Profile[K]) =>
+    setP((prev) => (prev ? { ...prev, [k]: v } : prev));
+
+  async function handleUploadImage(
+    e: React.ChangeEvent<HTMLInputElement>,
+    kind: "avatar" | "logo",
+  ) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user || !p) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("الملف يجب أن يكون صورة");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("الحد الأقصى ٥ ميجابايت");
+      return;
+    }
+    const setBusy = kind === "avatar" ? setUploadingAvatar : setUploadingLogo;
+    setBusy(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${user.id}/${kind}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) {
+      setBusy(false);
+      toast.error("فشل رفع الصورة");
+      return;
+    }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    const url = pub.publicUrl;
+    const field = kind === "avatar" ? "avatar_url" : "logo_url";
+    // Persist immediately so it survives refresh
+    const { error: dbErr } = await supabase.from("lawyer_profiles").upsert(
+      {
+        ...p,
+        [field]: url,
+        user_id: user.id,
+        slug: slugify(p.slug) || `lawyer-${user.id.slice(0, 8)}`,
+      },
+      { onConflict: "user_id" },
+    );
+    setBusy(false);
+    if (dbErr) {
+      toast.error("تم رفع الصورة لكن فشل الحفظ");
+      return;
+    }
+    update(field, url);
+    toast.success("تم رفع الصورة");
+  }
+
+  async function handleSave() {
+    if (!p || !user) return;
+    if (!p.full_name.trim()) {
+      toast.error("الاسم مطلوب");
+      return;
+    }
+    if (!p.slug.trim()) {
+      toast.error("الرابط مطلوب");
+      return;
+    }
+    if (slugStatus === "taken") {
+      toast.error("هذا الرابط مستخدم");
+      return;
+    }
+    if (slugStatus === "invalid") {
+      toast.error("الرابط غير صالح");
+      return;
+    }
+    setSaving(true);
+    const payload = { ...p, slug: slugify(p.slug), user_id: user.id };
+    const { error } = await supabase
+      .from("lawyer_profiles")
+      .upsert(payload, { onConflict: "user_id" });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message.includes("duplicate") ? "هذا الرابط مستخدم" : "فشل الحفظ");
+      return;
+    }
+    toast.success("تم الحفظ");
+  }
+
+  function toggleSpec(s: string) {
+    if (!p) return;
+    const has = p.specializations.includes(s);
+    update(
+      "specializations",
+      has ? p.specializations.filter((x) => x !== s) : [...p.specializations, s],
+    );
+  }
+
+  if (loading || !p) {
+    return <div className="py-20 text-center text-muted-foreground">...</div>;
+  }
+
+  const publicUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/lawyer/${p.slug}`
+      : `/lawyer/${p.slug}`;
+
+  return (
+    <div className="space-y-6 pb-10">
+      <h1 className="font-display text-2xl font-bold text-foreground">الملف الشخصي</h1>
+
+      {/* Avatar + public link */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Avatar */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">الصورة الشخصية</p>
+            <div className="flex items-center gap-3">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-[var(--gold-soft)] to-[var(--gold)]">
+                {p.avatar_url ? (
+                  <img src={p.avatar_url} className="h-full w-full object-cover" alt="" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center font-display text-2xl font-bold text-[color:var(--primary-foreground)]">
+                    {(p.full_name || "م")[0]}
+                  </div>
+                )}
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground hover:bg-secondary">
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                <span>رفع</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleUploadImage(e, "avatar")}
+                />
+              </label>
+            </div>
+          </div>
+          {/* Logo */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">شعار المكتب</p>
+            <div className="flex items-center gap-3">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-card">
+                {p.logo_url ? (
+                  <img src={p.logo_url} className="h-full w-full object-contain p-1" alt="" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                    لا يوجد
+                  </div>
+                )}
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground hover:bg-secondary">
+                {uploadingLogo ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                <span>رفع</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleUploadImage(e, "logo")}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm text-muted-foreground">الرابط العام</label>
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
+            <span dir="ltr" className="truncate text-sm text-muted-foreground">
+              {publicUrl}
+            </span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(publicUrl);
+                toast.success("تم نسخ الرابط");
+              }}
+              className="ml-auto rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              aria-label="نسخ"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+            <Link
+              to="/lawyer/$slug"
+              params={{ slug: p.slug }}
+              className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Identity */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+        <PremiumInput
+          label="الاسم الكامل"
+          value={p.full_name}
+          onChange={(e) => update("full_name", e.target.value)}
+        />
+        <PremiumInput
+          label="اللقب المهني"
+          value={p.title ?? ""}
+          onChange={(e) => update("title", e.target.value)}
+          placeholder="محامٍ بالنقض"
+        />
+        <div className="space-y-2">
+          <label className="block text-sm text-muted-foreground">درجة القيد</label>
+          <div className="flex flex-wrap gap-2">
+            {BAR_LEVELS.map((lvl) => (
+              <button
+                key={lvl}
+                type="button"
+                onClick={() => update("bar_level", lvl)}
+                className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                  p.bar_level === lvl
+                    ? "border-[var(--gold)] bg-[color:var(--gold)]/10 text-foreground"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                <BadgeCheck className="h-4 w-4" />
+                {lvl}
+              </button>
+            ))}
+          </div>
+        </div>
+        <PremiumInput
+          label="سنوات الخبرة"
+          type="number"
+          value={p.years_experience ?? ""}
+          onChange={(e) =>
+            update("years_experience", e.target.value ? Number(e.target.value) : null)
+          }
+        />
+        <div className="space-y-2">
+          <PremiumInput
+            label="الرابط المختصر (slug)"
+            value={p.slug}
+            onChange={(e) => update("slug", e.target.value)}
+            dir="ltr"
+          />
+          {slugStatus !== "idle" && (
+            <div className="flex items-center gap-2 text-xs">
+              {slugStatus === "checking" && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" /> جارٍ التحقق...
+                </span>
+              )}
+              {slugStatus === "available" && (
+                <span className="flex items-center gap-1 text-[color:var(--gold)]">
+                  <Check className="h-3 w-3" /> متاح
+                </span>
+              )}
+              {slugStatus === "taken" && (
+                <span className="flex items-center gap-1 text-destructive">
+                  <X className="h-3 w-3" /> غير متاح
+                </span>
+              )}
+              {slugStatus === "invalid" && (
+                <span className="flex items-center gap-1 text-destructive">
+                  <X className="h-3 w-3" /> الرابط غير صالح
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bio */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-2">
+        <label className="block text-sm text-muted-foreground">نبذة مختصرة</label>
+        <textarea
+          rows={4}
+          value={p.bio ?? ""}
+          onChange={(e) => update("bio", e.target.value)}
+          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-foreground outline-none focus:border-[var(--gold)]"
+          placeholder="عرّف العميل بخبرتك ومجالاتك"
+        />
+      </div>
+
+      {/* Specializations */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+        <label className="block text-sm text-muted-foreground">التخصصات</label>
+        <div className="flex flex-wrap gap-2">
+          {SPECIALIZATIONS.map((s) => {
+            const active = p.specializations.includes(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleSpec(s)}
+                className={`rounded-xl border px-3 py-2 text-sm transition-colors ${
+                  active
+                    ? "border-[var(--gold)] bg-[color:var(--gold)]/10 text-foreground"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Office & contact */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+        <PremiumInput
+          label="اسم المكتب"
+          value={p.office_name ?? ""}
+          onChange={(e) => update("office_name", e.target.value)}
+        />
+        <PremiumInput
+          label="عنوان المكتب"
+          value={p.office_address ?? ""}
+          onChange={(e) => update("office_address", e.target.value)}
+        />
+        <PremiumInput
+          label="واتساب"
+          dir="ltr"
+          placeholder="201234567890"
+          value={p.whatsapp ?? ""}
+          onChange={(e) => update("whatsapp", e.target.value)}
+        />
+        <PremiumInput
+          label="رابط جوجل ماب"
+          dir="ltr"
+          placeholder="https://maps.google.com/..."
+          value={p.maps_link ?? ""}
+          onChange={(e) => update("maps_link", e.target.value)}
+        />
+      </div>
+
+      <PremiumButton onClick={handleSave} loading={saving}>
+        حفظ التغييرات
+      </PremiumButton>
+
+      <PremiumButton
+        variant="outline"
+        onClick={async () => {
+          await signOut();
+          navigate({ to: "/login" });
+        }}
+      >
+        تسجيل الخروج
+      </PremiumButton>
+    </div>
+  );
+}
