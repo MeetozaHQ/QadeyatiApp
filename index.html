@@ -129,10 +129,162 @@
           }).catch(function(e) { console.error("Failed to report client error:", e); });
         }
 
+        // Store console logs in window for diagnostic screen
+        window.__diagnosticLogs = [];
+        function logDiagnostic(level, message, detail) {
+          window.__diagnosticLogs.push({
+            level: level,
+            message: message,
+            detail: detail,
+            time: new Date().toLocaleTimeString()
+          });
+          // Limit to last 200 logs to prevent memory leak
+          if (window.__diagnosticLogs.length > 200) {
+            window.__diagnosticLogs.shift();
+          }
+          // Also update diagnostic DOM if visible
+          var logList = document.getElementById("diag-log-list");
+          if (logList) {
+            var item = document.createElement("div");
+            item.style.borderBottom = "1px solid #232225";
+            item.style.padding = "4px 0";
+            item.style.whiteSpace = "pre-wrap";
+            item.style.fontSize = "11px";
+            
+            var badge = document.createElement("span");
+            badge.innerText = "[" + level.toUpperCase() + "]";
+            badge.style.fontWeight = "bold";
+            badge.style.marginRight = "6px";
+            if (level === "error") badge.style.color = "#ef4444";
+            else if (level === "warn") badge.style.color = "#f59e0b";
+            else badge.style.color = "#a1a1aa";
+            
+            item.appendChild(badge);
+            item.appendChild(document.createTextNode(window.__diagnosticLogs[window.__diagnosticLogs.length - 1].time + " - " + message + (detail ? " (" + detail + ")" : "")));
+            logList.appendChild(item);
+            logList.scrollTop = logList.scrollHeight;
+          }
+        }
+
+        function showVisualError(type, message, source, lineno, colno, error) {
+          try {
+            logDiagnostic("error", "Exception in app client execution: " + message, (source || "") + ":" + (lineno || "") + ":" + (colno || ""));
+            var div = document.getElementById("visual-error-overlay");
+            if (!div) {
+              div = document.createElement("div");
+              div.id = "visual-error-overlay";
+              div.style.position = "fixed";
+              div.style.top = "10px";
+              div.style.left = "10px";
+              div.style.right = "10px";
+              div.style.background = "#ffffff";
+              div.style.color = "#000000";
+              div.style.border = "4px solid #ef4444";
+              div.style.borderRadius = "8px";
+              div.style.padding = "20px";
+              div.style.zIndex = "999999";
+              div.style.fontFamily = "monospace";
+              div.style.fontSize = "14px";
+              div.style.whiteSpace = "pre-wrap";
+              div.style.boxShadow = "0 10px 25px rgba(0,0,0,0.5)";
+              div.style.overflow = "auto";
+              div.style.maxHeight = "90vh";
+
+              var title = document.createElement("h2");
+              title.style.margin = "0 0 10px 0";
+              title.style.color = "#ef4444";
+              title.style.fontSize = "18px";
+              title.innerText = "❌ Client-Side Error Captured";
+              div.appendChild(title);
+
+              var explanation = document.createElement("p");
+              explanation.style.margin = "0 0 15px 0";
+              explanation.style.color = "#4b5563";
+              explanation.innerText = "An error occurred during app execution that caused the blank screen. Please share this screen or message with us so we can fix it!";
+              div.appendChild(explanation);
+
+              var infoContainer = document.createElement("div");
+              infoContainer.id = "visual-error-info";
+              div.appendChild(infoContainer);
+
+              var closeButton = document.createElement("button");
+              closeButton.innerText = "Dismiss Overlay";
+              closeButton.style.marginTop = "15px";
+              closeButton.style.padding = "8px 16px";
+              closeButton.style.background = "#ef4444";
+              closeButton.style.color = "#ffffff";
+              closeButton.style.border = "none";
+              closeButton.style.borderRadius = "4px";
+              closeButton.style.cursor = "pointer";
+              closeButton.style.fontWeight = "bold";
+              closeButton.onclick = function() {
+                div.remove();
+              };
+              div.appendChild(closeButton);
+
+              if (document.body) {
+                document.body.appendChild(div);
+              } else {
+                window.addEventListener("DOMContentLoaded", function() {
+                  document.body.appendChild(div);
+                });
+              }
+            }
+
+            var info = document.getElementById("visual-error-info");
+            if (info) {
+              var p = document.createElement("p");
+              p.style.borderTop = "1px solid #e4e4e7";
+              p.style.paddingTop = "10px";
+              p.style.marginTop = "10px";
+              p.innerHTML = "<b>Type:</b> " + type + "<br/>" +
+                            "<b>Message:</b> <span style='color:#ef4444; font-weight:bold;'>" + message + "</span><br/>" +
+                            "<b>Source:</b> " + source + ":" + lineno + ":" + colno + "<br/>";
+              info.appendChild(p);
+
+              if (error && error.stack) {
+                var pre = document.createElement("pre");
+                pre.style.background = "#f4f4f5";
+                pre.style.padding = "10px";
+                pre.style.borderRadius = "4px";
+                pre.style.marginTop = "5px";
+                pre.style.border = "1px solid #e4e4e7";
+                pre.style.fontSize = "12px";
+                pre.style.overflow = "auto";
+                pre.innerText = error.stack;
+                info.appendChild(pre);
+              }
+            }
+          } catch(e) {
+            console.error("Failed to render visual error overlay:", e);
+          }
+        }
+
+        function logError(type, message, source, lineno, colno, error) {
+          showVisualError(type, message, source, lineno, colno, error);
+          var payload = {
+            type: type,
+            message: String(message),
+            source: String(source),
+            lineno: lineno,
+            colno: colno,
+            error: error ? { message: error.message, stack: error.stack, name: error.name } : null,
+            url: window.location.href,
+            userAgent: window.navigator.userAgent,
+            timestamp: new Date().toISOString()
+          };
+          console.warn("Captured load-time client-side error:", payload);
+          fetch("/api/log-client-error", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }).catch(function(e) { console.error("Failed to report client error:", e); });
+        }
+
         window.showVisualError = showVisualError;
         window.logError = logError;
 
-        // Override console methods to report back to backend
+        // Override console methods to report back to backend and store in window
         var originalConsole = {
           log: console.log,
           warn: console.warn,
@@ -148,6 +300,8 @@
               }
               return String(arg);
             }).join(" ");
+
+            logDiagnostic(level, msgStr);
 
             fetch("/api/log-client-error", {
               method: "POST",
@@ -189,12 +343,102 @@
           var msg = reason ? (reason.message || String(reason)) : "Unhandled promise rejection";
           logError("unhandledrejection", msg, null, null, null, reason);
         });
+
+        // Diagnostics Popup Controller
+        window.toggleDiagnosticsOverlay = function() {
+          var overlay = document.getElementById("diag-overlay");
+          if (!overlay) return;
+          if (overlay.style.display === "none" || overlay.style.display === "") {
+            overlay.style.display = "flex";
+            // Populate stats
+            document.getElementById("diag-stat-pathname").innerText = window.location.pathname;
+            document.getElementById("diag-stat-href").innerText = window.location.href;
+            document.getElementById("diag-stat-online").innerText = navigator.onLine ? "ONLINE" : "OFFLINE";
+            
+            var rootEl = document.getElementById("root");
+            var rootHTML = rootEl ? rootEl.innerHTML.trim() : "";
+            document.getElementById("diag-stat-root").innerText = rootHTML 
+              ? "Populated (" + rootHTML.length + " chars, starts with: " + rootHTML.substring(0, 50).replace(/</g, "&lt;") + ")" 
+              : "EMPTY (REACT HAS NOT RENDERED ANY ELEMENT INSIDE ROOT)";
+              
+            // Re-render diagnostic items
+            var logList = document.getElementById("diag-log-list");
+            if (logList) {
+              logList.innerHTML = "";
+              window.__diagnosticLogs.forEach(function(log) {
+                var item = document.createElement("div");
+                item.style.borderBottom = "1px solid #232225";
+                item.style.padding = "4px 0";
+                item.style.whiteSpace = "pre-wrap";
+                item.style.fontSize = "11px";
+                
+                var badge = document.createElement("span");
+                badge.innerText = "[" + log.level.toUpperCase() + "]";
+                badge.style.fontWeight = "bold";
+                badge.style.marginRight = "6px";
+                if (log.level === "error") badge.style.color = "#ef4444";
+                else if (log.level === "warn") badge.style.color = "#f59e0b";
+                else badge.style.color = "#a1a1aa";
+                
+                item.appendChild(badge);
+                item.appendChild(document.createTextNode(log.time + " - " + log.message + (log.detail ? " (" + log.detail + ")" : "")));
+                logList.appendChild(item);
+              });
+              logList.scrollTop = logList.scrollHeight;
+            }
+          } else {
+            overlay.style.display = "none";
+          }
+        };
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+    <!-- FLOATING DIAGNOSTIC WIDGET BYPASSING ROOT RENDER -->
+    <button 
+      id="diag-floating-btn"
+      onclick="window.toggleDiagnosticsOverlay()"
+      style="position: fixed; bottom: 15px; right: 15px; z-index: 999999; background: #c5a880; color: #12151c; border-radius: 9999px; padding: 6px 14px; font-weight: 600; font-size: 11px; cursor: pointer; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-family: system-ui, -apple-system, sans-serif; opacity: 0.55; transition: opacity 0.2s;"
+      onmouseover="this.style.opacity='1'"
+      onmouseout="this.style.opacity='0.55'"
+    >
+      🔍 تشخيص الأعطال (Diagnostics)
+    </button>
+
+    <div 
+      id="diag-overlay" 
+      style="position: fixed; top: 10%; left: 10%; right: 10%; bottom: 10%; background: #12151c; color: #f5f1e8; border: 1px solid #3c3225; border-radius: 12px; z-index: 1000000; padding: 24px; display: none; flex-direction: column; font-family: monospace; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: left;"
+    >
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3c3225; padding-bottom: 12px; margin-bottom: 16px;">
+        <h3 style="margin: 0; color: #c5a880; font-size: 15px;">📊 تشخيص أعطال قضيتي / System Diagnostics Panel</h3>
+        <button 
+          onclick="window.toggleDiagnosticsOverlay()"
+          style="background: #ef4444; color: #ffffff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;"
+        >
+          Close [X]
+        </button>
+      </div>
+      
+      <!-- System Stats Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; font-size: 11px; border-bottom: 1px dashed #3c3225; padding-bottom: 12px;">
+        <div><b>URL Pathname:</b> <span id="diag-stat-pathname" style="color:#c5a880;">-</span></div>
+        <div><b>Full URL:</b> <span id="diag-stat-href" style="color:#c5a880; word-break: break-all;">-</span></div>
+        <div><b>Connectivity:</b> <span id="diag-stat-online" style="color:#10b981;">-</span></div>
+        <div style="grid-column: 1 / -1;"><b>React Root state:</b> <span id="diag-stat-root" style="color:#f59e0b; font-weight: bold;">-</span></div>
+      </div>
+
+      <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+        <h4 style="margin: 0 0 8px 0; color: #a1a1aa; font-size: 12px;">💻 Console and Lifecycle Logs (Total Captured)</h4>
+        <div 
+          id="diag-log-list" 
+          style="flex: 1; overflow-y: auto; background: #0a0a0f; border: 1px solid #232225; padding: 12px; border-radius: 6px; font-size: 11px; line-height: 1.5; color: #e4e4e7;"
+        >
+          No logs captured yet. Toggle the panel or trigger an action to see logs.
+        </div>
+      </div>
+    </div>
 </html>
 
