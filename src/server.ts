@@ -76,16 +76,16 @@ export default {
           const fs = await import("fs");
           const logPayload = {
             ...body,
-            serverReceivedAt: new Date().toISOString()
+            serverReceivedAt: new Date().toISOString(),
           };
           fs.appendFileSync("client-errors.log", JSON.stringify(logPayload) + "\n");
           return new Response(JSON.stringify({ ok: true }), {
-            headers: { "content-type": "application/json" }
+            headers: { "content-type": "application/json" },
           });
         } catch (err) {
           return new Response(JSON.stringify({ ok: false, error: String(err) }), {
             status: 400,
-            headers: { "content-type": "application/json" }
+            headers: { "content-type": "application/json" },
           });
         }
       }

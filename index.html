@@ -6,7 +6,101 @@
     <title>My Google AI Studio App</title>
     <script>
       (function() {
+        function showVisualError(type, message, source, lineno, colno, error) {
+          try {
+            var div = document.getElementById("visual-error-overlay");
+            if (!div) {
+              div = document.createElement("div");
+              div.id = "visual-error-overlay";
+              div.style.position = "fixed";
+              div.style.top = "10px";
+              div.style.left = "10px";
+              div.style.right = "10px";
+              div.style.background = "#ffffff";
+              div.style.color = "#000000";
+              div.style.border = "4px solid #ef4444";
+              div.style.borderRadius = "8px";
+              div.style.padding = "20px";
+              div.style.zIndex = "999999";
+              div.style.fontFamily = "monospace";
+              div.style.fontSize = "14px";
+              div.style.whiteSpace = "pre-wrap";
+              div.style.boxShadow = "0 10px 25px rgba(0,0,0,0.5)";
+              div.style.overflow = "auto";
+              div.style.maxHeight = "90vh";
+
+              var title = document.createElement("h2");
+              title.style.margin = "0 0 10px 0";
+              title.style.color = "#ef4444";
+              title.style.fontSize = "18px";
+              title.innerText = "❌ Client-Side Error Captured";
+              div.appendChild(title);
+
+              var explanation = document.createElement("p");
+              explanation.style.margin = "0 0 15px 0";
+              explanation.style.color = "#4b5563";
+              explanation.innerText = "An error occurred during app execution that caused the blank screen. Please share this screen or message with us so we can fix it!";
+              div.appendChild(explanation);
+
+              var infoContainer = document.createElement("div");
+              infoContainer.id = "visual-error-info";
+              div.appendChild(infoContainer);
+
+              var closeButton = document.createElement("button");
+              closeButton.innerText = "Dismiss Overlay";
+              closeButton.style.marginTop = "15px";
+              closeButton.style.padding = "8px 16px";
+              closeButton.style.background = "#ef4444";
+              closeButton.style.color = "#ffffff";
+              closeButton.style.border = "none";
+              closeButton.style.borderRadius = "4px";
+              closeButton.style.cursor = "pointer";
+              closeButton.style.fontWeight = "bold";
+              closeButton.onclick = function() {
+                div.remove();
+              };
+              div.appendChild(closeButton);
+
+              if (document.body) {
+                document.body.appendChild(div);
+              } else {
+                window.addEventListener("DOMContentLoaded", function() {
+                  document.body.appendChild(div);
+                });
+              }
+            }
+
+            var info = document.getElementById("visual-error-info");
+            if (info) {
+              var p = document.createElement("p");
+              p.style.borderTop = "1px solid #e4e4e7";
+              p.style.paddingTop = "10px";
+              p.style.marginTop = "10px";
+              p.innerHTML = "<b>Type:</b> " + type + "<br/>" +
+                            "<b>Message:</b> <span style='color:#ef4444; font-weight:bold;'>" + message + "</span><br/>" +
+                            "<b>Source:</b> " + source + ":" + lineno + ":" + colno + "<br/>";
+              info.appendChild(p);
+
+              if (error && error.stack) {
+                var pre = document.createElement("pre");
+                pre.style.background = "#f4f4f5";
+                pre.style.padding = "10px";
+                pre.style.borderRadius = "4px";
+                pre.style.marginTop = "5px";
+                pre.style.border = "1px solid #e4e4e7";
+                pre.style.fontSize = "12px";
+                pre.style.overflow = "auto";
+                pre.innerText = error.stack;
+                info.appendChild(pre);
+              }
+            }
+          } catch(e) {
+            console.error("Failed to render visual error overlay:", e);
+          }
+        }
+
         function logError(type, message, source, lineno, colno, error) {
+          showVisualError(type, message, source, lineno, colno, error);
           var payload = {
             type: type,
             message: String(message),
@@ -25,6 +119,9 @@
             body: JSON.stringify(payload)
           }).catch(function(e) { console.error("Failed to report client error:", e); });
         }
+
+        window.showVisualError = showVisualError;
+        window.logError = logError;
 
         window.onerror = function(message, source, lineno, colno, error) {
           logError("onerror", message, source, lineno, colno, error);

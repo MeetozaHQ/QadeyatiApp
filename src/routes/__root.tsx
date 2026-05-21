@@ -279,32 +279,46 @@ function RootComponent() {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
 
-    function logError(type: string, message: any, source: any, lineno: any, colno: any, error: any) {
+    function logError(
+      type: string,
+      message: unknown,
+      source: unknown,
+      lineno: unknown,
+      colno: unknown,
+      error: unknown,
+    ) {
+      const errObj = error as Record<string, unknown> | null;
       const payload = {
         type,
         message: String(message),
         source: String(source),
         lineno,
         colno,
-        error: error ? { message: error.message, stack: error.stack, name: error.name } : null,
+        error: errObj
+          ? {
+              message: errObj.message,
+              stack: errObj.stack,
+              name: errObj.name,
+            }
+          : null,
         url: window.location.href,
         userAgent: window.navigator.userAgent,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       console.warn("Captured client-side error:", payload);
-      
+
       fetch("/api/log-client-error", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }).catch((e) => { 
-        console.error("Failed to report client error:", e); 
+        body: JSON.stringify(payload),
+      }).catch((e) => {
+        console.error("Failed to report client error:", e);
       });
     }
 
     const originalOnError = window.onerror;
-    window.onerror = function(message, source, lineno, colno, error) {
+    window.onerror = function (message, source, lineno, colno, error) {
       logError("onerror", message, source, lineno, colno, error);
       if (typeof originalOnError === "function") {
         return originalOnError(message, source, lineno, colno, error);
@@ -312,9 +326,9 @@ function RootComponent() {
       return false;
     };
 
-    const handleRejection = function(event: PromiseRejectionEvent) {
+    const handleRejection = function (event: PromiseRejectionEvent) {
       const reason = event.reason;
-      const msg = reason ? (reason.message || String(reason)) : "Unhandled promise rejection";
+      const msg = reason ? reason.message || String(reason) : "Unhandled promise rejection";
       logError("unhandledrejection", msg, null, null, null, reason);
     };
     window.addEventListener("unhandledrejection", handleRejection);
