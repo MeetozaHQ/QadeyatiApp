@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { GoogleGenAI } from "@google/genai";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -22,8 +23,19 @@ export const chatWithAI = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: ChatInput) => input)
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY غير مهيأ");
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("لم يتم تهيئة مفتاح GEMINI_API_KEY في النظام الحسابي. يرجى إضافته في إعدادات المنصة أو في متغيرات البيئة.");
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
 
     let contextBlock = "";
     if (data.caseId) {
@@ -66,27 +78,26 @@ export const chatWithAI = createServerFn({ method: "POST" })
       }
     }
 
-    const messages = [{ role: "system", content: SYSTEM_PROMPT + contextBlock }, ...data.messages];
+    const systemInstruction = SYSTEM_PROMPT + contextBlock;
+    const contents = data.messages
+      .filter((msg) => msg.role !== "system")
+      .map((msg) => ({
+        role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
+        parts: [{ text: msg.content }],
+      }));
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5-mini",
-        messages,
-      }),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      if (res.status === 429) throw new Error("تم تجاوز حد الاستخدام، حاول لاحقًا.");
-      if (res.status === 402) throw new Error("نفذ رصيد الذكاء الاصطناعي.");
-      throw new Error(`AI error ${res.status}: ${text.slice(0, 200)}`);
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents,
+        config: {
+          systemInstruction,
+        },
+      });
+      const content = response.text || "";
+      return { content };
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+      throw new Error(`تعذر الاتصال بالمستشار الذكي: ${error instanceof Error ? error.message : "حدث خطأ غير معروف"}`);
     }
-    const json = await res.json();
-    const content: string = json.choices?.[0]?.message?.content ?? "";
-    return { content };
   });
