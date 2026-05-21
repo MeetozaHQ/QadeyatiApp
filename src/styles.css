@@ -1,10 +1,9 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
-@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap");
 
 /*
  * Design system definition.
@@ -115,7 +114,11 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Cairo", system-ui, -apple-system, sans-serif !important;
+    font-family:
+      "Cairo",
+      system-ui,
+      -apple-system,
+      sans-serif !important;
     -webkit-font-smoothing: antialiased;
     direction: rtl;
   }
@@ -125,7 +128,11 @@
   optgroup,
   select,
   textarea {
-    font-family: "Cairo", system-ui, -apple-system, sans-serif !important;
+    font-family:
+      "Cairo",
+      system-ui,
+      -apple-system,
+      sans-serif !important;
   }
 
   h1,
@@ -134,7 +141,11 @@
   h4,
   h5,
   h6 {
-    font-family: "Cairo", system-ui, -apple-system, sans-serif !important;
+    font-family:
+      "Cairo",
+      system-ui,
+      -apple-system,
+      sans-serif !important;
     letter-spacing: -0.01em;
   }
 
