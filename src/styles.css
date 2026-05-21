@@ -20,7 +20,7 @@
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
-@theme inline {
+@theme {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -111,15 +111,21 @@
     border-color: var(--color-border);
   }
 
+  html,
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
+    font-family: "Cairo", system-ui, -apple-system, sans-serif !important;
     -webkit-font-smoothing: antialiased;
+    direction: rtl;
   }
 
-  html {
-    direction: rtl;
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: "Cairo", system-ui, -apple-system, sans-serif !important;
   }
 
   h1,
@@ -128,7 +134,7 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-display);
+    font-family: "Cairo", system-ui, -apple-system, sans-serif !important;
     letter-spacing: -0.01em;
   }
 
