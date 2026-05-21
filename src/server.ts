@@ -69,6 +69,27 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname === "/api/log-client-error" && request.method === "POST") {
+        try {
+          const body = await request.json();
+          const fs = await import("fs");
+          const logPayload = {
+            ...body,
+            serverReceivedAt: new Date().toISOString()
+          };
+          fs.appendFileSync("client-errors.log", JSON.stringify(logPayload) + "\n");
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { "content-type": "application/json" }
+          });
+        } catch (err) {
+          return new Response(JSON.stringify({ ok: false, error: String(err) }), {
+            status: 400,
+            headers: { "content-type": "application/json" }
+          });
+        }
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

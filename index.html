@@ -4,6 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Google AI Studio App</title>
+    <script>
+      (function() {
+        function logError(type, message, source, lineno, colno, error) {
+          var payload = {
+            type: type,
+            message: String(message),
+            source: String(source),
+            lineno: lineno,
+            colno: colno,
+            error: error ? { message: error.message, stack: error.stack, name: error.name } : null,
+            url: window.location.href,
+            userAgent: window.navigator.userAgent,
+            timestamp: new Date().toISOString()
+          };
+          console.warn("Captured load-time client-side error:", payload);
+          fetch("/api/log-client-error", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }).catch(function(e) { console.error("Failed to report client error:", e); });
+        }
+
+        window.onerror = function(message, source, lineno, colno, error) {
+          logError("onerror", message, source, lineno, colno, error);
+          return false;
+        };
+
+        window.addEventListener("unhandledrejection", function(event) {
+          var reason = event.reason;
+          var msg = reason ? (reason.message || String(reason)) : "Unhandled promise rejection";
+          logError("unhandledrejection", msg, null, null, null, reason);
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
