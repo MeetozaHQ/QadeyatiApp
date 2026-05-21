@@ -1,10 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Send, Sparkles, Save, Loader2, FileText, Download, Copy, Printer } from "lucide-react";
+import {
+  Send,
+  Sparkles,
+  Save,
+  Loader2,
+  FileText,
+  Download,
+  Copy,
+  Printer,
+  ShieldAlert,
+} from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { chatWithAI, type ChatMessage } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial } from "@/hooks/use-trial";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -51,6 +62,7 @@ const TEMPLATES: Array<{ label: string; prompt: string }> = [
 function AIPage() {
   const { caseId } = Route.useSearch();
   const { user } = useAuth();
+  const { isTrialExpired } = useTrial();
   const navigate = useNavigate();
   const callChat = useServerFn(chatWithAI);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -102,6 +114,12 @@ function AIPage() {
   const send = async (text: string) => {
     const content = text.trim();
     if (!content || loading) return;
+    if (isTrialExpired) {
+      setError(
+        "انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى الاشتراك أو التنشيط مجانًا بالرمز الترويجي EGYPT بالشريط العلوي لمواصلة الاستفادة من مزايا المساعد الذكي.",
+      );
+      return;
+    }
     setError(null);
     const next: ChatMessage[] = [...messages, { role: "user", content }];
     setMessages(next);
@@ -121,6 +139,10 @@ function AIPage() {
   };
 
   const saveAsNote = async (content: string) => {
+    if (isTrialExpired) {
+      toast.error("انتهت الفترة التجريبية. يرجى تفعيل الاشتراك.");
+      return;
+    }
     if (!caseId || !user) {
       toast.error("لحفظ كملاحظة افتح المساعد من داخل قضية.");
       return;
@@ -139,6 +161,10 @@ function AIPage() {
   };
 
   const saveAsDocument = async (content: string, hint: string) => {
+    if (isTrialExpired) {
+      toast.error("انتهت الفترة التجريبية. يرجى تفعيل الاشتراك المميز لحفظ المستندات.");
+      return;
+    }
     if (!caseId || !user) {
       toast.error("لحفظ داخل القضية افتح المساعد من داخل قضية.");
       return;

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Logo } from "@/components/qadeyti/Logo";
 import {
   MessageCircle,
   MapPin,
@@ -113,14 +114,11 @@ function PublicProfile() {
 
       {/* Brand strip */}
       <header className="relative z-10 mx-auto flex max-w-3xl items-center justify-between px-6 pt-6">
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-xs uppercase tracking-[0.32em] text-[var(--gold-soft)]/80"
-        >
-          <Scale className="h-3.5 w-3.5" /> قضيتي
+        <Link to="/">
+          <Logo className="h-8 w-auto" />
         </Link>
-        <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground/70">
-          Legal Identity
+        <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/70 font-sans">
+          Legal ID • ملف موثق
         </span>
       </header>
 

@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, ShieldAlert } from "lucide-react";
 import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { PremiumButton } from "@/components/qadeyti/PremiumButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial } from "@/hooks/use-trial";
 import { CASE_TYPES } from "@/lib/case-constants";
 import { createNotification } from "@/lib/notifications";
 import { ensureFirstSession } from "@/lib/first-session";
@@ -44,6 +45,7 @@ const STEPS = ["النوع", "المحكمة", "الأطراف", "التفاصي
 function NewCasePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isTrialExpired } = useTrial();
   const [step, setStep] = useState(0);
   const [f, setF] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
@@ -62,6 +64,12 @@ function NewCasePage() {
 
   const submit = async () => {
     if (!user) return;
+    if (isTrialExpired) {
+      setError(
+        "انتهت الفترة التجريبية. يرجى تفعيل الاشتراك المميز بالرمز الترويجي EGYPT أو تنشيط الباقة من الشريط العلوي لتتمكن من إنشاء قضايا جديدة.",
+      );
+      return;
+    }
     setSaving(true);
     setError(null);
     const { data, error } = await supabase
@@ -116,6 +124,19 @@ function NewCasePage() {
           {step + 1}/{STEPS.length}
         </span>
       </header>
+
+      {isTrialExpired && (
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-right flex gap-3 items-start">
+          <ShieldAlert className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-red-200">انتهت الفترة التجريبية</h4>
+            <p className="text-xs text-red-300 leading-relaxed">
+              لقد انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى تنشيط باقة الشريك القانوني
+              الممتازة بواسطة القسيمة المدونة بالشريط العلوي لتفعيل كامل صلاحيات الإرسال والحفظ.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="flex gap-1.5">

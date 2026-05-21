@@ -25,16 +25,18 @@ export const chatWithAI = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("لم يتم تهيئة مفتاح GEMINI_API_KEY في النظام الحسابي. يرجى إضافته في إعدادات المنصة أو في متغيرات البيئة.");
+      throw new Error(
+        "لم يتم تهيئة مفتاح GEMINI_API_KEY في النظام الحسابي. يرجى إضافته في إعدادات المنصة أو في متغيرات البيئة.",
+      );
     }
 
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
         headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
+          "User-Agent": "aistudio-build",
+        },
+      },
     });
 
     let contextBlock = "";
@@ -98,6 +100,8 @@ export const chatWithAI = createServerFn({ method: "POST" })
       return { content };
     } catch (error) {
       console.error("Gemini API Error:", error);
-      throw new Error(`تعذر الاتصال بالمستشار الذكي: ${error instanceof Error ? error.message : "حدث خطأ غير معروف"}`);
+      throw new Error(
+        `تعذر الاتصال بالمستشار الذكي: ${error instanceof Error ? error.message : "حدث خطأ غير معروف"}`,
+      );
     }
   });

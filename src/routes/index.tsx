@@ -1,9 +1,1350 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { Logo } from "@/components/qadeyti/Logo";
+import {
+  Scale,
+  ShieldCheck,
+  Sparkles,
+  UploadCloud,
+  BellRing,
+  CreditCard,
+  TrendingUp,
+  Briefcase,
+  UserCheck,
+  MapPin,
+  Phone,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Lock,
+  Database,
+  Smartphone,
+  LayoutGrid,
+  MessageSquare,
+  Mail,
+  Facebook,
+  Linkedin,
+  Youtube,
+  Menu,
+  X,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => {
-    throw redirect({ to: "/dashboard" });
-  },
-  component: () => null,
+  component: LandingPage,
 });
+
+function LandingPage() {
+  const { session } = useAuth();
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const faqs = [
+    {
+      q: "هل أحتاج بطاقة بنكية لتجربة المنصة؟",
+      a: "لا، يمكنك البدء فورًا بمجرد إنشاء حساب بالبريد الإلكتروني وتفعيله. ستحصل على فترة تجريبية كاملة لمدة 7 أيام دون الحاجة لإدخال أي بيانات دفع.",
+    },
+    {
+      q: "هل بيانات القضايا والمعلومات آمنة؟",
+      a: "نعم بشكل قطعي. نستخدم بروتوكولات حماية وتشفير متطورة للغاية بترميز SSL لحماية جميع الملفات، القضايا، والمستندات المخزنة سحابيًا. كما يجري تفعيل نسخ احتياطي آمن وتلقائي لكل مكتب لمنع ضياع أي ملف.",
+    },
+    {
+      q: "هل يعمل البرنامج على الهواتف والأجهزة اللوحية؟",
+      a: "نعم، النظام مصمم بتقنية واجهات متجاوبة بالكامل ليعمل بسلاسة فائقة وكفاءة قصوى على الهواتف الذكية (آيفون وأندرويد)، الأجهزة اللوحية، وأجهزة الكمبيوتر الشخصية المتنوعة دون الحاجة لتحميل تطبيقات ثقيلة.",
+    },
+    {
+      q: "هل أستطيع استخدامه لإدارة مكتب محاماة كامل بمساعدين؟",
+      a: "نعم، يتيح لك النظام المركزي متابعة ومزامنة أعمال مكتبك بالكامل في مكان واحد منظم يربط الأعمال الإدارية والمالية معًا بأعلى دقة.",
+    },
+    {
+      q: "هل الذكاء الاصطناعي (المستشار الذكي) يكتب المذكرات القانونية بالكامل؟",
+      a: "يقوم المستشار الذكي بصياغة مسودات قانونية دقيقة، استخراج أهم الثغرات والنقاط من أوراق قضيتك، وتلخيص المذكرات الطويلة في ثوانٍ. تظل هذه مخرجات استشارية للمساعدة، مراجعة وتعديل المحامي لها قبل الاستخدام أمر ضروري.",
+    },
+    {
+      q: "ماذا يحدث لحسابي وقضاياي بعد انتهاء التجربة المجانية؟",
+      a: "بعد انتهاء الـ 7 أيام، لن تفقد بياناتك أبدًا. سيبقى حسابك نشطًا ويمكنك 'عرض وقراءة' القضايا، الجلسات، الملفات، والملاحظات السابقة بحرية في أي وقت، ولكن سيتم تقييد إنشاء بيانات جديدة، استخدام المساعد الذكي، أو رفع مستندات جديدة حتى تختار الاشتراك في الخطة المدفوعة.",
+    },
+  ];
+
+  const features = [
+    {
+      icon: <Briefcase className="h-6 w-6 text-[var(--gold)]" />,
+      title: "إدارة القضايا والجلسات",
+      desc: "نظام أرشفة ذكي لمتابعة سير الدعاوى ومواعيد الجلسات والقرارات خطوة بخطوة.",
+    },
+    {
+      icon: <Sparkles className="h-6 w-6 text-[var(--gold)]" />,
+      title: "المساعد القانوني بالذكاء الاصطناعي",
+      desc: "صيغ مذكراتك القانونية، افحص الثغرات، ولخّص مستنداتك القانونية بذكاء بالاعتماد على Gemini 1.5 Flash.",
+    },
+    {
+      icon: <UploadCloud className="h-6 w-6 text-[var(--gold)]" />,
+      title: "رفع الملفات والمستندات",
+      desc: "خزّن عقودك، توكيلاتك، وصور محاضرك سحابيًا بأمان تام للوصول إليها من أي مكان بالجمهورية.",
+    },
+    {
+      icon: <BellRing className="h-6 w-6 text-[var(--gold)]" />,
+      title: "الإشعارات والتنبيهات",
+      desc: "تنبيهات فورية وذكية على لوحة التحكم للهامش والقرارات والجلسات القادمة حتى لا يضيع ميعاد.",
+    },
+    {
+      icon: <CreditCard className="h-6 w-6 text-[var(--gold)]" />,
+      title: "إدارة الأتعاب والأقساط",
+      desc: "سجّل دفعات الموكلين، وقسّم الأتعاب لمقادير واضحة بدفاتر مالية رقمية متطورة.",
+    },
+    {
+      icon: <TrendingUp className="h-6 w-6 text-[var(--gold)]" />,
+      title: "متابعة المتأخرات المالية",
+      desc: "اعرف من دفع ومن متأخر بضغطة زر. تتبع مديونيات القضايا وحسّن تحصيلات مكتبك المالية.",
+    },
+    {
+      icon: <UserCheck className="h-6 w-6 text-[var(--gold)]" />,
+      title: "صفحة احترافية للمحامي",
+      desc: "احصل على رابط عام مخصص لمكتبك يعكس خبرتك وتخصصاتك ويسهل وصول الموكلين إليك عبر واتساب.",
+    },
+    {
+      icon: <LayoutGrid className="h-6 w-6 text-[var(--gold)]" />,
+      title: "تنظيم المكتب القانوني بالكامل",
+      desc: "استبدل أكوام الورق ببيئة عمل رقمية تضمن حفظ جهودك وتنظيم ملفات عملائك بأقصى مهنية وسرعة.",
+    },
+  ];
+
+  return (
+    <div
+      className="min-h-screen bg-[#0A0A0F] text-[#F5F1E8] font-sans antialiased overflow-x-hidden selection:bg-[var(--gold)] selection:text-black"
+      dir="rtl"
+    >
+      {/* 1. Header & Navigation */}
+      <header className="sticky top-0 z-50 border-b border-border bg-[#0A0A0F]/95 backdrop-blur-md transition-all">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-20 items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center">
+              <Link to="/">
+                <Logo className="h-10 md:h-12 w-auto" />
+              </Link>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-8">
+              <a
+                href="#features"
+                className="text-sm font-medium text-slate-300 hover:text-[var(--gold)] transition-colors"
+              >
+                ميزات المنصة
+              </a>
+              <a
+                href="#ai-assistant"
+                className="text-sm font-medium text-slate-300 hover:text-[var(--gold)] transition-colors"
+              >
+                المستشار الذكي
+              </a>
+              <a
+                href="#financial"
+                className="text-sm font-medium text-slate-300 hover:text-[var(--gold)] transition-colors"
+              >
+                إدارة الأتعاب
+              </a>
+              <a
+                href="#lawyer-profile"
+                className="text-sm font-medium text-slate-300 hover:text-[var(--gold)] transition-colors"
+              >
+                الصفحة الشخصية
+              </a>
+              <a
+                href="#pricing"
+                className="text-sm font-semibold text-slate-300 hover:text-[var(--gold)] transition-colors"
+              >
+                الأسعار
+              </a>
+              <a
+                href="#faq"
+                className="text-sm font-medium text-slate-300 hover:text-[var(--gold)] transition-colors"
+              >
+                الأسئلة الشائعة
+              </a>
+            </nav>
+
+            {/* CTAs */}
+            <div className="hidden md:flex items-center gap-4">
+              {session ? (
+                <Link
+                  to="/dashboard"
+                  className="rounded-xl border border-[var(--gold)] px-6 py-2.5 text-sm font-bold text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-all shadow-gold/20"
+                >
+                  لوحة التحكم
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                  >
+                    تسجيل الدخول
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] px-6 py-2.5 text-sm font-bold text-black border border-transparent hover:brightness-110 active:scale-[0.98] transition-all shadow-md shadow-amber-500/10"
+                  >
+                    ابدأ مجانًا
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="flex md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="inline-flex items-center justify-center rounded-xl p-2.5 text-slate-400 hover:bg-slate-900 hover:text-white focus:outline-none"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile menu, show/hide based on menu state */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-[#0C0C12] px-4 py-6 space-y-4 animate-in fade-in slide-in-from-top-5 duration-200">
+            <div className="grid grid-cols-1 gap-4 font-sans text-right">
+              <a
+                href="#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-base font-medium text-slate-300 hover:text-[var(--gold)] py-2 border-b border-slate-900"
+              >
+                ميزات المنصة
+              </a>
+              <a
+                href="#ai-assistant"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-base font-medium text-slate-300 hover:text-[var(--gold)] py-2 border-b border-slate-900"
+              >
+                المستشار الذكي
+              </a>
+              <a
+                href="#financial"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-base font-medium text-slate-300 hover:text-[var(--gold)] py-2 border-b border-slate-900"
+              >
+                إدارة الأتعاب
+              </a>
+              <a
+                href="#lawyer-profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-base font-medium text-slate-300 hover:text-[var(--gold)] py-2 border-b border-slate-900"
+              >
+                الصفحة الشخصية
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-base font-semibold text-slate-300 hover:text-[var(--gold)] py-2 border-b border-slate-900"
+              >
+                الأسعار
+              </a>
+              <a
+                href="#faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-base font-medium text-slate-300 hover:text-[var(--gold)] py-2"
+              >
+                الأسئلة الشائعة
+              </a>
+            </div>
+
+            <div className="pt-4 border-t border-slate-900 flex flex-col gap-3">
+              {session ? (
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] py-3 text-sm font-bold text-black"
+                >
+                  لوحة التحكم
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center rounded-xl border border-border py-3 text-sm font-bold text-slate-300 hover:bg-slate-900"
+                  >
+                    تسجيل الدخول
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] py-3 text-sm font-bold text-black"
+                  >
+                    ابدأ تجربة الـ ٧ أيام مجانًا
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* 2. Hero Section */}
+      <section className="relative pt-12 pb-24 md:pt-20 md:pb-32 overflow-hidden">
+        {/* Glow Effects */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[600px] h-[400px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-12 right-10 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Tagline Badge */}
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-[var(--gold)] border border-amber-500/20 mb-8 animate-pulse">
+              <span>⚖️</span>
+              <span>جرّب قضيتي لمدة ٧ أيام مجانًا — بدون بطاقة بنكية</span>
+            </div>
+
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight md:leading-tight mb-6 font-display">
+              نظامك القانوني الذكي لإدارة{" "}
+              <span className="bg-gradient-to-l from-[var(--gold)] to-[#F3D078] bg-clip-text text-transparent">
+                مكتب المحاماة بالكامل
+              </span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-base sm:text-lg md:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed mb-10">
+              إدارة القضايا، الجلسات، الأتعاب، الملفات، والمساعد القانوني بالذكاء الاصطناعي — في
+              منصة واحدة مصممة خصيصاً لتناسب احتياجات المحامين المصريين.
+            </p>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+              <Link
+                to="/signup"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] px-8 py-4 text-base font-bold text-black border border-transparent shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-[0.98] transition-all"
+              >
+                ابدأ التجربة المجانية
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <a
+                href="#features"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl border border-border bg-slate-900/50 backdrop-blur-md px-8 py-4 text-base font-bold text-slate-300 hover:text-white hover:border-slate-700 hover:bg-slate-900 transition-all"
+              >
+                شاهد كيف تعمل المنصة
+              </a>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-16">
+              ٧ أيام مجانية بالكامل • لا تتطلب بطاقة بنكية • إلغاء في أي وقت
+            </p>
+
+            {/* Floating UI Elements / Premium Mockup Graphics */}
+            <div className="relative mt-8 mx-auto xl:max-w-5xl rounded-3xl border border-border bg-[#0E121C]/80 p-4 md:p-6 shadow-2xl backdrop-blur-lg">
+              {/* Inner Decorative Window Chrome */}
+              <div
+                className="flex items-center justify-between border-b border-slate-900 pb-4 mb-4"
+                dir="ltr"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-red-500/80"></div>
+                  <div className="h-3 w-3 rounded-full bg-yellow-500/80"></div>
+                  <div className="h-3 w-3 rounded-full bg-green-500/80"></div>
+                </div>
+                <div className="rounded-md bg-[#080B12] px-6 py-1 text-xs text-slate-500 border border-slate-950 font-mono">
+                  qadeyati.com/dashboard/cases
+                </div>
+                <div className="w-8"></div>
+              </div>
+
+              {/* Graphic Body */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-right" dir="rtl">
+                {/* Visual Card 1: Case Detail */}
+                <div className="rounded-2xl bg-[#090D16] border border-slate-800 p-5 p-r hover:border-amber-500/20 transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="rounded-lg bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/10">
+                      جاري الإجراء
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      قضية رقم ٢٣٧٤ لسنة ٢٠٢٦
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white mb-2 leading-relaxed">
+                    دعوى بطلان عقد إيجار خاضع للقانون القديم
+                  </h4>
+                  <div className="space-y-1.5 text-xs text-slate-300">
+                    <p className="text-[11px] text-slate-400">
+                      <strong className="text-[11px] text-slate-300 font-medium">الموكل:</strong>{" "}
+                      الحاج أحمد عبد الرحيم
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      <strong className="text-[11px] text-slate-300 font-medium">المحكمة:</strong>{" "}
+                      جنوب الجيزة الكلية — الدائرة ١٢ مدني
+                    </p>
+                  </div>
+                  <div className="border-t border-slate-900 pt-3 mt-4 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-400">الجلسة القادمة</span>
+                    <span className="text-xs font-bold text-[var(--gold)]">
+                      الأحد، ٢٤ مايو ٢٠٢٦
+                    </span>
+                  </div>
+                </div>
+
+                {/* Visual Card 2: AI Advisor */}
+                <div className="rounded-2xl bg-[#090D16] border border-[var(--gold)]/20 p-5 relative overflow-hidden backdrop-gradient-amber">
+                  <div className="absolute top-0 left-0 bg-[var(--gold)] text-black px-2.5 py-0.5 rounded-br-2xl text-[10px] font-bold flex items-center gap-1">
+                    <Sparkles className="h-2.5 w-2.5 animate-pulse" />
+                    المستشار الذكي (Gemini API)
+                  </div>
+                  <div className="text-right pt-2">
+                    <p className="text-xs text-slate-400 mb-2 font-mono">سؤال في المدني المصري:</p>
+                    <p className="text-[11.5px] text-slate-200 bg-[#101422] p-2.5 rounded-xl border border-slate-800 leading-relaxed mb-3">
+                      &quot;كيف أحصن طرد مستأجر تأخر بالوفاء بالأجرة بالرغم من عرضه الوفاء
+                      بالجلسة؟&quot;
+                    </p>
+                    <p className="text-[11.5px] text-[var(--gold-soft)] leading-relaxed flex items-start gap-1">
+                      <span>✦</span>
+                      <span>
+                        طبقاً للمادة ١٨ من القانون ١٣٦ لسنة ١٩٨١، يلزم إثبات تكرار الامتناع أو
+                        التأخر لتفادي أثر سداد الأجرة بالجلسة...
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Visual Card 3: Finance Overview */}
+                <div className="rounded-2xl bg-[#090D16] border border-slate-800 p-5 hover:border-amber-500/20 transition-all">
+                  <p className="text-[11px] text-slate-400 uppercase tracking-wide mb-1 font-mono">
+                    المتأخرات المالية هذا الشهر
+                  </p>
+                  <h5 className="text-2xl font-black text-white font-mono mb-2">
+                    ٤,٥٠٠ <span className="text-xs text-[var(--gold)] font-sans">جنيه</span>
+                  </h5>
+                  <div className="w-full bg-slate-900 rounded-full h-1.5 mb-4">
+                    <div
+                      className="bg-[var(--gold)] h-1.5 rounded-full"
+                      style={{ width: "65%" }}
+                    ></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">تحصيل الأستاذ محمد</span>
+                      <span className="font-bold text-emerald-400">تم الدفع • ١,٥٠٠ ج</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">مكتب المهندس خالد</span>
+                      <span className="font-bold text-amber-500">متأخر • ٣,٠٠٠ ج</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Trust Legal Workflow Section */}
+      <section className="py-16 md:py-24 border-t border-border bg-[#0C0C14]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 font-display">
+              منصة مبنية على الثقة والأمان الكاملين
+            </h2>
+            <p className="text-slate-400 text-sm sm:text-base">
+              نحفظ أسرار مكتبك بأرقى معايير التكنولوجيا السحابية الحديثة.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="rounded-2xl border border-slate-850 bg-[#0E121C]/50 p-6 text-center hover:bg-[#0E121C] transition-all">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-[var(--gold)]">
+                <Lock className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">حماية وتشفير البيانات</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                تشفير كامل لكافة مذكراتك وملفاتك الحساسة بترميزات بالغة الأمان لمنع أي اختراق.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-850 bg-[#0E121C]/50 p-6 text-center hover:bg-[#0E121C] transition-all">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-[var(--gold)]">
+                <Database className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">نسخ احتياطي آمن</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                يرحل النظام نسخة يومية من جميع قضاياك سحابيًا لضمان استرجاعها حتى في حال تلف أجهزتك.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-850 bg-[#0E121C]/50 p-6 text-center hover:bg-[#0E121C] transition-all">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-[var(--gold)]">
+                <Scale className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">مصممة للمحامين المصريين</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                مصطلحات القضايا وإجراءات المحاكم مطابقة للواقع الإداري والقضائي بالمحاكم المصرية.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-850 bg-[#0E121C]/50 p-6 text-center hover:bg-[#0E121C] transition-all">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-[var(--gold)]">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">واجهة عربية بالكامل</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                فهم سهل وتواصل سليم بعبارات ومصطلحات بلغة عربية فصيحة وأنيقة.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-850 bg-[#0E121C]/50 p-6 text-center hover:bg-[#0E121C] transition-all">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-[var(--gold)]">
+                <Smartphone className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">الجوال والكمبيوتر</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                مزامنة تامة لبياناتك لملاحقة جدول قضاياك ورول الجلسة أثناء تواجدك بالمحكمة من هاتفك
+                المحمول.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Features Section */}
+      <section id="features" className="py-20 md:py-28 border-t border-border relative">
+        <div className="absolute top-1/2 left-0 w-80 h-80 bg-gold/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)] mb-2 block">
+              الميزات والخصائص
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 font-display">
+              كل مكتبك في مكان واحد
+            </h2>
+            <p className="text-slate-300 font-medium">
+              &quot;بدل دفاتر القضايا والورق المبعثر — كل مكتبك في مكان واحد&quot;
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((item, idx) => (
+              <div
+                key={idx}
+                className="group rounded-2xl border border-border bg-[#0B0E17] p-6 hover:border-[var(--gold)]/30 hover:bg-[#0E121D] hover:shadow-lg hover:shadow-amber-500/5 transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/5 text-[var(--gold)] group-hover:bg-amber-500/10 transition-colors">
+                  {item.icon}
+                </div>
+                <h3 className="text-base font-bold text-white mb-2 group-hover:text-[var(--gold)] transition-colors">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 rounded-2xl bg-gradient-to-r from-amber-500/5 to-slate-900/50 border border-amber-500/10 p-6 text-center max-w-3xl mx-auto">
+            <p className="text-sm font-semibold text-[var(--gold)] leading-relaxed">
+              &quot;اعرف مين دفع ومين متأخر بدون دفاتر أو ورق&quot;
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. AI Assistant Section */}
+      <section
+        id="ai-assistant"
+        className="py-20 md:py-28 border-t border-border bg-[#0B0B12] relative overflow-hidden"
+      >
+        {/* Decorative elements */}
+        <div className="absolute top-1/3 left-10 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Column: Visual Mockup */}
+            <div className="lg:col-span-6 space-y-4">
+              <div className="rounded-3xl border border-[var(--gold)]/20 bg-[#121520]/90 p-5 md:p-6 shadow-2xl relative">
+                {/* Visual Glass Header */}
+                <div className="flex items-center justify-between border-b border-slate-900/50 pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    <span className="text-xs font-bold text-white font-display">
+                      المستشار الذكي
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">Gemini 1.5 Flash</span>
+                </div>
+
+                {/* AI Chat Layout */}
+                <div className="space-y-4 font-sans text-right">
+                  {/* User message */}
+                  <div className="flex items-start gap-2.5 max-w-[85%] mr-auto">
+                    <div className="rounded-2xl bg-[#090C16] border border-slate-800 p-3 text-xs leading-relaxed text-slate-200">
+                      طلب صياغة: قم بصياغة بند براءة ذمة المالك من أي التزامات مالية سابقة بعد
+                      التوقيع على محضر تسليم في عقد إيجار شقة.
+                    </div>
+                  </div>
+
+                  {/* AI Reply */}
+                  <div className="flex items-start gap-2.5 max-w-[90%]">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[var(--gold)] to-[var(--accent)] flex items-center justify-center shrink-0">
+                      <Sparkles className="h-4 w-4 text-black" />
+                    </div>
+                    <div className="rounded-2xl bg-[#1D212E] border border-slate-850 p-4 text-[11.5px] leading-relaxed text-slate-100 flex-1 space-y-2">
+                      <p className="font-bold text-[var(--gold)]">البند المقترح:</p>
+                      <p className="bg-[#121520] p-3 rounded-lg text-[11px] leading-relaxed select-all border border-slate-950 text-slate-300 font-mono">
+                        &quot;بمجرد توقيع المستأجر على محضر تسليم العين المؤجرة وخلوها من الشواغل
+                        والتلفيات، يعتبر ذلك بمثابة إقرار ببراءة ذمة المؤجر من أي التزامات سابقة،
+                        ويسقط حق المستأجر في أي ادعاء مالي بخصوص العين.&quot;
+                      </p>
+                      <div className="text-[9.5px] text-slate-400">
+                        تعديلك متاح بالنقر والنسخ المباشر.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-900 bg-black/40 p-4 text-center">
+                <p className="text-[11px] text-slate-400 italic">
+                  &quot;مخرجات الذكاء الاصطناعي هي مساعدات قانونية وتتطلب مراجعة المحامي.&quot;
+                </p>
+              </div>
+            </div>
+
+            {/* Right Column: Copy & Actions */}
+            <div className="lg:col-span-6 space-y-6">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">
+                الذكاء الاصطناعي القانوني
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white font-display leading-tight">
+                المستشار الذكي القانوني بمكتبك
+              </h2>
+              <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
+                استعن بأرقى تكنولوجيا الذكاء الاصطناعي للتفكير كشريك قانوني سريع الإنجاز. مصمم
+                خصيصاً لمساعدتك على الإعداد المثالي والرد على الخصوم في دقائق معدودة.
+              </p>
+
+              {/* Grid of Examples */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-[#0E121C]/50 hover:bg-[#0E121C] transition-colors">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-[var(--gold)] font-bold text-sm shrink-0">
+                    ✦
+                  </div>
+                  <span className="text-xs font-medium text-slate-200">
+                    صياغة دفوع وردود قانونية
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-[#0E121C]/50 hover:bg-[#0E121C] transition-colors">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-[var(--gold)] font-bold text-sm shrink-0">
+                    ✦
+                  </div>
+                  <span className="text-xs font-medium text-slate-200">
+                    استخراج أهم الثغرات والثبوتيات
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-[#0E121C]/50 hover:bg-[#0E121C] transition-colors">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-[var(--gold)] font-bold text-sm shrink-0">
+                    ✦
+                  </div>
+                  <span className="text-xs font-medium text-slate-200">
+                    تلخيص مذكرات ومستندات طويلة
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-[#0E121C]/50 hover:bg-[#0E121C] transition-colors">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-[var(--gold)] font-bold text-sm shrink-0">
+                    ✦
+                  </div>
+                  <span className="text-xs font-medium text-slate-200">
+                    صياغة وتنسيق مسودات العقود
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 border border-[var(--gold)] px-6 py-3 text-sm font-bold text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-all"
+                >
+                  اختبر المساعد الذكي مجانًا
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Financial Management Section */}
+      <section id="financial" className="py-20 md:py-28 border-t border-border">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)] mb-2 block">
+              الحلول المالية
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 font-display">
+              إدارة الأتعاب الحسابية بذكاء
+            </h2>
+            <p className="text-xl font-bold text-[var(--gold-soft)] font-display mb-4">
+              &quot;تابع أرباح مكتبك بسهولة وبدون دفاتر&quot;
+            </p>
+            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+              تصفح كل أتعاب القضايا والمبالغ المستلمة من الموكلين والأقساط المستحقة، وحدد المتأخرات
+              بدقة متناهية تحافظ على تدفقات مكتبك النقدية.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Copy section */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="rounded-2xl border border-border bg-[#0E121C]/50 p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 font-bold text-xs">
+                    ١
+                  </div>
+                  <h3 className="text-sm font-bold text-white">نظام الأقساط والدفعات</h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  قسّم الأتعاب الإجمالية للدعوى إلى أقساط وتواريخ سداد واضحة، ليقوم النظام بتذكيرك
+                  عند استحقاق القسط.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-[#0E121C]/50 p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 font-bold text-xs">
+                    ٢
+                  </div>
+                  <h3 className="text-sm font-bold text-white">تتبع المديونيات والمتأخرات</h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  تظهر المبالغ المتأخرة بلون متبقٍ واضح حتى تراجع الموكل فورياً قبل كل جلسة
+                  بالمحكمة.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-[#0E121C]/50 p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 font-bold text-xs">
+                    ٣
+                  </div>
+                  <h3 className="text-sm font-bold text-white">فواتير إلكترونية وتحصيل</h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  سجل استلام المبالغ والوصل المالي ليحدث النظام الرصيد المتبقي للقضية والضرائب
+                  والمصاريف تلقائياً.
+                </p>
+              </div>
+            </div>
+
+            {/* Visual section: Payments mockup */}
+            <div className="lg:col-span-7 bg-[#0E121C] border border-border rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between border-b border-slate-900 pb-4 mb-6">
+                <h4 className="text-sm font-bold text-white font-display">الأتعاب والتحصيلات</h4>
+                <span className="text-[11px] text-slate-400 font-mono">دفتر تحصيلات المكتب</span>
+              </div>
+
+              {/* Financial stats */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="rounded-xl bg-[#090C16] border border-slate-850 p-3 text-right">
+                  <span className="text-[9.5px] text-slate-400 block mb-0.5">
+                    إجمالي المتفق عليه
+                  </span>
+                  <span className="text-sm font-black text-white font-mono">
+                    ٤٥,٠٠٠ <span className="text-[9px] font-sans text-slate-400">ج</span>
+                  </span>
+                </div>
+                <div className="rounded-xl bg-[#090C16] border border-slate-850 p-3 text-right">
+                  <span className="text-[9.5px] text-emerald-400 block mb-0.5">مجموع المحصل</span>
+                  <span className="text-sm font-black text-emerald-400 font-mono">
+                    ٢٣,٥٠٠ <span className="text-[9px] font-sans text-emerald-500">ج</span>
+                  </span>
+                </div>
+                <div className="rounded-xl bg-[#090C16] border border-slate-850 p-3 text-right">
+                  <span className="text-[9.5px] text-amber-500 block mb-0.5">
+                    المتأخرات المعلقة
+                  </span>
+                  <span className="text-sm font-black text-amber-500 font-mono">
+                    ٢١,٥٠٠ <span className="text-[9px] font-sans text-amber-500">ج</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* List of payments */}
+              <div className="space-y-3">
+                <div className="rounded-xl bg-[#080B14] p-3 border border-slate-900 flex items-center justify-between text-right">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold font-mono">
+                      ✓
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">
+                        وديعة قسط الاستئناف — الحاج أحمد
+                      </p>
+                      <p className="text-[9px] text-slate-400">
+                        قضية التعويض المباشر • محكمة مصر الجديدة
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-left font-mono">
+                    <p className="text-xs font-bold text-emerald-400">+٥,٠٠٠ ج</p>
+                    <p className="text-[9px] text-slate-500">تم القبض ١٥-٠٥-٢٠٢٦</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-[#080B14] p-3 border border-slate-900 flex items-center justify-between text-right">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-bold font-mono">
+                      !
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">
+                        مؤخر أتعاب المرافعة — مكتب النور
+                      </p>
+                      <p className="text-[9px] text-slate-400">
+                        عقود توريد وتكامل • شمال القاهرة الإبتدائية
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-left font-mono">
+                    <p className="text-xs font-bold text-amber-500">+٧,٥٠٠ ج</p>
+                    <p className="text-[9px] text-slate-500">استحقاق ٢٠-٠٥-٢٠٢٦</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-[#080B14] p-3 border border-slate-900 flex items-center justify-between text-right">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold font-mono">
+                      ✓
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">
+                        الدفعة التأسيسية — قضية إشهار الإفلاس
+                      </p>
+                      <p className="text-[9px] text-slate-400">
+                        الشركة العقارية المتكاملة • المحكمة الإقتصادية
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-left font-mono">
+                    <p className="text-xs font-bold text-emerald-400">+١٠,٠٠٠ ج</p>
+                    <p className="text-[9px] text-slate-500">تم القبض ١٠-٠٥-٢٠٢٦</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Lawyer Public Profile Section */}
+      <section
+        id="lawyer-profile"
+        className="py-20 md:py-28 border-t border-border bg-[#0C0C14] relative"
+      >
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Copy side */}
+            <div className="lg:col-span-5 space-y-6">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">
+                الموقع الشخصي الرقمي
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white font-display">
+                صفحتك القانونية العامة الاحترافية
+              </h2>
+              <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
+                استبدل فوضى مواقع التواصل بصفحة رسمية فاخرة تعكس ثقل مكتبك وعناوين الفروع والدرجة
+                المقيد بها بالنقابة. سهّل على العملاء التواصل معك مباشرة بضغطة زر عبر واتساب دون
+                وسطاء.
+              </p>
+
+              <div className="space-y-3.5">
+                <div className="flex items-start gap-2 text-xs text-slate-300">
+                  <Check className="h-4.5 w-4.5 text-[var(--gold)] shrink-0" />
+                  <span>تثبيت تخصصاتك: مدني، جنائي، إداري، اقتصادي، شرعي ومجلس الدولة.</span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-slate-300">
+                  <Check className="h-4.5 w-4.5 text-[var(--gold)] shrink-0" />
+                  <span>زر تواصل مباشر وآمن بضغطة زر عبر واتساب والمكالمات الهاتفية.</span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-slate-300">
+                  <Check className="h-4.5 w-4.5 text-[var(--gold)] shrink-0" />
+                  <span>توجيه العملاء الجدد لمقر مكتبك القانوني بواسطة Google Maps.</span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  to="/signup"
+                  className="rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] px-6 py-3 text-sm font-bold text-black hover:brightness-110 active:scale-[0.98] transition-all"
+                >
+                  أنشئ صفحتك العامة فورًا
+                </Link>
+              </div>
+            </div>
+
+            {/* Visual: Preview profile */}
+            <div className="lg:col-span-7">
+              <div className="rounded-3xl border border-[var(--gold)]/20 bg-[#0A0A0F] p-6 md:p-8 shadow-2xl relative">
+                {/* Visual Accent Glow */}
+                <div className="absolute top-0 right-10 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
+
+                <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-right">
+                  {/* Lawyer Photo fallback */}
+                  <div className="h-28 w-28 rounded-full border-2 border-[var(--gold)] bg-[#12151D] flex items-center justify-center text-4xl shrink-0 overflow-hidden relative group">
+                    <span className="text-4xl">⚖️</span>
+                  </div>
+
+                  <div className="space-y-4 flex-1">
+                    <div>
+                      <div className="flex items-center justify-center sm:justify-start gap-2 mb-1.5 flex-wrap">
+                        <span className="inline-flex items-center rounded-md bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold text-[var(--gold)] border border-amber-500/20">
+                          محامٍ مقيد بالنقض ومجلس الدّولة
+                        </span>
+                        <span className="inline-flex items-center rounded-md bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold text-indigo-400 border border-indigo-500/15">
+                          خبرة ١٨ عامًا
+                        </span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-white font-display">
+                        الأستاذ المستشار • حازم الشريف
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1 font-mono">
+                        مكتب الشريف للاستشارات والعمل القانوني المتكامل
+                      </p>
+                    </div>
+
+                    <p className="text-[11.5px] text-slate-300 leading-relaxed max-w-lg">
+                      متخصصون في القضايا الجنائية والمدنية الكبرى والمحكمة الاقتصادية ومجلس الدولة
+                      ومنازعات الاستثمار والشركات وعقود المطورين العقاريين في مصر.
+                    </p>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+                      <span className="rounded-full bg-slate-900 border border-slate-800 px-3 py-1 text-[10px] text-slate-300">
+                        القانون الجنائي
+                      </span>
+                      <span className="rounded-full bg-slate-900 border border-slate-800 px-3 py-1 text-[10px] text-slate-300">
+                        مجلس الدّولة
+                      </span>
+                      <span className="rounded-full bg-slate-900 border border-slate-800 px-3 py-1 text-[10px] text-slate-300">
+                        القضايا المدنية الكبرى
+                      </span>
+                    </div>
+
+                    {/* Contact CTA buttons inside Lawyers public page */}
+                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-3">
+                      <a
+                        href="https://wa.me/201035854329"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-[#25D366] text-black px-5 py-2.5 text-xs font-bold hover:brightness-105 active:scale-[0.98] transition-all"
+                      >
+                        <Phone className="h-4 w-4" />
+                        تواصل عبر واتساب
+                      </a>
+                      <a
+                        href="https://maps.google.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-slate-850 bg-slate-900 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-700 transition-all px-5 py-2.5"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        عنوان الفرع الرئيسي بالدقي
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Pricing Section */}
+      <section id="pricing" className="py-20 md:py-28 border-t border-border bg-[#0A0A0F] relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] h-[300px] bg-amber-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)] mb-2 block">
+              باقات الاشتراك
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 font-display">
+              خطة تسعير واحدة شفافة وبلا تعقيد
+            </h2>
+            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+              جرّب قضيتي لمدة ٧ أيام مجانًا — بدون بطاقة بنكية. ثم اختر الاشتراك المناسب لمكتبك
+              القانوني بكل أريحية.
+            </p>
+
+            {/* Toggle Billing Period */}
+            <div className="inline-flex items-center gap-1 rounded-2xl bg-secondary p-1 border border-slate-900 mt-8">
+              <button
+                onClick={() => setBillingPeriod("monthly")}
+                className={`rounded-xl px-5 py-2 text-xs font-semibold transition-all ${billingPeriod === "monthly" ? "bg-[var(--gold)] text-black font-bold shadow-md" : "text-slate-400 hover:text-white"}`}
+              >
+                الدفع شهرياً
+              </button>
+              <button
+                onClick={() => setBillingPeriod("yearly")}
+                className={`relative rounded-xl px-5 py-2 text-xs font-semibold transition-all ${billingPeriod === "yearly" ? "bg-[var(--gold)] text-black font-bold shadow-md" : "text-slate-400 hover:text-white"}`}
+              >
+                الدفع سنوياً
+                <span className="absolute -top-6 -left-2 rounded-full bg-red-500 px-2 py-0.5 text-[8.5px] font-bold text-white tracking-tight animate-bounce">
+                  الأكثر توفيرًا
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Pricing Card (ONLY ONE PLAN) */}
+          <div className="max-w-md mx-auto rounded-3xl border-2 border-[var(--gold)] bg-[#0C101A] p-6 sm:p-8 shadow-2xl relative">
+            {billingPeriod === "yearly" && (
+              <span className="absolute -top-3.5 right-6 rounded-full bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] px-4 py-1 text-[10px] font-bold text-black border border-amber-600/20">
+                موصى به للمكاتب القانونية
+              </span>
+            )}
+
+            <div className="text-right">
+              <h3 className="text-xl font-bold text-white mb-1 font-display">
+                باقة الشريك القانوني — العضوية الفاخرة
+              </h3>
+              <p className="text-xs text-slate-400 mb-6 font-sans">
+                اشتراك متكامل بكافة الميزات والخصائص اللانهائية للمحاماة.
+              </p>
+
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-4xl sm:text-5xl font-black text-white font-mono">
+                  {billingPeriod === "yearly" ? "٢,٩٩٠" : "٢٩٩"}
+                </span>
+                <span className="text-sm font-semibold text-slate-300">جنيه مصرى</span>
+                <span className="text-xs text-slate-400">
+                  / {billingPeriod === "yearly" ? "سنة" : "شهر"}
+                </span>
+              </div>
+
+              {billingPeriod === "yearly" && (
+                <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-1.5 text-xs text-red-400 font-bold mb-6 inline-block">
+                  وفر شهرين كاملين (٢ شهر مجاناً خصم مباشر)
+                </div>
+              )}
+
+              {/* Checklist included */}
+              <div className="border-t border-slate-900 pt-6 space-y-4 text-right">
+                <p className="text-xs font-bold text-white mb-2 uppercase tracking-wider font-mono">
+                  ما هو مشمول بالباقة:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>قضايا غير محدودة</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>جلسات غير محدودة</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>رفع الملفات القانونية</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>المساعد القانوني الذكي</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>تنبيهات الجلسات والرول</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>إدارة الأتعاب والمتأخرات</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>صفحة المحامي الاحترافية</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>مزامنة تامة عبر الأجهزة</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>نسخ احتياطي يومي آمن</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <Check className="h-4 w-4 text-[var(--gold)] shrink-0" />
+                    <span>دعم فني عربي كامل</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upgrade CTA */}
+              <div className="mt-8">
+                <Link
+                  to="/signup"
+                  className="w-full text-center flex items-center justify-center rounded-2xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] py-4 text-sm font-bold text-black hover:brightness-110 active:scale-[0.98] transition-all"
+                >
+                  ابدأ تجربتك المجانية مجانًا
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 9. Coming Soon Section */}
+      <section className="py-12 md:py-16 border-t border-border bg-[#0C0C14]">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+          <span className="rounded-full bg-slate-900 border border-slate-800 px-3.5 py-1 text-[11px] font-bold text-[var(--gold)] mb-4 inline-block font-display tracking-wider">
+            قريباً في قضيتي
+          </span>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-display">
+            ميزات ذكية قيد التطوير
+          </h2>
+          <p className="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed mb-6">
+            مستمرون دوماً بتزويد مكتبك بما يحتاجه من تحليل رقمي رائد. الميزات التالية تضاف قريباً
+            لجميع عملائنا مجاناً:
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+            <div className="rounded-xl border border-slate-900 bg-[#090C15]/50 p-3 hover:bg-[#0E121D] transition-colors">
+              <h3 className="text-xs font-bold text-slate-200">إحصاءات الإيرادات</h3>
+            </div>
+            <div className="rounded-xl border border-slate-900 bg-[#090C15]/50 p-3 hover:bg-[#0E121D] transition-colors">
+              <h3 className="text-xs font-bold text-slate-200">تقارير شهرية متقدمة</h3>
+            </div>
+            <div className="rounded-xl border border-slate-900 bg-[#090C15]/50 p-3 hover:bg-[#0E121D] transition-colors">
+              <h3 className="text-xs font-bold text-slate-200">تقارير سنوية شاملة</h3>
+            </div>
+            <div className="rounded-xl border border-slate-900 bg-[#090C15]/50 p-3 hover:bg-[#0E121D] transition-colors">
+              <h3 className="text-xs font-bold text-slate-200">تحليلات أداء المكتب</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 10. FAQ Section */}
+      <section id="faq" className="py-20 md:py-28 border-t border-border bg-[#0A0A0F]">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)] mb-2 block font-display">
+              الأسئلة الشائعة
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white font-display">
+              إرشادات وأجوبة حول قضيتي
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-border bg-[#0C101A] overflow-hidden transition-all duration-300"
+                >
+                  <button
+                    onClick={() => toggleFaq(idx)}
+                    className="w-full flex items-center justify-between p-5 text-right font-display text-sm sm:text-base font-bold text-white hover:bg-slate-900 transition-colors focus:outline-none"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown
+                      className={`h-4.5 w-4.5 text-[var(--gold)] transition-transform duration-300 ${isOpen ? "transform rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-5 pt-1 text-slate-300 text-xs sm:text-sm font-sans leading-relaxed border-t border-slate-900/50 animate-in fade-in slide-in-from-top-1">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 11. CTA Section */}
+      <section className="py-20 border-t border-border bg-gradient-to-br from-[#0B0E17] to-[#121524] relative text-center">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--gold)]/30 to-transparent"></div>
+
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight font-display mb-4">
+            ابدأ تنظيم أعمال مكتبك اليوم
+          </h2>
+          <p className="text-slate-300 max-w-xl mx-auto leading-relaxed text-xs sm:text-sm mb-10">
+            انضم إلى مئات المحامين في مصر الذين يثقون في منصتنا الرقمية لتسريع صياغة مذكراتهم
+            القانونية ومتابعة دفاتر القضايا والأتعاب باحترافية وسهولة مطلقة.
+          </p>
+
+          <Link
+            to="/signup"
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] px-8 py-4 text-base font-bold text-black hover:brightness-110 active:scale-[0.98] transition-all shadow-xl shadow-amber-500/10"
+          >
+            ابدأ تجربة الـ ٧ أيام المجانية
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+
+          <p className="text-[11px] text-slate-500 mt-4">
+            جرّب قضيتي لمدة ٧ أيام مجانًا — بدون بطاقة بنكية
+          </p>
+        </div>
+      </section>
+
+      {/* 12. Footer & Footer Links */}
+      <footer className="bg-[#09090D] border-t border-border pt-16 pb-8 text-right text-xs sm:text-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-12 border-b border-slate-850">
+            {/* Logo and phone */}
+            <div className="space-y-4">
+              <Logo className="h-10 w-auto" />
+              <p className="text-xs text-slate-400 leading-relaxed max-w-xs mt-2">
+                نظام قانوني ذكي وإداري متكامل للمحامين والمشاركين بالعمل القانوني في المحاكم
+                المصرية.
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 border border-slate-850 rounded-xl hover:text-[var(--gold)] hover:border-slate-700 transition-colors"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 border border-slate-850 rounded-xl hover:text-[var(--gold)] hover:border-slate-700 transition-colors"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 border border-slate-850 rounded-xl hover:text-[var(--gold)] hover:border-slate-700 transition-colors"
+                  aria-label="YouTube"
+                >
+                  <Youtube className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+
+            {/* Quick links */}
+            <div>
+              <h3 className="text-xs font-bold uppercase text-slate-300 mb-4 font-display">
+                رابط سريعة
+              </h3>
+              <ul className="space-y-2.5 text-xs text-slate-400">
+                <li>
+                  <a href="#features" className="hover:text-white transition-colors">
+                    ميزات المنصة
+                  </a>
+                </li>
+                <li>
+                  <a href="#ai-assistant" className="hover:text-white transition-colors">
+                    المستشار الذكي (AI)
+                  </a>
+                </li>
+                <li>
+                  <a href="#financial" className="hover:text-white transition-colors">
+                    إدارة الأتعاب والمدفوعات
+                  </a>
+                </li>
+                <li>
+                  <a href="#pricing" className="hover:text-white transition-colors">
+                    خطط الاشتراك والأسعار
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal links */}
+            <div>
+              <h3 className="text-xs font-bold uppercase text-slate-300 mb-4 font-display">
+                الشروط القانونية
+              </h3>
+              <ul className="space-y-2.5 text-xs text-slate-400 font-sans">
+                <li>
+                  <Link to="/login" className="hover:text-white transition-colors">
+                    تواصل معنا
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/login" className="hover:text-white transition-colors">
+                    الشروط والأحكام
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/login" className="hover:text-white transition-colors">
+                    سياسة الخصوصية
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/login" className="hover:text-white transition-colors">
+                    سياسة الاسترداد وإلغاء الاشتراك
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Support communications info */}
+            <div>
+              <h3 className="text-xs font-bold uppercase text-slate-300 mb-4 font-display">
+                تواصل مباشرة
+              </h3>
+              <ul className="space-y-3 text-xs text-slate-400">
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-slate-500 shrink-0" />
+                  <a
+                    href="mailto:info@Qadeyati.com"
+                    className="hover:text-white transition-colors font-mono"
+                  >
+                    info@Qadeyati.com
+                  </a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <span className="font-mono">+20 103 585 4329</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  {/* WhatsApp green icon indicator */}
+                  <span className="flex h-2 w-2 rounded-full bg-[#25D366] shrink-0"></span>
+                  <span className="text-slate-400">واتساب: </span>
+                  <a
+                    href="https://wa.me/201035854329"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors font-mono font-bold"
+                  >
+                    +20 103 585 4329
+                  </a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-slate-500 shrink-0" />
+                  <span className="text-slate-400">القاهرة — جمهورية مصر العربية</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-8 text-center text-[11.5px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 قضيتي — جميع الحقوق محفوظة · صُنع بـ ❤️ في مصر</p>
+            <p className="text-[10px] text-slate-600 font-sans">
+              يُحظر إعادة إنتاج أو نسخ المحتويات دون تصريح خطي مسبق.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

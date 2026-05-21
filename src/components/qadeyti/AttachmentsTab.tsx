@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "./EmptyState";
+import { useTrial } from "@/hooks/use-trial";
 import { FILE_CATEGORIES, type FileCategory, formatBytes } from "@/lib/file-constants";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,6 +60,7 @@ type UploadState = {
 };
 
 export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: string }) {
+  const { isTrialExpired } = useTrial();
   const [items, setItems] = useState<Attachment[] | null>(null);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [showActivity, setShowActivity] = useState(false);
@@ -106,6 +108,12 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
   };
 
   const handleFiles = async (files: FileList | File[]) => {
+    if (isTrialExpired) {
+      toast.error(
+        "انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى الاشتراك أو التنشيط مجانًا بالرمز الترويجي EGYPT بالشريط العلوي لتتمكن من رفع ملفات جديدة.",
+      );
+      return;
+    }
     const list = Array.from(files);
     if (!list.length) return;
     const category = pendingCategory;
