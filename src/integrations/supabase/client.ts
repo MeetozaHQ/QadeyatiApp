@@ -5,18 +5,20 @@ import type { Database } from "./types";
 
 export function isSupabaseConfigured(): boolean {
   const SUPABASE_URL =
-    typeof import.meta !== "undefined" && import.meta.env
+    (typeof import.meta !== "undefined" && import.meta.env
       ? import.meta.env.VITE_SUPABASE_URL
-      : typeof process !== "undefined"
-        ? process.env.SUPABASE_URL
-        : undefined;
+      : undefined) ||
+    (typeof process !== "undefined"
+      ? process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+      : undefined);
 
   const SUPABASE_PUBLISHABLE_KEY =
-    typeof import.meta !== "undefined" && import.meta.env
-      ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
-      : typeof process !== "undefined"
-        ? process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
-        : undefined;
+    (typeof import.meta !== "undefined" && import.meta.env
+      ? import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      : undefined) ||
+    (typeof process !== "undefined"
+      ? process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY
+      : undefined);
 
   return !!(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 }
@@ -120,14 +122,25 @@ function createSupabaseClient() {
   const SUPABASE_URL =
     (typeof import.meta !== "undefined" && import.meta.env
       ? import.meta.env.VITE_SUPABASE_URL
-      : undefined) || (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined);
-  const SUPABASE_PUBLISHABLE_KEY =
-    (typeof import.meta !== "undefined" && import.meta.env
-      ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
       : undefined) ||
     (typeof process !== "undefined"
-      ? process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
+      ? process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
       : undefined);
+
+  const SUPABASE_PUBLISHABLE_KEY =
+    (typeof import.meta !== "undefined" && import.meta.env
+      ? import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      : undefined) ||
+    (typeof process !== "undefined"
+      ? process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY
+      : undefined);
+
+  // Diagnostic log
+  console.log("[Supabase Client] Resolved keys:", {
+    url: SUPABASE_URL || "NOT_FOUND",
+    keyLength: SUPABASE_PUBLISHABLE_KEY ? SUPABASE_PUBLISHABLE_KEY.length : 0,
+    keyPrefix: SUPABASE_PUBLISHABLE_KEY ? SUPABASE_PUBLISHABLE_KEY.substring(0, 15) + "..." : "none",
+  });
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
