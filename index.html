@@ -397,6 +397,70 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
+    <script>
+      // Self-diagnostic helper to detect uncompiled sources or missing builds in production
+      window.addEventListener("load", function() {
+        setTimeout(function() {
+          var isMounted = window.__diagnosticLogs && window.__diagnosticLogs.some(function(log) {
+            return log.message.indexOf("main.tsx") !== -1 || log.message.indexOf("App.tsx") !== -1;
+          });
+          var rootEl = document.getElementById("root");
+          var hasReactRendered = rootEl && rootEl.innerHTML.trim().length > 0;
+          
+          if (!isMounted && !hasReactRendered) {
+            var overlay = document.createElement("div");
+            overlay.id = "v-unbuilt-notice";
+            overlay.style.position = "fixed";
+            overlay.style.inset = "0";
+            overlay.style.background = "#07090e";
+            overlay.style.color = "#f5f1e8";
+            overlay.style.zIndex = "999998";
+            overlay.style.display = "flex";
+            overlay.style.alignItems = "center";
+            overlay.style.justifyContent = "center";
+            overlay.style.padding = "24px";
+            overlay.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            overlay.style.textAlign = "right";
+            overlay.dir = "rtl";
+
+            var card = document.createElement("div");
+            card.style.maxWidth = "600px";
+            card.style.width = "100%";
+            card.style.border = "1px solid #c5a88035";
+            card.style.background = "#0d121f";
+            card.style.padding = "32px";
+            card.style.borderRadius = "24px";
+            card.style.boxShadow = "0 20px 50px rgba(0,0,0,0.6)";
+
+            card.innerHTML = 
+              '<div style="text-align: center; margin-bottom: 24px;">' +
+                '<div style="font-size: 48px; margin-bottom: 12px;">⚖️</div>' +
+                '<h2 style="color: #c5a880; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">أهلاً بك في منصة قضيتي</h2>' +
+                '<p style="color: #a1a1aa; font-size: 14px; margin: 0;">منصة المحاماة والعمل القانوني المتكاملة</p>' +
+              '</div>' +
+              '<div style="border-top: 1px solid #3c322550; border-bottom: 1px solid #3c322550; padding: 20px 0; margin-bottom: 24px;">' +
+                '<h3 style="color: #ef4444; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">📉 تعذر تشغيل واجهة المستخدم الرسومية تلقائياً</h3>' +
+                '<p style="font-size: 13.5px; line-height: 1.7; color: #d4d4d8; margin: 0 0 16px 0;">' +
+                  'يبدو أن متصفحك يقوم بتحميل الصفحة بصيغتها الخام دون تجميعها (Build). يرجى التأكد من تكوين إعدادات البناء للمشروع على منصة <strong>Vercel</strong>:' +
+                '</p>' +
+                '<ol style="font-size: 13px; line-height: 1.8; color: #a1a1aa; padding-right: 20px; margin: 0;">' +
+                  '<li>اضبط <strong>Framework Preset</strong> في إعدادات Vercel إلى <strong>Vite</strong>.</li>' +
+                  '<li>تأكد من أن <strong>Build Command</strong> هو <code>npm run build</code> (أو <code>vite build</code>).</li>' +
+                  '<li>تأكد من أن <strong>Output Directory</strong> هو <code>dist</code>.</li>' +
+                  '<li>تأكد من إضافة متغيرات Supabase (<code>VITE_SUPABASE_URL</code> و <code>VITE_SUPABASE_ANON_KEY</code>) في إعدادات البيئة (Environment Variables) في Vercel.</li>' +
+                '</ol>' +
+              '</div>' +
+              '<div style="font-size: 11px; text-align: center; color: #71717a; border-top: 1px dashed #3c322530; padding-top: 12px;">' +
+                '<span>English Notice: Your browser is loading the uncompiled source code. Please verify that your Vercel deployment has its build settings properly set: Framework preset to <strong>Vite</strong>, Build command to <code>vite build</code> and Target Folder to <code>dist</code>.</span>' +
+              '</div>';
+
+            overlay.appendChild(card);
+            document.body.appendChild(overlay);
+          }
+        }, 4000);
+      });
+    </script>
+
     <!-- FLOATING DIAGNOSTIC WIDGET BYPASSING ROOT RENDER -->
     <button 
       id="diag-floating-btn"
@@ -440,5 +504,6 @@
         </div>
       </div>
     </div>
+  </body>
 </html>
 
