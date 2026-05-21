@@ -254,6 +254,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const isClientSPA = typeof window !== "undefined" && !!document.getElementById("root");
+
+  if (isClientSPA) {
+    return <React.Fragment>{children}</React.Fragment>;
+  }
+
   return (
     <html lang="ar" dir="rtl">
       <head>

@@ -95,8 +95,7 @@ function createSupabaseClient() {
   const SUPABASE_URL =
     (typeof import.meta !== "undefined" && import.meta.env
       ? import.meta.env.VITE_SUPABASE_URL
-      : undefined) ||
-    (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined);
+      : undefined) || (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined);
   const SUPABASE_PUBLISHABLE_KEY =
     (typeof import.meta !== "undefined" && import.meta.env
       ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
