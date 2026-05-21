@@ -2,5 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "framework": null,
-  "buildCommand": "vite build"
+  "buildCommand": "vite build",
+  "outputDirectory": "dist/client",
+  "rewrites": [
+    {
+      "source": "/((?!api/|assets/|favicon\\.png|logo\\.png|.*\\.[a-zA-Z0-9]+$).*)",
+      "destination": "/api/index"
+    }
+  ]
 }
