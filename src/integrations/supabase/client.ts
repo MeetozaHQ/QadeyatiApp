@@ -89,6 +89,31 @@ function createDummySupabaseClient() {
   return dummyClient;
 }
 
+function getSafeStorage() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const testKey = "__supabase_test__";
+    window.localStorage.setItem(testKey, "test");
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch (e) {
+    console.warn(
+      "[Supabase] localStorage is not accessible (safari incognito or third party iframe sandbox). Falling back to memory storage.",
+      e,
+    );
+    const memStore: Record<string, string> = {};
+    return {
+      getItem: (key: string) => memStore[key] || null,
+      setItem: (key: string, value: string) => {
+        memStore[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete memStore[key];
+      },
+    };
+  }
+}
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
@@ -117,7 +142,7 @@ function createSupabaseClient() {
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
-      storage: typeof window !== "undefined" ? localStorage : undefined,
+      storage: getSafeStorage(),
       persistSession: true,
       autoRefreshToken: true,
     },

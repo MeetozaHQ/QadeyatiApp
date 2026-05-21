@@ -16,17 +16,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      setLoading(false);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-    return () => subscription.unsubscribe();
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+
+    try {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, s) => {
+        if (!active) return;
+        setSession(s);
+        setLoading(false);
+      });
+      unsubscribe = subscription.unsubscribe;
+    } catch (err) {
+      console.error("Supabase onAuthStateChange error:", err);
+      if (active) setLoading(false);
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Supabase getSession error:", err);
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   return (
