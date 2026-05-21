@@ -7,6 +7,21 @@ import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { Logo } from "@/components/qadeyti/Logo";
 import { Mail } from "lucide-react";
 
+const TROUBLESHOOT_TIPS = [
+  {
+    title: "1. تحقق من صندوق Spam/Junk:",
+    desc: "غالبًا ما تصنف رسائل Supabase التلقائية كرسائل مزعجة في Gmail.",
+  },
+  {
+    title: "2. لتفعيل حسابك ودخولك فوراً (لوحة Supabase):",
+    desc: "اذهب إلى لوحة تحكم Supabase ثم Authentication ثم Users. ابحث عن بريدك الإلكتروني، واضغط على النقاط الثلاث بجانبه واختر Confirm User. سيتم تفعيله فورًا ويمكنك الدخول!",
+  },
+  {
+    title: "3. لتفعيل الحسابات تلقائياً للمستقبل:",
+    desc: "إذا أردت إلغاء شرط تفعيل البريد تماماً وتسجيل الدخول الفوري: اذهب إلى Authentication ثم Providers ثم Email، وقم بإيقاف خيار Confirm email.",
+  },
+];
+
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
@@ -19,6 +34,7 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showTips, setShowTips] = useState(false);
 
   useEffect(() => {
     if (session) navigate({ to: "/dashboard" });
@@ -63,6 +79,7 @@ function SignupPage() {
                 القانوني لتتمكن من تسجيل الدخول.
               </p>
             </div>
+
             <div className="pt-2">
               <Link
                 to="/login"
@@ -70,6 +87,27 @@ function SignupPage() {
               >
                 الذهاب إلى صفحة تسجيل الدخول
               </Link>
+            </div>
+
+            <div className="pt-4 border-t border-emerald-500/10">
+              <button
+                type="button"
+                onClick={() => setShowTips(!showTips)}
+                className="text-xs text-slate-400 hover:text-emerald-300 transition-colors underline underline-offset-4"
+              >
+                {showTips ? "إخفاء نصائح حل المشكلات" : "لم يصلك بريد التفعيل؟ اضغط هنا للحل"}
+              </button>
+
+              {showTips && (
+                <div className="mt-4 text-right bg-slate-950/45 p-4 rounded-xl border border-slate-800 space-y-3 animate-in slide-in-from-top-2 duration-150">
+                  {TROUBLESHOOT_TIPS.map((tip, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <p className="text-xs font-bold text-slate-200">{tip.title}</p>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">{tip.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (
