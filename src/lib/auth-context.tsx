@@ -19,6 +19,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     let unsubscribe: (() => void) | undefined;
 
+    // Safety timeout to ensure loading is never stuck at true
+    const safetyTimeout = setTimeout(() => {
+      if (active) {
+        console.warn("Auth initialization safety timeout triggered.");
+        setLoading(false);
+      }
+    }, 1200);
+
     try {
       const {
         data: { subscription },
@@ -47,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false;
+      clearTimeout(safetyTimeout);
       if (unsubscribe) unsubscribe();
     };
   }, []);

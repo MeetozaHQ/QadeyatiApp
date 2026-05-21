@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <title>قضيتي — نظامك القانوني المتكامل</title>
+    <style>
+      html, body {
+        background-color: #0A0A0F;
+        color: #F5F1E8;
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+    </style>
     <script>
       (function() {
         function showVisualError(type, message, source, lineno, colno, error) {
@@ -122,6 +131,53 @@
 
         window.showVisualError = showVisualError;
         window.logError = logError;
+
+        // Override console methods to report back to backend
+        var originalConsole = {
+          log: console.log,
+          warn: console.warn,
+          error: console.error,
+          info: console.info
+        };
+
+        function sendConsoleMessage(level, args) {
+          try {
+            var msgStr = Array.prototype.slice.call(args).map(function(arg) {
+              if (typeof arg === "object") {
+                try { return JSON.stringify(arg); } catch(e) { return String(arg); }
+              }
+              return String(arg);
+            }).join(" ");
+
+            fetch("/api/log-client-error", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "console." + level,
+                message: msgStr,
+                timestamp: new Date().toISOString(),
+                url: window.location.href
+              })
+            }).catch(function() {});
+          } catch(e) {}
+        }
+
+        console.log = function() {
+          originalConsole.log.apply(console, arguments);
+          sendConsoleMessage("log", arguments);
+        };
+        console.warn = function() {
+          originalConsole.warn.apply(console, arguments);
+          sendConsoleMessage("warn", arguments);
+        };
+        console.error = function() {
+          originalConsole.error.apply(console, arguments);
+          sendConsoleMessage("error", arguments);
+        };
+        console.info = function() {
+          originalConsole.info.apply(console, arguments);
+          sendConsoleMessage("info", arguments);
+        };
 
         window.onerror = function(message, source, lineno, colno, error) {
           logError("onerror", message, source, lineno, colno, error);
