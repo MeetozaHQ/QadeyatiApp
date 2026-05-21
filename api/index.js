@@ -1,4 +1,4 @@
-import server from "../dist/server/server.js";
+import server from "../dist/server/index.js";
 
 export default async function handler(request, context) {
   try {
