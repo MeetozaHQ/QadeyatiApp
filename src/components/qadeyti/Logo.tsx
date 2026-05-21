@@ -43,7 +43,7 @@ export function Logo({
     return (
       <div className={`relative shrink-0 ${sizeClass} ${className}`}>
         <img
-          src="/input_file_0.png"
+          src="/favicon.png"
           alt="قضيتي Logo"
           referrerPolicy="no-referrer"
           className="h-full w-full object-contain"
@@ -65,7 +65,7 @@ export function Logo({
   return (
     <div className={`relative shrink-0 flex items-center ${sizeClass} ${className}`}>
       <img
-        src="/input_file_1.png"
+        src="/logo.png"
         alt="قضيتي"
         referrerPolicy="no-referrer"
         className="h-full object-contain overflow-visible max-w-full"

@@ -5,18 +5,22 @@
     <meta name="google" content="notranslate" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>قضيتي — نظامك القانوني المتكامل</title>
-    <link rel="icon" type="image/png" href="/input_file_0.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <style>
-      html, body {
-        background-color: #0A0A0F;
-        color: #F5F1E8;
+      html,
+      body {
+        background-color: #0a0a0f;
+        color: #f5f1e8;
         margin: 0;
         padding: 0;
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
       }
     </style>
     <script>
-      (function() {
+      (function () {
         // Store console logs in window for diagnostic screen
         window.__diagnosticLogs = [];
         function logDiagnostic(level, message, detail) {
@@ -24,7 +28,7 @@
             level: level,
             message: message,
             detail: detail,
-            time: new Date().toLocaleTimeString()
+            time: new Date().toLocaleTimeString(),
           });
           // Limit to last 200 logs to prevent memory leak
           if (window.__diagnosticLogs.length > 200) {
@@ -38,7 +42,7 @@
             item.style.padding = "4px 0";
             item.style.whiteSpace = "pre-wrap";
             item.style.fontSize = "11px";
-            
+
             var badge = document.createElement("span");
             badge.innerText = "[" + level.toUpperCase() + "]";
             badge.style.fontWeight = "bold";
@@ -46,9 +50,16 @@
             if (level === "error") badge.style.color = "#ef4444";
             else if (level === "warn") badge.style.color = "#f59e0b";
             else badge.style.color = "#a1a1aa";
-            
+
             item.appendChild(badge);
-            item.appendChild(document.createTextNode(window.__diagnosticLogs[window.__diagnosticLogs.length - 1].time + " - " + message + (detail ? " (" + detail + ")" : "")));
+            item.appendChild(
+              document.createTextNode(
+                window.__diagnosticLogs[window.__diagnosticLogs.length - 1].time +
+                  " - " +
+                  message +
+                  (detail ? " (" + detail + ")" : ""),
+              ),
+            );
             logList.appendChild(item);
             logList.scrollTop = logList.scrollHeight;
           }
@@ -56,7 +67,11 @@
 
         function showVisualError(type, message, source, lineno, colno, error) {
           try {
-            logDiagnostic("error", "Exception in app client execution: " + message, (source || "") + ":" + (lineno || "") + ":" + (colno || ""));
+            logDiagnostic(
+              "error",
+              "Exception in app client execution: " + message,
+              (source || "") + ":" + (lineno || "") + ":" + (colno || ""),
+            );
             var div = document.getElementById("visual-error-overlay");
             if (!div) {
               div = document.createElement("div");
@@ -88,7 +103,8 @@
               var explanation = document.createElement("p");
               explanation.style.margin = "0 0 15px 0";
               explanation.style.color = "#4b5563";
-              explanation.innerText = "An error occurred during app execution that caused the blank screen. Please share this screen or message with us so we can fix it!";
+              explanation.innerText =
+                "An error occurred during app execution that caused the blank screen. Please share this screen or message with us so we can fix it!";
               div.appendChild(explanation);
 
               var infoContainer = document.createElement("div");
@@ -105,7 +121,7 @@
               closeButton.style.borderRadius = "4px";
               closeButton.style.cursor = "pointer";
               closeButton.style.fontWeight = "bold";
-              closeButton.onclick = function() {
+              closeButton.onclick = function () {
                 div.remove();
               };
               div.appendChild(closeButton);
@@ -113,7 +129,7 @@
               if (document.body) {
                 document.body.appendChild(div);
               } else {
-                window.addEventListener("DOMContentLoaded", function() {
+                window.addEventListener("DOMContentLoaded", function () {
                   document.body.appendChild(div);
                 });
               }
@@ -125,9 +141,20 @@
               p.style.borderTop = "1px solid #e4e4e7";
               p.style.paddingTop = "10px";
               p.style.marginTop = "10px";
-              p.innerHTML = "<b>Type:</b> " + type + "<br/>" +
-                            "<b>Message:</b> <span style='color:#ef4444; font-weight:bold;'>" + message + "</span><br/>" +
-                            "<b>Source:</b> " + source + ":" + lineno + ":" + colno + "<br/>";
+              p.innerHTML =
+                "<b>Type:</b> " +
+                type +
+                "<br/>" +
+                "<b>Message:</b> <span style='color:#ef4444; font-weight:bold;'>" +
+                message +
+                "</span><br/>" +
+                "<b>Source:</b> " +
+                source +
+                ":" +
+                lineno +
+                ":" +
+                colno +
+                "<br/>";
               info.appendChild(p);
 
               if (error && error.stack) {
@@ -143,7 +170,7 @@
                 info.appendChild(pre);
               }
             }
-          } catch(e) {
+          } catch (e) {
             console.error("Failed to render visual error overlay:", e);
           }
         }
@@ -159,14 +186,16 @@
             error: error ? { message: error.message, stack: error.stack, name: error.name } : null,
             url: window.location.href,
             userAgent: window.navigator.userAgent,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
           console.warn("Captured load-time client-side error:", payload);
           fetch("/api/log-client-error", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          }).catch(function(e) { console.error("Failed to report client error:", e); });
+            body: JSON.stringify(payload),
+          }).catch(function (e) {
+            console.error("Failed to report client error:", e);
+          });
         }
 
         window.showVisualError = showVisualError;
@@ -177,17 +206,24 @@
           log: console.log,
           warn: console.warn,
           error: console.error,
-          info: console.info
+          info: console.info,
         };
 
         function sendConsoleMessage(level, args) {
           try {
-            var msgStr = Array.prototype.slice.call(args).map(function(arg) {
-              if (typeof arg === "object") {
-                try { return JSON.stringify(arg); } catch(e) { return String(arg); }
-              }
-              return String(arg);
-            }).join(" ");
+            var msgStr = Array.prototype.slice
+              .call(args)
+              .map(function (arg) {
+                if (typeof arg === "object") {
+                  try {
+                    return JSON.stringify(arg);
+                  } catch (e) {
+                    return String(arg);
+                  }
+                }
+                return String(arg);
+              })
+              .join(" ");
 
             logDiagnostic(level, msgStr);
 
@@ -198,42 +234,42 @@
                 type: "console." + level,
                 message: msgStr,
                 timestamp: new Date().toISOString(),
-                url: window.location.href
-              })
-            }).catch(function() {});
-          } catch(e) {}
+                url: window.location.href,
+              }),
+            }).catch(function () {});
+          } catch (e) {}
         }
 
-        console.log = function() {
+        console.log = function () {
           originalConsole.log.apply(console, arguments);
           sendConsoleMessage("log", arguments);
         };
-        console.warn = function() {
+        console.warn = function () {
           originalConsole.warn.apply(console, arguments);
           sendConsoleMessage("warn", arguments);
         };
-        console.error = function() {
+        console.error = function () {
           originalConsole.error.apply(console, arguments);
           sendConsoleMessage("error", arguments);
         };
-        console.info = function() {
+        console.info = function () {
           originalConsole.info.apply(console, arguments);
           sendConsoleMessage("info", arguments);
         };
 
-        window.onerror = function(message, source, lineno, colno, error) {
+        window.onerror = function (message, source, lineno, colno, error) {
           logError("onerror", message, source, lineno, colno, error);
           return false;
         };
 
-        window.addEventListener("unhandledrejection", function(event) {
+        window.addEventListener("unhandledrejection", function (event) {
           var reason = event.reason;
-          var msg = reason ? (reason.message || String(reason)) : "Unhandled promise rejection";
+          var msg = reason ? reason.message || String(reason) : "Unhandled promise rejection";
           logError("unhandledrejection", msg, null, null, null, reason);
         });
 
         // Diagnostics Popup Controller
-        window.toggleDiagnosticsOverlay = function() {
+        window.toggleDiagnosticsOverlay = function () {
           var overlay = document.getElementById("diag-overlay");
           if (!overlay) return;
           if (overlay.style.display === "none" || overlay.style.display === "") {
@@ -241,25 +277,31 @@
             // Populate stats
             document.getElementById("diag-stat-pathname").innerText = window.location.pathname;
             document.getElementById("diag-stat-href").innerText = window.location.href;
-            document.getElementById("diag-stat-online").innerText = navigator.onLine ? "ONLINE" : "OFFLINE";
-            
+            document.getElementById("diag-stat-online").innerText = navigator.onLine
+              ? "ONLINE"
+              : "OFFLINE";
+
             var rootEl = document.getElementById("root");
             var rootHTML = rootEl ? rootEl.innerHTML.trim() : "";
-            document.getElementById("diag-stat-root").innerText = rootHTML 
-              ? "Populated (" + rootHTML.length + " chars, starts with: " + rootHTML.substring(0, 50).replace(/</g, "&lt;") + ")" 
+            document.getElementById("diag-stat-root").innerText = rootHTML
+              ? "Populated (" +
+                rootHTML.length +
+                " chars, starts with: " +
+                rootHTML.substring(0, 50).replace(/</g, "&lt;") +
+                ")"
               : "EMPTY (REACT HAS NOT RENDERED ANY ELEMENT INSIDE ROOT)";
-              
+
             // Re-render diagnostic items
             var logList = document.getElementById("diag-log-list");
             if (logList) {
               logList.innerHTML = "";
-              window.__diagnosticLogs.forEach(function(log) {
+              window.__diagnosticLogs.forEach(function (log) {
                 var item = document.createElement("div");
                 item.style.borderBottom = "1px solid #232225";
                 item.style.padding = "4px 0";
                 item.style.whiteSpace = "pre-wrap";
                 item.style.fontSize = "11px";
-                
+
                 var badge = document.createElement("span");
                 badge.innerText = "[" + log.level.toUpperCase() + "]";
                 badge.style.fontWeight = "bold";
@@ -267,9 +309,13 @@
                 if (log.level === "error") badge.style.color = "#ef4444";
                 else if (log.level === "warn") badge.style.color = "#f59e0b";
                 else badge.style.color = "#a1a1aa";
-                
+
                 item.appendChild(badge);
-                item.appendChild(document.createTextNode(log.time + " - " + log.message + (log.detail ? " (" + log.detail + ")" : "")));
+                item.appendChild(
+                  document.createTextNode(
+                    log.time + " - " + log.message + (log.detail ? " (" + log.detail + ")" : ""),
+                  ),
+                );
                 logList.appendChild(item);
               });
               logList.scrollTop = logList.scrollHeight;
@@ -287,14 +333,18 @@
 
     <script>
       // Self-diagnostic helper to detect uncompiled sources or missing builds in production
-      window.addEventListener("load", function() {
-        setTimeout(function() {
-          var isMounted = window.__diagnosticLogs && window.__diagnosticLogs.some(function(log) {
-            return log.message.indexOf("main.tsx") !== -1 || log.message.indexOf("App.tsx") !== -1;
-          });
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          var isMounted =
+            window.__diagnosticLogs &&
+            window.__diagnosticLogs.some(function (log) {
+              return (
+                log.message.indexOf("main.tsx") !== -1 || log.message.indexOf("App.tsx") !== -1
+              );
+            });
           var rootEl = document.getElementById("root");
           var hasReactRendered = rootEl && rootEl.innerHTML.trim().length > 0;
-          
+
           if (!isMounted && !hasReactRendered) {
             var overlay = document.createElement("div");
             overlay.id = "v-unbuilt-notice";
@@ -307,7 +357,8 @@
             overlay.style.alignItems = "center";
             overlay.style.justifyContent = "center";
             overlay.style.padding = "24px";
-            overlay.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            overlay.style.fontFamily =
+              "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
             overlay.style.textAlign = "right";
             overlay.dir = "rtl";
 
@@ -320,27 +371,27 @@
             card.style.borderRadius = "24px";
             card.style.boxShadow = "0 20px 50px rgba(0,0,0,0.6)";
 
-            card.innerHTML = 
+            card.innerHTML =
               '<div style="text-align: center; margin-bottom: 24px;">' +
-                '<div style="font-size: 48px; margin-bottom: 12px;">⚖️</div>' +
-                '<h2 style="color: #c5a880; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">أهلاً بك في منصة قضيتي</h2>' +
-                '<p style="color: #a1a1aa; font-size: 14px; margin: 0;">منصة المحاماة والعمل القانوني المتكاملة</p>' +
-              '</div>' +
+              '<div style="font-size: 48px; margin-bottom: 12px;">⚖️</div>' +
+              '<h2 style="color: #c5a880; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">أهلاً بك في منصة قضيتي</h2>' +
+              '<p style="color: #a1a1aa; font-size: 14px; margin: 0;">منصة المحاماة والعمل القانوني المتكاملة</p>' +
+              "</div>" +
               '<div style="border-top: 1px solid #3c322550; border-bottom: 1px solid #3c322550; padding: 20px 0; margin-bottom: 24px;">' +
-                '<h3 style="color: #ef4444; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">📉 تعذر تشغيل واجهة المستخدم الرسومية تلقائياً</h3>' +
-                '<p style="font-size: 13.5px; line-height: 1.7; color: #d4d4d8; margin: 0 0 16px 0;">' +
-                  'يبدو أن متصفحك يقوم بتحميل الصفحة بصيغتها الخام دون تجميعها (Build). يرجى التأكد من تكوين إعدادات البناء للمشروع على منصة <strong>Vercel</strong>:' +
-                '</p>' +
-                '<ol style="font-size: 13px; line-height: 1.8; color: #a1a1aa; padding-right: 20px; margin: 0;">' +
-                  '<li>اضبط <strong>Framework Preset</strong> في إعدادات Vercel إلى <strong>Vite</strong>.</li>' +
-                  '<li>تأكد من أن <strong>Build Command</strong> هو <code>npm run build</code> (أو <code>vite build</code>).</li>' +
-                  '<li>تأكد من أن <strong>Output Directory</strong> هو <code>dist</code>.</li>' +
-                  '<li>تأكد من إضافة متغيرات Supabase (<code>VITE_SUPABASE_URL</code> و <code>VITE_SUPABASE_ANON_KEY</code>) في إعدادات البيئة (Environment Variables) في Vercel.</li>' +
-                '</ol>' +
-              '</div>' +
+              '<h3 style="color: #ef4444; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">📉 تعذر تشغيل واجهة المستخدم الرسومية تلقائياً</h3>' +
+              '<p style="font-size: 13.5px; line-height: 1.7; color: #d4d4d8; margin: 0 0 16px 0;">' +
+              "يبدو أن متصفحك يقوم بتحميل الصفحة بصيغتها الخام دون تجميعها (Build). يرجى التأكد من تكوين إعدادات البناء للمشروع على منصة <strong>Vercel</strong>:" +
+              "</p>" +
+              '<ol style="font-size: 13px; line-height: 1.8; color: #a1a1aa; padding-right: 20px; margin: 0;">' +
+              "<li>اضبط <strong>Framework Preset</strong> في إعدادات Vercel إلى <strong>Vite</strong>.</li>" +
+              "<li>تأكد من أن <strong>Build Command</strong> هو <code>npm run build</code> (أو <code>vite build</code>).</li>" +
+              "<li>تأكد من أن <strong>Output Directory</strong> هو <code>dist</code>.</li>" +
+              "<li>تأكد من إضافة متغيرات Supabase (<code>VITE_SUPABASE_URL</code> و <code>VITE_SUPABASE_ANON_KEY</code>) في إعدادات البيئة (Environment Variables) في Vercel.</li>" +
+              "</ol>" +
+              "</div>" +
               '<div style="font-size: 11px; text-align: center; color: #71717a; border-top: 1px dashed #3c322530; padding-top: 12px;">' +
-                '<span>English Notice: Your browser is loading the uncompiled source code. Please verify that your Vercel deployment has its build settings properly set: Framework preset to <strong>Vite</strong>, Build command to <code>vite build</code> and Target Folder to <code>dist</code>.</span>' +
-              '</div>';
+              "<span>English Notice: Your browser is loading the uncompiled source code. Please verify that your Vercel deployment has its build settings properly set: Framework preset to <strong>Vite</strong>, Build command to <code>vite build</code> and Target Folder to <code>dist</code>.</span>" +
+              "</div>";
 
             overlay.appendChild(card);
             document.body.appendChild(overlay);
@@ -350,43 +401,130 @@
     </script>
 
     <!-- FLOATING DIAGNOSTIC WIDGET BYPASSING ROOT RENDER -->
-    <button 
+    <button
       id="diag-floating-btn"
       onclick="window.toggleDiagnosticsOverlay()"
-      style="position: fixed; bottom: 15px; right: 15px; z-index: 999999; background: #c5a880; color: #12151c; border-radius: 9999px; padding: 6px 14px; font-weight: 600; font-size: 11px; cursor: pointer; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-family: system-ui, -apple-system, sans-serif; opacity: 0.55; transition: opacity 0.2s;"
-      onmouseover="this.style.opacity='1'"
-      onmouseout="this.style.opacity='0.55'"
+      style="
+        position: fixed;
+        bottom: 15px;
+        right: 15px;
+        z-index: 999999;
+        background: #c5a880;
+        color: #12151c;
+        border-radius: 9999px;
+        padding: 6px 14px;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        opacity: 0.55;
+        transition: opacity 0.2s;
+      "
+      onmouseover="this.style.opacity = '1'"
+      onmouseout="this.style.opacity = '0.55'"
     >
       🔍 تشخيص الأعطال (Diagnostics)
     </button>
 
-    <div 
-      id="diag-overlay" 
-      style="position: fixed; top: 10%; left: 10%; right: 10%; bottom: 10%; background: #12151c; color: #f5f1e8; border: 1px solid #3c3225; border-radius: 12px; z-index: 1000000; padding: 24px; display: none; flex-direction: column; font-family: monospace; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: left;"
+    <div
+      id="diag-overlay"
+      style="
+        position: fixed;
+        top: 10%;
+        left: 10%;
+        right: 10%;
+        bottom: 10%;
+        background: #12151c;
+        color: #f5f1e8;
+        border: 1px solid #3c3225;
+        border-radius: 12px;
+        z-index: 1000000;
+        padding: 24px;
+        display: none;
+        flex-direction: column;
+        font-family: monospace;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        text-align: left;
+      "
     >
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3c3225; padding-bottom: 12px; margin-bottom: 16px;">
-        <h3 style="margin: 0; color: #c5a880; font-size: 15px;">📊 تشخيص أعطال قضيتي / System Diagnostics Panel</h3>
-        <button 
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #3c3225;
+          padding-bottom: 12px;
+          margin-bottom: 16px;
+        "
+      >
+        <h3 style="margin: 0; color: #c5a880; font-size: 15px">
+          📊 تشخيص أعطال قضيتي / System Diagnostics Panel
+        </h3>
+        <button
           onclick="window.toggleDiagnosticsOverlay()"
-          style="background: #ef4444; color: #ffffff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;"
+          style="
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+          "
         >
           Close [X]
         </button>
       </div>
-      
+
       <!-- System Stats Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; font-size: 11px; border-bottom: 1px dashed #3c3225; padding-bottom: 12px;">
-        <div><b>URL Pathname:</b> <span id="diag-stat-pathname" style="color:#c5a880;">-</span></div>
-        <div><b>Full URL:</b> <span id="diag-stat-href" style="color:#c5a880; word-break: break-all;">-</span></div>
-        <div><b>Connectivity:</b> <span id="diag-stat-online" style="color:#10b981;">-</span></div>
-        <div style="grid-column: 1 / -1;"><b>React Root state:</b> <span id="diag-stat-root" style="color:#f59e0b; font-weight: bold;">-</span></div>
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 12px;
+          margin-bottom: 16px;
+          font-size: 11px;
+          border-bottom: 1px dashed #3c3225;
+          padding-bottom: 12px;
+        "
+      >
+        <div>
+          <b>URL Pathname:</b> <span id="diag-stat-pathname" style="color: #c5a880">-</span>
+        </div>
+        <div>
+          <b>Full URL:</b>
+          <span id="diag-stat-href" style="color: #c5a880; word-break: break-all">-</span>
+        </div>
+        <div><b>Connectivity:</b> <span id="diag-stat-online" style="color: #10b981">-</span></div>
+        <div style="grid-column: 1 / -1">
+          <b>React Root state:</b>
+          <span id="diag-stat-root" style="color: #f59e0b; font-weight: bold">-</span>
+        </div>
       </div>
 
-      <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
-        <h4 style="margin: 0 0 8px 0; color: #a1a1aa; font-size: 12px;">💻 Console and Lifecycle Logs (Total Captured)</h4>
-        <div 
-          id="diag-log-list" 
-          style="flex: 1; overflow-y: auto; background: #0a0a0f; border: 1px solid #232225; padding: 12px; border-radius: 6px; font-size: 11px; line-height: 1.5; color: #e4e4e7;"
+      <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+        <h4 style="margin: 0 0 8px 0; color: #a1a1aa; font-size: 12px">
+          💻 Console and Lifecycle Logs (Total Captured)
+        </h4>
+        <div
+          id="diag-log-list"
+          style="
+            flex: 1;
+            overflow-y: auto;
+            background: #0a0a0f;
+            border: 1px solid #232225;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #e4e4e7;
+          "
         >
           No logs captured yet. Toggle the panel or trigger an action to see logs.
         </div>
@@ -394,4 +532,3 @@
     </div>
   </body>
 </html>
-
