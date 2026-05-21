@@ -4,6 +4,11 @@
   "framework": null,
   "buildCommand": "vite build",
   "outputDirectory": "dist/client",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "dist/server/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!api/|assets/|favicon\\.png|logo\\.png|.*\\.[a-zA-Z0-9]+$).*)",
