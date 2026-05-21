@@ -2,7 +2,7 @@
   "cleanUrls": true,
   "framework": "vite",
   "buildCommand": "vite build",
-  "outputDirectory": "dist",
+  "outputDirectory": "dist/client",
   "rewrites": [
     {
       "source": "/((?!assets/|.*\\.[a-zA-Z0-9]+$).*)",
