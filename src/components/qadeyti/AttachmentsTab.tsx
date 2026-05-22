@@ -92,6 +92,7 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
   const [gdriveToken, setGdriveToken] = useState<string | null>(getCachedToken());
   const [showDriveSettings, setShowDriveSettings] = useState(false);
   const [customClientId, setCustomClientId] = useState(getGoogleClientId());
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const saveToGoogleDrive = async (a: Attachment) => {
     try {
@@ -104,9 +105,13 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
           // authenticateGoogleDrive() will automatically use dynamic preconfigured Firebase credentials or custom client ID if set
           token = await authenticateGoogleDrive();
           setGdriveToken(token);
+          setAuthError(null);
           toast.success("تم الاتصال بـ Google Drive بنجاح!");
         } catch (err) {
           const errMsg = (err as { message?: string }).message || String(err);
+          if (errMsg.includes("auth/unauthorized-domain")) {
+            setAuthError("unauthorized-domain");
+          }
           if (errMsg === "POPUP_BLOCKED") {
             toast.error(
               "تم حظر النافذة المنبثقة من قِبل المتصفح. يرجى تفعيل النوافذ المنبثقة وبدء الاتصال من جديد.",
@@ -393,6 +398,7 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                 onClick={() => {
                   logoutGoogle();
                   setGdriveToken(null);
+                  setAuthError(null);
                 }}
                 className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs text-destructive hover:bg-destructive/20 transition-colors cursor-pointer"
               >
@@ -407,11 +413,15 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                     // Try to authenticate seamlessly via Firebase Google Drive Auth
                     const token = await authenticateGoogleDrive();
                     setGdriveToken(token);
+                    setAuthError(null);
                     toast.dismiss("google-auth");
                     toast.success("تم ربط حساب Google Drive بنجاح!");
                   } catch (err) {
                     toast.dismiss("google-auth");
                     const errMsg = (err as { message?: string }).message || String(err);
+                    if (errMsg.includes("auth/unauthorized-domain")) {
+                      setAuthError("unauthorized-domain");
+                    }
                     if (errMsg === "POPUP_BLOCKED") {
                       toast.error("تم حظر الإطار المنبثق. يرجى تفعيل النوافذ المنبثقة لموقعنا.");
                     } else if (errMsg === "WINDOW_CLOSED") {
@@ -428,6 +438,58 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
             )}
           </div>
         </div>
+
+        {/* Dynamic troubleshooting instructions when Firebase returns unauthorized-domain error */}
+        {authError === "unauthorized-domain" && (
+          <div className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-slate-300 text-[11px] leading-relaxed font-sans space-y-3 mt-2 animate-in fade-in duration-300">
+            <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
+              <span>⚠️ خطأ النطاق غير المعتمد (Unauthorized Domain)</span>
+            </div>
+            <p>
+              لتفعيل ربط حساب Google Drive مباشرة على نطاق الاستعراض التجريبي هذا، يرجى إضافة هذا
+              النطاق لقائمة النطاقات المعتمدة في كونسول Firebase:
+            </p>
+            <div className="space-y-2 p-2.5 rounded-lg bg-black/40 border border-border/50">
+              <p className="text-slate-400 font-medium">خطوات الحل عبر كونسول Firebase:</p>
+              <div className="space-y-1 pl-1">
+                <p>1. افتح صفحة إعدادات الهوية لمشروع Firebase الخاص بك:</p>
+                <a
+                  href="https://console.firebase.google.com/u/0/project/gen-lang-client-0226596636/authentication/settings"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[var(--gold-soft)] underline hover:text-[var(--gold)] flex items-center gap-1 w-fit font-mono py-0.5 text-[10px]"
+                >
+                  <span>فتح إعدادات مشروع gen-lang-client-0226596636</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <p className="mt-1">
+                  2. اذهب لتبويب <strong>Authorized Domains (النطاقات المصرح بها)</strong> ثم اضغط
+                  على <strong>Add Domain</strong>.
+                </p>
+                <p>3. انسخ النطاق التجريبي الحالي وأضفه هناك:</p>
+              </div>
+              <div className="flex gap-1.5 mt-2 items-center bg-background/50 p-1.5 rounded-md border border-border/40 w-full justify-between">
+                <code className="text-[var(--gold-soft)] font-mono text-[10px] select-all truncate max-w-[200px] md:max-w-xs">
+                  {window.location.hostname}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.hostname);
+                    toast.success("تم نسخ النطاق بنجاح!");
+                  }}
+                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 rounded px-2.5 py-1 text-[10px] font-semibold transition-colors cursor-pointer shrink-0"
+                >
+                  نسخ النطاق
+                </button>
+              </div>
+            </div>
+            <div className="pt-2 text-[10px] text-slate-500 leading-relaxed border-t border-border/40">
+              * ملحوظة: يمكنك تخطي هذا الإعداد عبر إدخال <strong>Google Client ID</strong> يدوي خاص
+              لتخطي تحقق Firebase بالضغط على زر الترس ⚙️ بالأعلى.
+            </div>
+          </div>
+        )}
 
         {/* Dynamic client-id settings block under gear icon */}
         {showDriveSettings && (
