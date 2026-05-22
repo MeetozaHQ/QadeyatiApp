@@ -97,21 +97,12 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
     try {
       setUploadingToDrive(a.id);
 
-      const clientId = getGoogleClientId();
-      if (!clientId) {
-        toast.error(
-          "يرجى إدخال معرّف العميل (Google Client ID) أولاً من لوحة تحكم Google Drive بالصفحة.",
-        );
-        setShowDriveSettings(true);
-        setUploadingToDrive(null);
-        return;
-      }
-
       let token = gdriveToken || getCachedToken();
       if (!token) {
         toast.info("يرجى إكمال تسجيل الدخول لـ Google Drive بالنافذة المنبثقة...");
         try {
-          token = await authenticateGoogleDrive(clientId);
+          // authenticateGoogleDrive() will automatically use dynamic preconfigured Firebase credentials or custom client ID if set
+          token = await authenticateGoogleDrive();
           setGdriveToken(token);
           toast.success("تم الاتصال بـ Google Drive بنجاح!");
         } catch (err) {
@@ -411,17 +402,10 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
             ) : (
               <button
                 onClick={async () => {
-                  const clientId = getGoogleClientId();
-                  if (!clientId) {
-                    toast.error(
-                      "يرجى إدخال معرّف العميل (Google Client ID) في الإعدادات أدناه أولاً.",
-                    );
-                    setShowDriveSettings(true);
-                    return;
-                  }
                   toast.loading("جاري فتح نافذة الاتصال بـ Google...", { id: "google-auth" });
                   try {
-                    const token = await authenticateGoogleDrive(clientId);
+                    // Try to authenticate seamlessly via Firebase Google Drive Auth
+                    const token = await authenticateGoogleDrive();
                     setGdriveToken(token);
                     toast.dismiss("google-auth");
                     toast.success("تم ربط حساب Google Drive بنجاح!");

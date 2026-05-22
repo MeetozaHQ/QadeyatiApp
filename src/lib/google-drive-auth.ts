@@ -1,5 +1,13 @@
-// Google Drive Auth and Upload utility
+// Google Drive Auth and Upload utility with Firebase Integration
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { toast } from "sonner";
+import firebaseConfig from "../../firebase-applet-config.json";
+
+// Initialize Firebase App lazily to ensure robust startup and no side-effects on load
+const getFirebaseApp = () => {
+  return getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+};
 
 let gdriveAccessToken: string | null = null;
 
@@ -26,6 +34,15 @@ export function setCachedToken(token: string) {
 export function logoutGoogle() {
   gdriveAccessToken = null;
   localStorage.removeItem("temp_gdrive_token");
+
+  try {
+    const app = getFirebaseApp();
+    const auth = getAuth(app);
+    auth.signOut();
+  } catch (err) {
+    console.warn("Sign out from Firebase failed or not configured yet:", err);
+  }
+
   toast.success("تم تسجيل الخروج من Google Drive بنجاح");
 }
 
@@ -41,16 +58,9 @@ export function saveGoogleClientId(clientId: string) {
 }
 
 /**
- * Initiates the Google OAuth Implicit Flow popup.
- * Returns a promise that resolves with the access token or rejects with an error.
+ * Fallback to standard Google Implicit OAuth Flow using standard popup.
  */
-export function authenticateGoogleDrive(customClientId?: string): Promise<string> {
-  const clientId = customClientId || getGoogleClientId();
-
-  if (!clientId) {
-    return Promise.reject(new Error("MISSING_CLIENT_ID"));
-  }
-
+function fallbackImplicitFlow(clientId: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const redirectUri = `${window.location.origin}/oauth-callback.html`;
     const scope = "https://www.googleapis.com/auth/drive.file";
@@ -129,6 +139,45 @@ export function authenticateGoogleDrive(customClientId?: string): Promise<string
       }
     }, 1000);
   });
+}
+
+/**
+ * Initiates either Google OAuth Implicit Flow or Firebase Auth popup.
+ * Returns a promise that resolves with the access token or rejects with an error.
+ */
+export async function authenticateGoogleDrive(customClientId?: string): Promise<string> {
+  // We prefer Firebase Auth because it is fully preconfigured for the active applet
+  // and works flawlessly with zero requirements to pass a manual client-id.
+  try {
+    const app = getFirebaseApp();
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // We request the Drive direct file scopes
+    provider.addScope("https://www.googleapis.com/auth/drive.file");
+
+    const result = await signInWithPopup(auth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (!credential?.accessToken) {
+      throw new Error("No access token returned from Google Auth provider.");
+    }
+
+    gdriveAccessToken = credential.accessToken;
+    return gdriveAccessToken;
+  } catch (err) {
+    console.warn("Firebase Google Auth failed, trying legacy custom OAuth callback fallback:", err);
+
+    const clientId = customClientId || getGoogleClientId();
+    if (clientId) {
+      return fallbackImplicitFlow(clientId);
+    }
+
+    // If no client ID was specified and Firebase failed, let the user know what went wrong
+    const errMsg = (err as { message?: string }).message || String(err);
+    throw new Error(
+      `فشل الاتصال التلقائي بـ Google: ${errMsg}. يرجى إعداد معرّف العميل (Client ID) يدوياً في لوحة الإعدادات لتجربة الاتصال المخصص.`,
+    );
+  }
 }
 
 /**
