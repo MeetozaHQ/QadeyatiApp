@@ -1275,22 +1275,22 @@ function LandingPage() {
               </h3>
               <ul className="space-y-2.5 text-xs text-slate-400 font-sans">
                 <li>
-                  <Link to="/login" className="hover:text-white transition-colors">
+                  <Link to="/contact" className="hover:text-white transition-colors">
                     تواصل معنا
                   </Link>
                 </li>
                 <li>
-                  <Link to="/login" className="hover:text-white transition-colors">
+                  <Link to="/terms" className="hover:text-white transition-colors">
                     الشروط والأحكام
                   </Link>
                 </li>
                 <li>
-                  <Link to="/login" className="hover:text-white transition-colors">
+                  <Link to="/privacy" className="hover:text-white transition-colors">
                     سياسة الخصوصية
                   </Link>
                 </li>
                 <li>
-                  <Link to="/login" className="hover:text-white transition-colors">
+                  <Link to="/refund-policy" className="hover:text-white transition-colors">
                     سياسة الاسترداد وإلغاء الاشتراك
                   </Link>
                 </li>
