@@ -88,12 +88,11 @@ function PublicProfile() {
   const waUrl = waNumber
     ? `https://wa.me/${waNumber}?text=${encodeURIComponent(WA_MESSAGE)}`
     : null;
-  const city = p.office_address?.split("،")[0]?.trim() || p.office_address?.split(",")[0]?.trim();
 
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen overflow-hidden bg-[#0A0A0F] pb-36 text-foreground"
+      className="relative min-h-screen overflow-hidden bg-[#050508] pb-24 text-foreground selection:bg-[var(--gold)] selection:text-black"
     >
       {/* Ambient luxury background */}
       <div className="pointer-events-none absolute inset-0">
@@ -113,7 +112,7 @@ function PublicProfile() {
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--gold)]/70 to-transparent" />
 
       {/* Brand strip */}
-      <header className="relative z-10 mx-auto flex max-w-3xl items-center justify-between px-6 pt-6">
+      <header className="relative z-10 mx-auto flex max-w-4xl items-center justify-between px-6 pt-6 mb-12">
         <Link to="/">
           <Logo className="h-8 w-auto" />
         </Link>
@@ -122,200 +121,168 @@ function PublicProfile() {
         </span>
       </header>
 
-      {/* HERO */}
-      <section className="relative z-10 mx-auto max-w-3xl px-6 pt-12 pb-14 text-center animate-fade-in">
-        <div className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-[var(--gold)]/30 bg-white/[0.02] px-4 py-1.5 text-[10px] uppercase tracking-[0.32em] text-[var(--gold-soft)] backdrop-blur">
-          <Sparkles className="h-3 w-3" /> مكتب محاماة معتمد
-        </div>
+      {/* Card Wrapper Container */}
+      <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 mt-4 md:mt-12 animate-fade-in">
+        <div className="rounded-[24px] border border-[#1E1E26] bg-[#0E0E12] p-8 md:p-12 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] relative overflow-hidden">
+          {/* Visual Accent Glow */}
+          <div className="absolute top-0 right-14 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
 
-        {/* Portrait */}
-        <div className="relative mx-auto mb-10 h-40 w-40 sm:h-48 sm:w-48">
-          <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-[var(--gold)]/40 via-transparent to-[var(--gold-soft)]/40 blur-2xl" />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[var(--gold)] via-[var(--gold-soft)] to-[var(--gold)] p-[1.5px]">
-            <div className="h-full w-full overflow-hidden rounded-full bg-[#0A0A0F]">
-              {p.avatar_url ? (
-                <img src={p.avatar_url} alt={p.full_name} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-[#15151D] to-[#0A0A0F] font-display text-6xl font-bold text-[var(--gold)]">
-                  {p.full_name[0]}
+          <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start text-center md:text-right">
+            {/* Left section: Info & CTAs */}
+            <div className="space-y-6 flex-1 w-full flex flex-col justify-between">
+              <div>
+                {/* Badges */}
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-3.5 flex-wrap">
+                  {p.bar_level && (
+                    <span className="inline-flex items-center rounded-md bg-amber-500/10 px-3 py-1 text-xs font-bold text-[var(--gold)] border border-amber-500/20">
+                      {p.bar_level}
+                    </span>
+                  )}
+                  {p.years_experience != null && p.years_experience > 0 && (
+                    <span className="inline-flex items-center rounded-md bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-400 border border-indigo-500/15">
+                      خبرة {p.years_experience} عامًا
+                    </span>
+                  )}
+                </div>
+
+                {/* Name & Title */}
+                <h1 className="text-2xl sm:text-3xl font-black text-white font-display leading-[1.3] tracking-tight">
+                  {p.title ? `${p.title} • ` : "الأستاذ المستشار • "}
+                  {p.full_name}
+                </h1>
+
+                {/* Office Name */}
+                {p.office_name && (
+                  <p className="text-xs sm:text-sm text-slate-400 mt-2 font-mono tracking-wide">
+                    {p.office_name}
+                  </p>
+                )}
+              </div>
+
+              {/* Bio Description */}
+              {p.bio && (
+                <p className="text-sm sm:text-[14.5px] text-slate-300 leading-relaxed max-w-2xl">
+                  {p.bio}
+                </p>
+              )}
+
+              {/* Specializations Tags */}
+              {p.specializations?.length > 0 && (
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
+                  {p.specializations.map((s) => (
+                    <span
+                      key={s}
+                      className="rounded-full bg-[#181822] border border-slate-800/80 px-3.5 py-1.5 text-xs text-slate-300 font-medium transition-colors hover:border-[var(--gold)]/30"
+                    >
+                      {s}
+                    </span>
+                  ))}
                 </div>
               )}
+
+              {/* Bottom Buttons Row */}
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3.5 pt-4">
+                {waUrl && (
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2.5 rounded-xl bg-[#25D366] text-black px-6 py-3 text-sm font-bold hover:brightness-105 active:scale-[0.98] transition-all"
+                  >
+                    <Phone className="h-4.5 w-4.5" />
+                    تواصل عبر واتساب
+                  </a>
+                )}
+                {p.office_address && (
+                  <a
+                    href={p.maps_link || "https://maps.google.com"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2.5 rounded-xl border border-slate-800 bg-[#16161F]/80 text-sm font-semibold text-slate-300 hover:text-white hover:border-slate-700 transition-all px-6 py-3"
+                  >
+                    <MapPin className="h-4.5 w-4.5 text-[var(--gold)]" />
+                    {p.office_address}
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Right section: Elegant Circular portrait or Gold scales */}
+            <div className="shrink-0">
+              <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-full border-[3px] border-[var(--gold)]/80 p-1.5 bg-[#12151D] flex items-center justify-center overflow-hidden relative group shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+                {p.avatar_url ? (
+                  <img
+                    src={p.avatar_url}
+                    alt={p.full_name}
+                    className="h-full w-full rounded-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0A0A0F] text-[var(--gold)] transition-colors duration-300 group-hover:bg-[#12121A]">
+                    {/* Custom elegant vector scales icon */}
+                    <svg
+                      className="h-14 w-14 sm:h-18 sm:w-18"
+                      viewBox="0 0 64 64"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 24H52"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M32 14V48"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      />
+                      <circle cx="32" cy="11" r="2.5" fill="currentColor" />
+                      <path
+                        d="M22 48H42"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+                      <path d="M27 48L32 41L37 48" fill="currentColor" opacity="0.8" />
+                      <path d="M18 24L13 36M18 24L23 36" stroke="currentColor" strokeWidth="1.2" />
+                      <path
+                        d="M11 36H25"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M13 36C13 40 23 40 23 36"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                        fill="none"
+                      />
+                      <circle cx="18" cy="37" r="1.5" fill="#E2C175" />
+                      <path d="M46 24L41 36M46 24L51 36" stroke="currentColor" strokeWidth="1.2" />
+                      <path
+                        d="M39 36H53"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M41 36C41 40 51 40 51 36"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                        fill="none"
+                      />
+                      <circle cx="46" cy="37" r="1.5" fill="#E2C175" />
+                    </svg>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <div className="absolute -bottom-1 left-1/2 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border-2 border-[#0A0A0F] bg-gradient-to-br from-[var(--gold)] to-[var(--gold-soft)] shadow-lg">
-            <BadgeCheck className="h-5 w-5 text-[#0A0A0F]" />
-          </div>
         </div>
-
-        <h1 className="font-display text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
-          {p.full_name}
-        </h1>
-        {p.title && (
-          <p className="mt-4 bg-gradient-to-r from-[var(--gold-soft)] via-[var(--gold)] to-[var(--gold-soft)] bg-clip-text font-display text-lg font-medium text-transparent sm:text-xl">
-            {p.title}
-          </p>
-        )}
-
-        {/* Meta row */}
-        <div className="mx-auto mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs text-muted-foreground">
-          {p.bar_level && (
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-[var(--gold)]" />
-              <span className="text-foreground/80">{p.bar_level}</span>
-            </span>
-          )}
-          {p.years_experience != null && p.years_experience > 0 && (
-            <span className="inline-flex items-center gap-1.5">
-              <Award className="h-3.5 w-3.5 text-[var(--gold)]" />
-              <span className="text-foreground/80">{p.years_experience}+ سنة خبرة</span>
-            </span>
-          )}
-          {city && (
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-[var(--gold)]" />
-              <span className="text-foreground/80">{city}</span>
-            </span>
-          )}
-        </div>
-
-        {/* Divider ornament */}
-        <div className="mx-auto mt-10 flex items-center justify-center gap-3">
-          <span className="h-px w-16 bg-gradient-to-l from-[var(--gold)]/60 to-transparent" />
-          <span className="h-1.5 w-1.5 rotate-45 bg-[var(--gold)]" />
-          <span className="h-px w-16 bg-gradient-to-r from-[var(--gold)]/60 to-transparent" />
-        </div>
-      </section>
-
-      <div className="relative z-10 mx-auto max-w-3xl space-y-6 px-6">
-        {/* BIO */}
-        {p.bio && (
-          <section className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-8 backdrop-blur-sm animate-fade-in">
-            <span className="absolute right-6 top-6 font-display text-6xl leading-none text-[var(--gold)]/20">
-              ”
-            </span>
-            <p className="relative text-lg leading-[2.1] text-foreground/85">{p.bio}</p>
-          </section>
-        )}
-
-        {/* SPECIALIZATIONS */}
-        {p.specializations?.length > 0 && (
-          <section className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 animate-fade-in">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="font-display text-sm font-semibold uppercase tracking-[0.24em] text-[var(--gold-soft)]">
-                مجالات الممارسة
-              </h2>
-              <Briefcase className="h-4 w-4 text-[var(--gold)]/60" />
-            </div>
-            <div className="flex flex-wrap gap-2.5">
-              {p.specializations.map((s) => (
-                <span
-                  key={s}
-                  className="rounded-full border border-[var(--gold)]/25 bg-gradient-to-b from-[var(--gold)]/10 to-transparent px-4 py-2 text-sm font-medium text-foreground/90 transition-all hover:border-[var(--gold)]/50 hover:from-[var(--gold)]/15"
-                >
-                  {s}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* CREDIBILITY STATS */}
-        {(p.years_experience || p.bar_level) && (
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 animate-fade-in">
-            {p.years_experience != null && p.years_experience > 0 && (
-              <StatTile
-                value={`${p.years_experience}+`}
-                label="سنوات الخبرة"
-                icon={<Award className="h-4 w-4" />}
-              />
-            )}
-            {p.bar_level && (
-              <StatTile
-                value={p.bar_level}
-                label="درجة القيد"
-                icon={<ShieldCheck className="h-4 w-4" />}
-              />
-            )}
-            <StatTile value="موثّق" label="عبر قضيتي" icon={<BadgeCheck className="h-4 w-4" />} />
-          </section>
-        )}
-
-        {/* OFFICE INFO */}
-        {(p.office_name || p.office_address) && (
-          <section className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 animate-fade-in">
-            <h2 className="mb-6 font-display text-sm font-semibold uppercase tracking-[0.24em] text-[var(--gold-soft)]">
-              المكتب
-            </h2>
-            <div className="space-y-5">
-              {p.office_name && (
-                <InfoRow
-                  icon={<Briefcase className="h-4 w-4" />}
-                  label="اسم المكتب"
-                  value={p.office_name}
-                />
-              )}
-              {p.office_address && (
-                <InfoRow
-                  icon={<MapPin className="h-4 w-4" />}
-                  label="العنوان"
-                  value={p.office_address}
-                />
-              )}
-              <InfoRow
-                icon={<Clock className="h-4 w-4" />}
-                label="ساعات العمل"
-                value="الأحد – الخميس · 10ص – 6م"
-              />
-            </div>
-
-            {p.maps_link && (
-              <a
-                href={p.maps_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group mt-7 flex items-center justify-between rounded-2xl border border-[var(--gold)]/30 bg-gradient-to-l from-[var(--gold)]/10 to-transparent px-5 py-4 transition-all hover:border-[var(--gold)]/60 hover:from-[var(--gold)]/15"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--gold)]/15 text-[var(--gold)]">
-                    <MapPin className="h-5 w-5" />
-                  </span>
-                  <span className="font-display text-base font-semibold text-foreground">
-                    فتح في خرائط Google
-                  </span>
-                </span>
-                <ArrowLeft className="h-4 w-4 text-[var(--gold)] transition-transform group-hover:-translate-x-1" />
-              </a>
-            )}
-          </section>
-        )}
-
-        {/* PRIMARY CTAs */}
-        <section className="space-y-3 pt-2 animate-fade-in">
-          {waUrl && (
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative flex h-16 w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1FB855] to-[#25D366] font-display text-base font-semibold text-white shadow-[0_20px_50px_-15px_rgba(37,211,102,0.5)] transition-transform active:scale-[0.98]"
-            >
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-l from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-              <MessageCircle className="h-5 w-5" />
-              تواصل عبر واتساب
-            </a>
-          )}
-          {waNumber && (
-            <a
-              href={`tel:+${waNumber}`}
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] font-display text-base font-medium text-foreground transition-colors hover:bg-white/[0.06]"
-            >
-              <Phone className="h-4 w-4 text-[var(--gold)]" />
-              اتصال مباشر
-            </a>
-          )}
-        </section>
 
         {/* Footer */}
-        <div className="pt-12 text-center">
+        <div className="pt-16 pb-6 text-center">
           <div className="mx-auto mb-4 flex items-center justify-center gap-3">
             <span className="h-px w-12 bg-[var(--gold)]/30" />
             <Scale className="h-4 w-4 text-[var(--gold)]/60" />
@@ -334,39 +301,11 @@ function PublicProfile() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="واتساب"
-          className="fixed bottom-6 left-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#1FB855] to-[#25D366] text-white shadow-2xl ring-4 ring-[#25D366]/20 transition-transform hover:scale-110"
+          className="fixed bottom-6 left-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-black shadow-2xl ring-4 ring-[#25D366]/20 transition-transform hover:scale-110 active:scale-95"
         >
-          <MessageCircle className="h-6 w-6" />
+          <Phone className="h-6 w-6" />
         </a>
       )}
-    </div>
-  );
-}
-
-function StatTile({ value, label, icon }: { value: string; label: string; icon: React.ReactNode }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-5 text-center transition-colors hover:border-[var(--gold)]/30">
-      <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--gold)]/10 text-[var(--gold)]">
-        {icon}
-      </div>
-      <div className="font-display text-xl font-bold text-foreground">{value}</div>
-      <div className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-4">
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--gold)]/20 bg-[var(--gold)]/5 text-[var(--gold)]">
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-        <p className="mt-1 text-base text-foreground/90">{value}</p>
-      </div>
     </div>
   );
 }
