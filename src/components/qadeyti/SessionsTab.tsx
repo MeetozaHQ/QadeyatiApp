@@ -33,6 +33,7 @@ export function SessionsTab({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [hasExtendedSchema, setHasExtendedSchema] = useState<boolean | null>(null);
   const [form, setForm] = useState({
     session_date: "",
     session_type: "",
@@ -43,25 +44,75 @@ export function SessionsTab({
     next_session_notes: "",
   });
 
-  const load = () => {
-    supabase
-      .from("sessions")
-      .select(
-        "id,session_date,session_type,outcome,notes,next_session_date,next_session_type,postponed_from_session_id",
-      )
-      .eq("case_id", caseId)
-      .order("session_date", { ascending: false })
-      .then(({ data }) => setItems((data as Session[]) ?? []));
+  const load = async () => {
+    if (hasExtendedSchema !== false) {
+      const { data, error } = await supabase
+        .from("sessions")
+        .select(
+          "id,session_date,session_type,outcome,notes,next_session_date,next_session_type,postponed_from_session_id",
+        )
+        .eq("case_id", caseId)
+        .order("session_date", { ascending: false });
+
+      if (error) {
+        console.warn("Extended columns load failed, checking schema cache:", error);
+        const isColumnError =
+          error.code === "PGRST200" ||
+          error.message?.includes("next_session_date") ||
+          error.message?.includes("column");
+
+        if (isColumnError) {
+          setHasExtendedSchema(false);
+          // Fall back instantly to standard columns query
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from("sessions")
+            .select("id,session_date,session_type,outcome,notes")
+            .eq("case_id", caseId)
+            .order("session_date", { ascending: false });
+
+          if (fallbackError) {
+            console.error("Fallback query failed:", fallbackError);
+            toast.error(fallbackError.message);
+            setItems([]);
+          } else {
+            setItems((fallbackData as Session[]) ?? []);
+          }
+          return;
+        } else {
+          toast.error(error.message);
+          setItems([]);
+          return;
+        }
+      }
+
+      setHasExtendedSchema(true);
+      setItems((data as Session[]) ?? []);
+    } else {
+      const { data, error } = await supabase
+        .from("sessions")
+        .select("id,session_date,session_type,outcome,notes")
+        .eq("case_id", caseId)
+        .order("session_date", { ascending: false });
+
+      if (error) {
+        toast.error(error.message);
+        setItems([]);
+      } else {
+        setItems((data as Session[]) ?? []);
+      }
+    }
   };
 
-  useEffect(load, [caseId]);
+  useEffect(() => {
+    load();
+  }, [caseId, hasExtendedSchema]);
 
   const add = async () => {
     if (!form.session_date) {
       toast.error("يرجى إدخال تاريخ الجلسة");
       return;
     }
-    if (form.outcome === "مؤجلة" && !form.next_session_date) {
+    if (hasExtendedSchema && form.outcome === "مؤجلة" && !form.next_session_date) {
       toast.error("يرجى تحديد تاريخ الجلسة القادمة لتأجيل الجلسة");
       return;
     }
@@ -69,48 +120,53 @@ export function SessionsTab({
     setSaving(true);
 
     try {
-      const payload = {
+      const payload: Record<string, string | null> = {
         session_date: new Date(form.session_date).toISOString(),
         session_type: form.session_type || null,
         outcome: form.outcome || null,
         notes: form.notes || null,
-        next_session_date:
+      };
+
+      if (hasExtendedSchema) {
+        payload.next_session_date =
           form.outcome === "مؤجلة" && form.next_session_date
             ? new Date(form.next_session_date).toISOString()
-            : null,
-        next_session_type:
-          form.outcome === "مؤجلة" && form.next_session_type ? form.next_session_type : null,
-      };
+            : null;
+        payload.next_session_type =
+          form.outcome === "مؤجلة" && form.next_session_type ? form.next_session_type : null;
+      }
 
       if (editingId) {
         // 1. Update original session
         await supabase.from("sessions").update(payload).eq("id", editingId);
 
-        if (form.outcome === "مؤجلة" && form.next_session_date) {
-          // Check if future session already exists
-          const { data: child } = await supabase
-            .from("sessions")
-            .select("id")
-            .eq("postponed_from_session_id", editingId)
-            .maybeSingle();
+        if (hasExtendedSchema) {
+          if (form.outcome === "مؤجلة" && form.next_session_date) {
+            // Check if future session already exists
+            const { data: child } = await supabase
+              .from("sessions")
+              .select("id")
+              .eq("postponed_from_session_id", editingId)
+              .maybeSingle();
 
-          const childPayload = {
-            case_id: caseId,
-            user_id: userId,
-            session_date: new Date(form.next_session_date).toISOString(),
-            session_type: form.next_session_type || null,
-            notes: form.next_session_notes || null,
-            postponed_from_session_id: editingId,
-          };
+            const childPayload = {
+              case_id: caseId,
+              user_id: userId,
+              session_date: new Date(form.next_session_date).toISOString(),
+              session_type: form.next_session_type || null,
+              notes: form.next_session_notes || null,
+              postponed_from_session_id: editingId,
+            };
 
-          if (child) {
-            await supabase.from("sessions").update(childPayload).eq("id", child.id);
+            if (child) {
+              await supabase.from("sessions").update(childPayload).eq("id", child.id);
+            } else {
+              await supabase.from("sessions").insert(childPayload);
+            }
           } else {
-            await supabase.from("sessions").insert(childPayload);
+            // If edited outcome is no longer postponed, clean up any automatic child session
+            await supabase.from("sessions").delete().eq("postponed_from_session_id", editingId);
           }
-        } else {
-          // If edited outcome is no longer postponed, clean up any automatic child session
-          await supabase.from("sessions").delete().eq("postponed_from_session_id", editingId);
         }
       } else {
         // 1. Insert fresh main session
@@ -126,7 +182,10 @@ export function SessionsTab({
 
         if (origError) throw origError;
 
-        if (form.outcome === "مؤجلة" && form.next_session_date && origSession) {
+        const isPostponed =
+          hasExtendedSchema && form.outcome === "مؤجلة" && form.next_session_date && origSession;
+
+        if (isPostponed && origSession) {
           // 2. Automatically create upcoming connected session
           await supabase.from("sessions").insert({
             case_id: caseId,
@@ -198,7 +257,7 @@ export function SessionsTab({
       next_session_notes: "",
     });
 
-    if (s.outcome === "مؤجلة") {
+    if (hasExtendedSchema && s.outcome === "مؤجلة") {
       supabase
         .from("sessions")
         .select("notes")
@@ -216,8 +275,10 @@ export function SessionsTab({
 
   const remove = async (id: string) => {
     if (!confirm("حذف الجلسة؟")) return;
-    // Delete any connected future postponement sessions as well to keep timeline clean
-    await supabase.from("sessions").delete().eq("postponed_from_session_id", id);
+    if (hasExtendedSchema) {
+      // Delete any connected future postponement sessions as well to keep timeline clean
+      await supabase.from("sessions").delete().eq("postponed_from_session_id", id);
+    }
     await supabase.from("sessions").delete().eq("id", id);
     await recomputeCaseStatus(caseId);
     load();
@@ -226,6 +287,42 @@ export function SessionsTab({
 
   return (
     <div className="space-y-4">
+      {hasExtendedSchema === false && (
+        <div className="rounded-2xl border border-amber-500/35 bg-amber-500/5 p-4 text-xs text-amber-200 space-y-2">
+          <p className="font-semibold flex items-center gap-1.5 text-amber-400">
+            <span>⚠️</span>
+            <span>{"تنبيه للمطور: تحديث جدول الجلسات (Sessions) مطلوب"}</span>
+          </p>
+          <p className="leading-relaxed opacity-90">
+            {
+              "قاعدة بيانات Supabase المخصصة الخاصة بك لا تحتوي على الأعمدة الإضافية لدعم ميزة التأجيل التلقائي والربط. يمكنك حفظ وتعديل الجلسات بشكل سليم، ولكن لتفعيل الجدولة التلقائية وتذكيرات الجلسة المؤجلة، يرجى نسخ وتشغيل الأمر التالي في "
+            }
+            <strong>SQL Editor</strong>
+            {" داخل لوحة تحكم Supabase الخاصة بك:"}
+          </p>
+          <div className="relative mt-2 rounded-lg bg-black/40 p-2.5 font-mono text-[10px] text-amber-300 border border-amber-500/10">
+            <pre className="overflow-x-auto whitespace-pre-wrap">
+              {`ALTER TABLE public.sessions 
+ADD COLUMN IF NOT EXISTS next_session_date timestamp with time zone,
+ADD COLUMN IF NOT EXISTS next_session_type text,
+ADD COLUMN IF NOT EXISTS postponed_from_session_id uuid REFERENCES public.sessions(id) ON DELETE SET NULL;`}
+            </pre>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`ALTER TABLE public.sessions 
+ADD COLUMN IF NOT EXISTS next_session_date timestamp with time zone,
+ADD COLUMN IF NOT EXISTS next_session_type text,
+ADD COLUMN IF NOT EXISTS postponed_from_session_id uuid REFERENCES public.sessions(id) ON DELETE SET NULL;`);
+                toast.success("تم نسخ كود SQL");
+              }}
+              className="absolute top-2 left-2 rounded bg-amber-500/15 hover:bg-amber-500/25 px-2 py-0.5 text-[9px] text-amber-400 transition-colors cursor-pointer"
+            >
+              {"نسخ الكود"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -280,32 +377,39 @@ export function SessionsTab({
             className="w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)]"
           />
 
-          {form.outcome === "مؤجلة" && (
-            <div className="space-y-3 border-r-2 border-[var(--gold)]/40 pr-3 mr-1 my-2 py-1 animate-fade-in">
-              <p className="text-xs font-semibold text-[var(--gold-soft)]">
-                تفاصيل الجلسة المؤجلة القادمة
-              </p>
-              <PremiumInput
-                label="تاريخ الجلسة القادمة"
-                type="datetime-local"
-                value={form.next_session_date}
-                onChange={(e) => setForm({ ...form, next_session_date: e.target.value })}
-              />
-              <PremiumInput
-                label="نوع الجلسة القادمة"
-                placeholder="مرافعة، مداولة، تقديم مستندات إلخ"
-                value={form.next_session_type}
-                onChange={(e) => setForm({ ...form, next_session_type: e.target.value })}
-              />
-              <textarea
-                value={form.next_session_notes}
-                onChange={(e) => setForm({ ...form, next_session_notes: e.target.value })}
-                rows={2}
-                placeholder="ملاحظات إضافية لجلسة التأجيل (مثال: تقديم أصل عقد الإيجار)"
-                className="w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)]"
-              />
-            </div>
-          )}
+          {form.outcome === "مؤجلة" &&
+            (hasExtendedSchema === false ? (
+              <div className="rounded-xl border border-dashed border-amber-500/20 bg-amber-500/5 p-3 text-[11px] leading-relaxed text-amber-300">
+                {
+                  '⚠️ ميزة الجدولة التلقائية لجلسة التأجيل معطلة لأن قاعدة البيانات مخصصة وتحتاج لتشغيل تحديث SQL المذكور أعلاه لتوفير الأعمدة اللازمة. سيتم حفظ خيار "مؤجلة" كحالة فقط للجلسة الحالية.'
+                }
+              </div>
+            ) : (
+              <div className="space-y-3 border-r-2 border-[var(--gold)]/40 pr-3 mr-1 my-2 py-1 animate-fade-in">
+                <p className="text-xs font-semibold text-[var(--gold-soft)]">
+                  تفاصيل الجلسة المؤجلة القادمة
+                </p>
+                <PremiumInput
+                  label="تاريخ الجلسة القادمة"
+                  type="datetime-local"
+                  value={form.next_session_date}
+                  onChange={(e) => setForm({ ...form, next_session_date: e.target.value })}
+                />
+                <PremiumInput
+                  label="نوع الجلسة القادمة"
+                  placeholder="مرافعة، مداولة، تقديم مستندات إلخ"
+                  value={form.next_session_type}
+                  onChange={(e) => setForm({ ...form, next_session_type: e.target.value })}
+                />
+                <textarea
+                  value={form.next_session_notes}
+                  onChange={(e) => setForm({ ...form, next_session_notes: e.target.value })}
+                  rows={2}
+                  placeholder="ملاحظات إضافية لجلسة التأجيل (مثال: تقديم أصل عقد الإيجار)"
+                  className="w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)]"
+                />
+              </div>
+            ))}
 
           <div className="flex gap-2">
             <PremiumButton
@@ -387,7 +491,7 @@ export function SessionsTab({
                   </div>
                 )}
 
-                {s.postponed_from_session_id && (
+                {hasExtendedSchema && s.postponed_from_session_id && (
                   <div className="mt-1.5 text-xs text-[var(--gold-soft)]/90 flex items-center gap-1 bg-[var(--gold)]/5 px-2 py-0.5 rounded border border-[var(--gold)]/10 w-fit">
                     <span className="font-mono">★</span>
                     <span>جلسة مؤجلة مجدولة تلقائياً</span>
@@ -400,7 +504,7 @@ export function SessionsTab({
                   </p>
                 )}
 
-                {s.outcome === "مؤجلة" && s.next_session_date && (
+                {hasExtendedSchema && s.outcome === "مؤجلة" && s.next_session_date && (
                   <div className="mt-3.5 flex flex-col items-center justify-center border-t border-dashed border-[var(--gold)]/20 pt-3">
                     <div className="flex items-center gap-1.5 text-xs text-[var(--gold-soft)] bg-[var(--gold)]/5 px-3 py-1 rounded-full border border-[var(--gold)]/15">
                       <span className="font-semibold">{s.next_session_type || "جلسة قادمة"}</span>
