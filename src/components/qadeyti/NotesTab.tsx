@@ -3,6 +3,8 @@ import { Trash2, Pencil, Check, X, StickyNote } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PremiumButton } from "./PremiumButton";
 import { EmptyState } from "./EmptyState";
+import { LoadingSkeleton } from "./LoadingSkeleton";
+import { motion, AnimatePresence } from "motion/react";
 
 interface Note {
   id: string;
@@ -54,13 +56,13 @@ export function NotesTab({ caseId, userId }: { caseId: string; userId: string })
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
+      <div className="space-y-2 rounded-2xl border border-border bg-card p-3 shadow-sm">
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={3}
           placeholder="أضف ملاحظة سريعة عن القضية..."
-          className="w-full resize-none rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)]"
+          className="w-full resize-none rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)] transition-colors"
         />
         <PremiumButton loading={saving} disabled={!draft.trim()} onClick={add}>
           إضافة ملاحظة
@@ -68,67 +70,86 @@ export function NotesTab({ caseId, userId }: { caseId: string; userId: string })
       </div>
 
       {items === null ? (
-        <div className="h-24 animate-pulse rounded-2xl border border-border bg-card/50" />
+        <div className="space-y-3">
+          <LoadingSkeleton variant="card" />
+          <LoadingSkeleton variant="card" />
+        </div>
       ) : items.length === 0 ? (
         <EmptyState icon={<StickyNote className="h-7 w-7" />} title="لا توجد ملاحظات" />
       ) : (
-        <ul className="space-y-3">
-          {items.map((n) => (
-            <li key={n.id} className="rounded-2xl border border-border bg-card p-4">
-              {editing === n.id ? (
-                <>
-                  <textarea
-                    value={editDraft}
-                    onChange={(e) => setEditDraft(e.target.value)}
-                    rows={3}
-                    className="w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground outline-none focus:border-[var(--gold)]"
-                  />
-                  <div className="mt-2 flex justify-end gap-2 text-sm">
-                    <button
-                      onClick={() => setEditing(null)}
-                      className="flex items-center gap-1 text-muted-foreground"
-                    >
-                      <X className="h-4 w-4" /> إلغاء
-                    </button>
-                    <button
-                      onClick={() => saveEdit(n.id)}
-                      className="flex items-center gap-1 text-[var(--gold-soft)]"
-                    >
-                      <Check className="h-4 w-4" /> حفظ
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="whitespace-pre-wrap text-sm text-foreground">{n.content}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(n.created_at).toLocaleString("ar-EG", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </span>
-                    <div className="flex gap-3 text-muted-foreground">
+        <motion.ul layout className="space-y-3">
+          <AnimatePresence mode="popLayout">
+            {items.map((n) => (
+              <motion.li
+                key={n.id}
+                layout
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm hover:border-[var(--gold)]/20 transition-all duration-300"
+              >
+                {editing === n.id ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground outline-none focus:border-[var(--gold)]"
+                    />
+                    <div className="flex justify-end gap-2 text-sm">
                       <button
-                        aria-label="تعديل"
-                        onClick={() => {
-                          setEditing(n.id);
-                          setEditDraft(n.content);
-                        }}
+                        onClick={() => setEditing(null)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-all cursor-pointer"
                       >
-                        <Pencil className="h-4 w-4 hover:text-foreground" />
+                        <X className="h-3.5 w-3.5" /> إلغاء
                       </button>
-                      <button aria-label="حذف" onClick={() => remove(n.id)}>
-                        <Trash2 className="h-4 w-4 hover:text-destructive" />
+                      <button
+                        onClick={() => saveEdit(n.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-[var(--gold)]/10 text-[var(--gold-soft)] hover:bg-[var(--gold)]/20 transition-all cursor-pointer"
+                      >
+                        <Check className="h-3.5 w-3.5" /> حفظ
                       </button>
                     </div>
                   </div>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+                ) : (
+                  <>
+                    <p className="whitespace-pre-wrap text-sm text-foreground leading-relaxed">{n.content}</p>
+                    <div className="mt-3.5 flex items-center justify-between border-t border-border/40 pt-2.5">
+                      <span className="text-xs text-muted-foreground/80 font-medium">
+                        {new Date(n.created_at).toLocaleString("ar-EG", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                      <div className="flex gap-2.5 text-muted-foreground">
+                        <button
+                          aria-label="تعديل"
+                          onClick={() => {
+                            setEditing(n.id);
+                            setEditDraft(n.content);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary hover:text-foreground transition-all cursor-pointer"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button 
+                          aria-label="حذف" 
+                          onClick={() => remove(n.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </motion.ul>
       )}
     </div>
   );
 }
+

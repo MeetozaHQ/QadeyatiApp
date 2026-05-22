@@ -7,7 +7,9 @@ export function TopBar() {
   const { count } = useUnreadCount();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-md">
-      <Logo />
+      <Link to="/" className="outline-none cursor-pointer">
+        <Logo />
+      </Link>
       <div className="flex items-center gap-2">
         <Link
           to="/files"
