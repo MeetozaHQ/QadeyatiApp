@@ -139,7 +139,44 @@ function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && (
+                <div className="space-y-3">
+                  <p className="text-sm text-destructive font-semibold text-center">{error}</p>
+                  {(error.toLowerCase().includes("confirmation email") ||
+                    error.toLowerCase().includes("email")) && (
+                    <div className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-right space-y-2.5 text-xs text-slate-300 animate-in fade-in duration-300">
+                      <div className="font-semibold text-amber-400 flex items-center gap-1.5 justify-end">
+                        <span>إعدادات البريد والتفعيل في Supabase</span>
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      </div>
+                      <p className="leading-relaxed text-[11px] text-slate-400">
+                        يظهر هذا الخطأ بسبب نفاد الحصة الافتراضية المحدودة لإرسال الرسائل المجانية
+                        في Supabase، أو بسبب عدم إعداد سيرفر بريد مخصص لـ{" "}
+                        <code className="text-amber-200">Qadeyati.com</code>.
+                      </p>
+                      <div className="space-y-1.5 pt-1 text-[11px] text-slate-400 border-t border-slate-800/60">
+                        <p className="font-semibold text-slate-200">
+                          لتسجيل الدخول الفوري وتخطي هذا الخطأ:
+                        </p>
+                        <p>
+                          1. افتح مشروعك في لوحة تحكم <strong>Supabase</strong>.
+                        </p>
+                        <p>
+                          2. اذهب للقسم <strong>Authentication</strong> من القائمة الجانبية.
+                        </p>
+                        <p>
+                          3. اضغط على <strong>Providers</strong> ثم افتح خيار <strong>Email</strong>
+                          .
+                        </p>
+                        <p>
+                          4. قم بإيقاف تفعيل خيار <strong>Confirm email</strong> واضغط{" "}
+                          <strong>Save</strong> لتمكين التسجيل المباشر بدون رسائل تأكيد.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <PremiumButton
                 type="submit"
                 loading={loading}
