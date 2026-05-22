@@ -373,8 +373,11 @@ export type Database = {
           court_name: string | null;
           created_at: string;
           id: string;
+          next_session_date: string | null;
+          next_session_type: string | null;
           notes: string | null;
           outcome: string | null;
+          postponed_from_session_id: string | null;
           session_date: string;
           session_type: string | null;
           user_id: string;
@@ -384,8 +387,11 @@ export type Database = {
           court_name?: string | null;
           created_at?: string;
           id?: string;
+          next_session_date?: string | null;
+          next_session_type?: string | null;
           notes?: string | null;
           outcome?: string | null;
+          postponed_from_session_id?: string | null;
           session_date: string;
           session_type?: string | null;
           user_id: string;
@@ -395,8 +401,11 @@ export type Database = {
           court_name?: string | null;
           created_at?: string;
           id?: string;
+          next_session_date?: string | null;
+          next_session_type?: string | null;
           notes?: string | null;
           outcome?: string | null;
+          postponed_from_session_id?: string | null;
           session_date?: string;
           session_type?: string | null;
           user_id?: string;
