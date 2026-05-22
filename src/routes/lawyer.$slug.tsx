@@ -127,7 +127,7 @@ function PublicProfile() {
           {/* Visual Accent Glow */}
           <div className="absolute top-0 right-14 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
 
-          <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start text-center md:text-right">
+          <div className="flex flex-col-reverse md:flex-row gap-8 lg:gap-12 items-center md:items-start text-center md:text-right">
             {/* Left section: Info & CTAs */}
             <div className="space-y-6 flex-1 w-full flex flex-col justify-between">
               <div>
