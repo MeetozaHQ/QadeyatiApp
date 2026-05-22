@@ -144,33 +144,54 @@ function SignupPage() {
                   <p className="text-sm text-destructive font-semibold text-center">{error}</p>
                   {(error.toLowerCase().includes("confirmation email") ||
                     error.toLowerCase().includes("email")) && (
-                    <div className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-right space-y-2.5 text-xs text-slate-300 animate-in fade-in duration-300">
+                    <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-right space-y-3.5 text-xs text-slate-300 animate-in fade-in duration-300">
                       <div className="font-semibold text-amber-400 flex items-center gap-1.5 justify-end">
-                        <span>إعدادات البريد والتفعيل في Supabase</span>
+                        <span>💡 حل مشكلة إرسال بريد التفعيل (SMTP مع Resend)</span>
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                       </div>
+
                       <p className="leading-relaxed text-[11px] text-slate-400">
-                        يظهر هذا الخطأ بسبب نفاد الحصة الافتراضية المحدودة لإرسال الرسائل المجانية
-                        في Supabase، أو بسبب عدم إعداد سيرفر بريد مخصص لـ{" "}
-                        <code className="text-amber-200">Qadeyati.com</code>.
+                        لأنك تستخدم خدمة <span className="text-slate-200">Resend</span> مع نطاقك
+                        المخصص <code className="text-amber-200">Qadeyati.com</code>، فهناك خطوة
+                        حاسمة متبقية في لوحة تحكم Supabase لتفادي رفض خوادم Resend للإرسال:
                       </p>
-                      <div className="space-y-1.5 pt-1 text-[11px] text-slate-400 border-t border-slate-800/60">
+
+                      <div className="space-y-1.5 p-2.5 rounded-lg bg-black/30 border border-amber-500/10 text-[11px] text-slate-300 text-right">
+                        <p className="font-bold text-amber-300">
+                          ⚙️ مشكلة حالة الأحرف (Case Sensitivity) - مهمة جداً:
+                        </p>
+                        <p>
+                          نطاقك الموثق في Resend هو لقيمات صغيرة:{" "}
+                          <code className="text-emerald-300">qadeyati.com</code> (حرف q صغير).
+                        </p>
+                        <p>
+                          أما في لوحة تحكم Supabase SMTP (الخطأ الأبرز): قمت بكتابته بحرف Q كبير:{" "}
+                          <code className="text-rose-400">info@Qadeyati.com</code>.
+                        </p>
+                        <p>
+                          <strong>الحل:</strong> قم بتغيير البريد في إعدادات SMTP في Supabase إلى{" "}
+                          <code className="text-emerald-300">info@qadeyati.com</code> (أحرف صغيرة
+                          بالكامل) ليتطابق مع النطاق الموثق في Resend، ثم اضغط{" "}
+                          <strong>Save changes</strong>.
+                        </p>
+                        <p className="text-slate-400 mt-1 text-[10px] leading-normal">
+                          * ملاحظتك صحيحة تماماً: في واجهة Supabase الحديثة، لا يوجد حقل لبريد
+                          المرسل داخل القوالب الفردية؛ فهو يستمد العنوان تلقائياً من حقل "Sender
+                          email address" العام في إعدادات SMTP.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5 p-2.5 rounded-lg bg-black/15 border border-border text-[11px] text-slate-400 text-right">
                         <p className="font-semibold text-slate-200">
-                          لتسجيل الدخول الفوري وتخطي هذا الخطأ:
+                          ⚙️ لتخطي تفعيل البريد تماماً والتسجيل المباشر:
                         </p>
                         <p>
-                          1. افتح مشروعك في لوحة تحكم <strong>Supabase</strong>.
+                          1. اذهب في Supabase إلى <strong>Authentication</strong> ثم{" "}
+                          <strong>Providers</strong>.
                         </p>
                         <p>
-                          2. اذهب للقسم <strong>Authentication</strong> من القائمة الجانبية.
-                        </p>
-                        <p>
-                          3. اضغط على <strong>Providers</strong> ثم افتح خيار <strong>Email</strong>
-                          .
-                        </p>
-                        <p>
-                          4. قم بإيقاف تفعيل خيار <strong>Confirm email</strong> واضغط{" "}
-                          <strong>Save</strong> لتمكين التسجيل المباشر بدون رسائل تأكيد.
+                          2. افتح خيار <strong>Email</strong> وقم بإغلاق تفعيل{" "}
+                          <strong>Confirm email</strong> ثم اضغط <strong>Save</strong>.
                         </p>
                       </div>
                     </div>

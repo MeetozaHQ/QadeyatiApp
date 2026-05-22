@@ -53,26 +53,27 @@ export function ContactPage() {
         </Link>
         <Link
           to="/"
-          className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-slate-900/40 px-3.5 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-slate-900 hover:text-white active:scale-95"
+          className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-slate-900/40 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-slate-900 hover:text-white active:scale-95 sm:px-3.5"
         >
-          <ArrowLeft className="h-4 w-4 rotate-180" />
-          <span>الرجوع للرئيسية</span>
+          <ArrowLeft className="h-4 w-4 rotate-180 shrink-0" />
+          <span className="hidden sm:inline">الرجوع للرئيسية</span>
+          <span className="sm:inline-hidden inline">الرئيسية</span>
         </Link>
       </header>
 
       {/* Hero Header */}
-      <div className="relative border-b border-border/20 bg-gradient-to-b from-slate-950 to-[#07090e] py-16 px-4 text-center">
+      <div className="relative border-b border-border/20 bg-gradient-to-b from-slate-950 to-[#07090e] py-10 md:py-16 px-4 text-center">
         <div className="absolute -left-20 -top-20 h-60 w-60 rounded-full bg-amber-500/5 blur-3xl"></div>
         <div className="absolute -right-20 -bottom-20 h-60 w-60 rounded-full bg-indigo-500/5 blur-3xl"></div>
 
         <div className="relative mx-auto max-w-2xl">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 text-[var(--gold)]">
-            <Inbox className="h-6 w-6 animate-pulse" />
+          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 text-[var(--gold)]">
+            <Inbox className="h-5.5 w-5.5 animate-pulse" />
           </div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-white md:text-4xl mb-3">
+          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white mb-3">
             يسعدنا التواصل معك
           </h1>
-          <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
             سواء كنت ترغب في الاستفسار عن ميزات المنصة، أو واجهت مشكلة، أو تود طلب عرض توضيحي
             لمكتبك، فريقنا على أتم الاستعداد لخدمتكم.
           </p>
@@ -176,7 +177,7 @@ export function ContactPage() {
 
         {/* Contact Form Area - 3 Cols */}
         <div className="lg:col-span-3">
-          <div className="rounded-3xl border border-border/40 bg-[#0d121f]/50 p-6 md:p-8 shadow-2xl backdrop-blur-sm h-full flex flex-col justify-between">
+          <div className="rounded-2xl sm:rounded-3xl border border-border/40 bg-[#0d121f]/50 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-sm h-full flex flex-col justify-between">
             <AnimatePresence mode="wait">
               {!submitted ? (
                 <motion.form
