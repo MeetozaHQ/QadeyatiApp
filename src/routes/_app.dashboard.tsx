@@ -98,6 +98,7 @@ function Dashboard() {
     supabase
       .from("payment_installments")
       .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
       .neq("status", "مدفوع")
       .lt("due_date", new Date().toISOString().slice(0, 10))
       .then(({ count }) => setOverdueCount(count ?? 0));

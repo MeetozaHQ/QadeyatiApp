@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { computeStatus } from "./finance-constants";
 
 export const NOTIFICATION_TYPES = [
   "جلسة قادمة",
@@ -65,6 +66,21 @@ export async function createNotification(input: {
  * Scans upcoming sessions and overdue installments, then inserts notifications
  * that don't already exist for today. Cheap, runs once per app load.
  */
+interface InstallmentWithDetails {
+  id: string;
+  payment_id: string;
+  due_date: string | null;
+  status: string;
+  amount: number;
+  payments: {
+    client_name: string;
+    case_id: string | null;
+    cases: {
+      title: string | null;
+    } | null;
+  } | null;
+}
+
 export async function syncReminders(userId: string) {
   try {
     const today = new Date();
@@ -72,6 +88,53 @@ export async function syncReminders(userId: string) {
     const in2Days = new Date(today.getTime() + 2 * 86400000).toISOString();
     const startToday = new Date(todayStr + "T00:00:00").toISOString();
 
+    // 1. STAGE: Database Status Reconciliation
+    const { data: dbPayments } = await supabase
+      .from("payments")
+      .select("id, total_amount, paid_amount, payment_status")
+      .eq("user_id", userId);
+
+    const { data: dbInstallments } = await supabase
+      .from("payment_installments")
+      .select("id, payment_id, due_date, status")
+      .eq("user_id", userId);
+
+    const paymentsList = dbPayments ?? [];
+    const installmentsList = dbInstallments ?? [];
+
+    for (const ins of installmentsList) {
+      let correctInsStatus = ins.status;
+      if (ins.status !== "مدفوع") {
+        if (ins.due_date && ins.due_date < todayStr) {
+          correctInsStatus = "متأخر";
+        } else {
+          correctInsStatus = "غير مدفوع";
+        }
+      }
+      if (ins.status !== correctInsStatus) {
+        await supabase
+          .from("payment_installments")
+          .update({ status: correctInsStatus })
+          .eq("id", ins.id);
+        ins.status = correctInsStatus;
+      }
+    }
+
+    for (const p of paymentsList) {
+      const pIns = installmentsList.filter((ins) => ins.payment_id === p.id);
+      const hasOverdue = pIns.some((ins) => ins.status === "متأخر");
+      const correctPayStatus = computeStatus(
+        Number(p.total_amount),
+        Number(p.paid_amount),
+        hasOverdue,
+      );
+      if (p.payment_status !== correctPayStatus) {
+        await supabase.from("payments").update({ payment_status: correctPayStatus }).eq("id", p.id);
+        p.payment_status = correctPayStatus;
+      }
+    }
+
+    // 2. STAGE: Sessions reminding
     // Existing notifications today (to dedupe)
     const { data: existing } = await supabase
       .from("notifications")
@@ -112,27 +175,49 @@ export async function syncReminders(userId: string) {
       });
     }
 
-    // Overdue installments
+    // 3. STAGE: Overdue Installments Reminding
+    const { data: existingOverdue } = await supabase
+      .from("notifications")
+      .select("related_payment_id, message")
+      .eq("user_id", userId)
+      .eq("type", "قسط متأخر");
+
+    const seenOverdue = new Set(
+      (existingOverdue ?? []).map((n) => `${n.related_payment_id}:${n.message ?? ""}`),
+    );
+
     const { data: inst } = await supabase
       .from("payment_installments")
-      .select("id, payment_id, due_date, status, amount")
+      .select(
+        "id, payment_id, due_date, status, amount, payments(client_name, case_id, cases(title))",
+      )
       .eq("user_id", userId)
       .neq("status", "مدفوع")
       .lt("due_date", todayStr);
 
-    for (const i of inst ?? []) {
-      const key = `قسط متأخر::${i.payment_id}`;
-      if (seen.has(key)) continue;
-      const days = Math.max(
-        1,
-        Math.floor((Date.now() - new Date(i.due_date as string).getTime()) / 86400000),
-      );
+    for (const i of (inst as unknown as InstallmentWithDetails[]) ?? []) {
+      const p = i.payments;
+      const clientName = p?.client_name ?? "الموكل";
+      const caseTitle = p?.cases?.title;
+      const caseId = p?.case_id;
+
+      let msg = "";
+      if (caseTitle) {
+        msg = `قسط مستحق على قضية ${caseTitle} بقيمة ${Number(i.amount).toLocaleString("ar-EG")} جنيه`;
+      } else {
+        msg = `قسط مستحق على ${clientName} بقيمة ${Number(i.amount).toLocaleString("ar-EG")} جنيه`;
+      }
+
+      const key = `${i.payment_id}:${msg}`;
+      if (seenOverdue.has(key)) continue;
+
       await createNotification({
         user_id: userId,
         type: "قسط متأخر",
-        title: `قسط متأخر منذ ${days} يوم`,
-        message: `قيمة القسط: ${Number(i.amount).toLocaleString("ar-EG")} ج.م`,
+        title: "قسط متأخر",
+        message: msg,
         related_payment_id: i.payment_id,
+        related_case_id: caseId || null,
         priority: "حرج",
       });
     }

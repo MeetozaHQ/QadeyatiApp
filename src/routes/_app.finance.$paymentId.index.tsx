@@ -89,10 +89,13 @@ function PaymentDetailPage() {
     if (!user || !payment) return;
     const amt = Number(iAmount) || 0;
     if (amt <= 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const targetStatus = iDue && iDue < today ? "متأخر" : "غير مدفوع";
+
     if (editingId) {
       await supabase
         .from("payment_installments")
-        .update({ amount: amt, due_date: iDue || null })
+        .update({ amount: amt, due_date: iDue || null, status: targetStatus })
         .eq("id", editingId);
     } else {
       await supabase.from("payment_installments").insert({
@@ -100,7 +103,7 @@ function PaymentDetailPage() {
         user_id: user.id,
         amount: amt,
         due_date: iDue || null,
-        status: "غير مدفوع",
+        status: targetStatus,
       });
     }
     setIAmount("");
@@ -111,7 +114,9 @@ function PaymentDetailPage() {
   };
 
   const togglePaid = async (i: Installment) => {
-    const nextStatus = i.status === "مدفوع" ? "غير مدفوع" : "مدفوع";
+    const today = new Date().toISOString().slice(0, 10);
+    const nextStatus =
+      i.status === "مدفوع" ? (i.due_date && i.due_date < today ? "متأخر" : "غير مدفوع") : "مدفوع";
     const paidAt = nextStatus === "مدفوع" ? new Date().toISOString() : null;
     await supabase
       .from("payment_installments")

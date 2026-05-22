@@ -26,6 +26,34 @@ export function computeStatus(
   return "غير مدفوع";
 }
 
+interface MinimalPayment {
+  paid_amount: number;
+  total_amount: number;
+}
+
+interface MinimalInstallment {
+  status: string;
+  due_date: string | null;
+  amount: number;
+}
+
+export function computeFinanceStats(
+  payments: MinimalPayment[],
+  installments: MinimalInstallment[],
+) {
+  const today = new Date().toISOString().slice(0, 10);
+  const collected = payments.reduce((sum, p) => sum + Number(p.paid_amount ?? 0), 0);
+  const remaining = payments.reduce(
+    (sum, p) => sum + Math.max(Number(p.total_amount ?? 0) - Number(p.paid_amount ?? 0), 0),
+    0,
+  );
+  const overdueTotal = installments.reduce((sum, ins) => {
+    const isOverdue = ins.status !== "مدفوع" && ins.due_date && ins.due_date < today;
+    return sum + (isOverdue ? Number(ins.amount ?? 0) : 0);
+  }, 0);
+  return { collected, remaining, overdueTotal };
+}
+
 export function buildWhatsAppLink(phone: string, message: string): string {
   const clean = phone.replace(/[^\d]/g, "");
   return `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;

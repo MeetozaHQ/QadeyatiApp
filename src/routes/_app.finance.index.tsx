@@ -4,7 +4,13 @@ import { Wallet, Plus, Search, ChevronLeft, TrendingUp, AlertCircle } from "luci
 import { EmptyState } from "@/components/qadeyti/EmptyState";
 import { StatCard } from "@/components/qadeyti/StatCard";
 import { supabase } from "@/integrations/supabase/client";
-import { PAYMENT_STATUSES, PAYMENT_STATUS_STYLES, fmtEGP } from "@/lib/finance-constants";
+import {
+  PAYMENT_STATUSES,
+  PAYMENT_STATUS_STYLES,
+  fmtEGP,
+  computeStatus,
+  computeFinanceStats,
+} from "@/lib/finance-constants";
 import { cn } from "@/lib/utils";
 
 type Row = {
@@ -16,6 +22,12 @@ type Row = {
   case_id: string | null;
   created_at: string;
   cases?: { title: string | null } | null;
+  payment_installments?: {
+    id: string;
+    amount: number;
+    due_date: string | null;
+    status: string;
+  }[];
 };
 
 export const Route = createFileRoute("/_app/finance/")({
@@ -26,40 +38,46 @@ function FinancePage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<string | null>(null);
-  const [overdueTotal, setOverdueTotal] = useState(0);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("payments")
         .select(
-          "id,client_name,total_amount,paid_amount,payment_status,case_id,created_at,cases(title)",
+          `
+          id,
+          client_name,
+          total_amount,
+          paid_amount,
+          payment_status,
+          case_id,
+          created_at,
+          cases(title),
+          payment_installments(id, amount, due_date, status)
+        `,
         )
         .order("created_at", { ascending: false });
-      setRows((data as unknown as Row[]) ?? []);
 
       const today = new Date().toISOString().slice(0, 10);
-      const { data: over } = await supabase
-        .from("payment_installments")
-        .select("amount")
-        .neq("status", "مدفوع")
-        .lt("due_date", today);
-      const sum = (over ?? []).reduce(
-        (a: number, r: { amount?: number | null }) => a + Number(r.amount ?? 0),
-        0,
-      );
-      setOverdueTotal(sum);
+      const rowsWithLiveStatus = ((data as unknown as Row[]) ?? []).map((r) => {
+        const hasOverdue = (r.payment_installments ?? []).some(
+          (ins) => ins.status !== "مدفوع" && ins.due_date && ins.due_date < today,
+        );
+        const liveStatus = computeStatus(Number(r.total_amount), Number(r.paid_amount), hasOverdue);
+        return {
+          ...r,
+          payment_status: liveStatus,
+        };
+      });
+
+      setRows(rowsWithLiveStatus);
     })();
   }, []);
 
   const stats = useMemo(() => {
     const list = rows ?? [];
-    const collected = list.reduce((a, r) => a + Number(r.paid_amount ?? 0), 0);
-    const remaining = list.reduce(
-      (a, r) => a + Math.max(Number(r.total_amount ?? 0) - Number(r.paid_amount ?? 0), 0),
-      0,
-    );
-    return { collected, remaining };
+    const allInstallments = list.flatMap((r) => r.payment_installments ?? []);
+    return computeFinanceStats(list, allInstallments);
   }, [rows]);
 
   const filtered = useMemo(() => {
@@ -99,7 +117,7 @@ function FinancePage() {
         <div className="col-span-2">
           <StatCard
             label="متأخرات مستحقة"
-            value={fmtEGP(overdueTotal)}
+            value={fmtEGP(stats.overdueTotal)}
             icon={<AlertCircle className="h-4 w-4 text-red-400" />}
           />
         </div>
