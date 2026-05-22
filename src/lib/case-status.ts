@@ -24,6 +24,11 @@ export async function recomputeCaseStatus(caseId: string): Promise<void> {
     .maybeSingle();
   if (!caseRow) return;
 
+  // Protect terminal/inactive statuses ("صدر حكم", "مغلقة") from being automatically overwritten
+  if (caseRow.status === "صدر حكم" || caseRow.status === "مغلقة") {
+    return;
+  }
+
   const { data: sessions } = await supabase
     .from("sessions")
     .select("session_date,outcome")
@@ -37,7 +42,7 @@ export async function recomputeCaseStatus(caseId: string): Promise<void> {
 
   let next: string | null = null;
 
-  if (caseRow.status !== "صدر حكم" && caseRow.status !== "مغلقة" && future.length > 0) {
+  if (future.length > 0) {
     next = "جلسة قادمة";
   } else if (past.length > 0) {
     const outcome = past[0].outcome?.trim() ?? "";
