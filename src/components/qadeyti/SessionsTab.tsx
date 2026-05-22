@@ -8,6 +8,7 @@ import { recomputeCaseStatus, SESSION_OUTCOMES } from "@/lib/case-status";
 import { createNotification } from "@/lib/notifications";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTrial } from "@/hooks/use-trial";
 
 interface Session {
   id: string;
@@ -29,6 +30,7 @@ export function SessionsTab({
   userId: string;
   onChange?: () => void;
 }) {
+  const { isTrialExpired } = useTrial();
   const [items, setItems] = useState<Session[] | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -108,6 +110,13 @@ export function SessionsTab({
   }, [caseId, hasExtendedSchema]);
 
   const add = async () => {
+    if (isTrialExpired && !editingId) {
+      toast.error(
+        "انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى الاشتراك أو التنشيط مجانًا بالرمز الترويجي EGYPT بالشريط العلوي لتتمكن من إضافة جلسات جديدة.",
+      );
+      return;
+    }
+
     if (!form.session_date) {
       toast.error("يرجى إدخال تاريخ الجلسة");
       return;
@@ -325,7 +334,15 @@ ADD COLUMN IF NOT EXISTS postponed_from_session_id uuid REFERENCES public.sessio
 
       {!open && (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            if (isTrialExpired) {
+              toast.error(
+                "انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى الاشتراك أو التنشيط مجانًا بالرمز الترويجي EGYPT بالشريط العلوي لتتمكن من إضافة جلسة جديدة.",
+              );
+              return;
+            }
+            setOpen(true);
+          }}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--gold)]/40 bg-card/40 py-3 text-sm text-[var(--gold-soft)] hover:bg-[var(--gold)]/5"
         >
           <Plus className="h-4 w-4" /> إضافة جلسة

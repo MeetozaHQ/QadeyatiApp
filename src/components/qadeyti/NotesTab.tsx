@@ -5,6 +5,8 @@ import { PremiumButton } from "./PremiumButton";
 import { EmptyState } from "./EmptyState";
 import { LoadingSkeleton } from "./LoadingSkeleton";
 import { motion, AnimatePresence } from "motion/react";
+import { useTrial } from "@/hooks/use-trial";
+import { toast } from "sonner";
 
 interface Note {
   id: string;
@@ -14,6 +16,7 @@ interface Note {
 }
 
 export function NotesTab({ caseId, userId }: { caseId: string; userId: string }) {
+  const { isTrialExpired } = useTrial();
   const [items, setItems] = useState<Note[] | null>(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
@@ -31,6 +34,12 @@ export function NotesTab({ caseId, userId }: { caseId: string; userId: string })
   useEffect(load, [caseId]);
 
   const add = async () => {
+    if (isTrialExpired) {
+      toast.error(
+        "انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى الاشتراك أو التنشيط مجانًا بالرمز الترويجي EGYPT بالشريط العلوي لتتمكن من إضافة ملاحظات جديدة.",
+      );
+      return;
+    }
     const t = draft.trim();
     if (!t) return;
     setSaving(true);
@@ -61,10 +70,15 @@ export function NotesTab({ caseId, userId }: { caseId: string; userId: string })
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={3}
-          placeholder="أضف ملاحظة سريعة عن القضية..."
-          className="w-full resize-none rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)] transition-colors"
+          disabled={isTrialExpired}
+          placeholder={
+            isTrialExpired
+              ? "⚠️ انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى تنشيط الاشتراك أو الرمز الترويجي EGYPT بالشريط العلوي للكتابة."
+              : "أضف ملاحظة سريعة عن القضية..."
+          }
+          className="w-full resize-none rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)] transition-colors disabled:opacity-75 disabled:cursor-not-allowed"
         />
-        <PremiumButton loading={saving} disabled={!draft.trim()} onClick={add}>
+        <PremiumButton loading={saving} disabled={!draft.trim() || isTrialExpired} onClick={add}>
           إضافة ملاحظة
         </PremiumButton>
       </div>
