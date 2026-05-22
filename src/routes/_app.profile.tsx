@@ -144,16 +144,34 @@ function Profile() {
     setBusy(true);
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `${user.id}/${kind}-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (upErr) {
-      setBusy(false);
-      toast.error("فشل رفع الصورة");
-      return;
+    let url: string | null = null;
+    try {
+      const { data: upData, error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (!upErr && upData) {
+        const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+        url = pub?.publicUrl || null;
+      }
+    } catch (err) {
+      console.warn("Storage upload failed, falling back to base64", err);
     }
-    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = pub.publicUrl;
+
+    if (!url) {
+      try {
+        url = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+      } catch (err) {
+        setBusy(false);
+        toast.error("فشل قراءة ملف الصورة");
+        return;
+      }
+    }
+
     const field = kind === "avatar" ? "avatar_url" : "logo_url";
     // Persist immediately so it survives refresh
     const { error: dbErr } = await supabase.from("lawyer_profiles").upsert(
