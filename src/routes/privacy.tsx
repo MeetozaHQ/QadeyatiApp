@@ -15,7 +15,7 @@ export function PrivacyPage() {
       {/* Top Header navbar */}
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/40 bg-[#07090e]/80 px-4 md:px-8 backdrop-blur-md">
         <Link to="/" className="outline-none cursor-pointer">
-          <Logo size="sm" />
+          <Logo size="md" />
         </Link>
         <Link
           to="/"

@@ -49,7 +49,7 @@ export function ContactPage() {
       {/* Top Header navbar */}
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/40 bg-[#07090e]/85 px-4 md:px-8 backdrop-blur-md">
         <Link to="/" className="outline-none cursor-pointer">
-          <Logo size="sm" />
+          <Logo size="md" />
         </Link>
         <Link
           to="/"
@@ -99,13 +99,13 @@ export function ContactPage() {
               <div className="p-3.5 rounded-xl bg-slate-900 border border-border/60 text-[var(--gold)] shrink-0">
                 <Mail className="h-5 w-5" />
               </div>
-              <div className="space-y-1">
-                <span className="text-[10px] text-slate-500 font-sans tracking-wide">
+              <div className="space-y-1 flex-1">
+                <span className="block text-[10px] text-slate-500 font-sans tracking-wide">
                   البريد الإلكتروني الرسمي:
                 </span>
                 <a
                   href="mailto:info@Qadeyati.com"
-                  className="block text-sm font-mono font-medium text-slate-200 hover:text-[var(--gold-soft)] transition-colors"
+                  className="block text-sm font-mono font-medium text-slate-200 hover:text-[var(--gold-soft)] transition-colors text-right"
                 >
                   info@Qadeyati.com
                 </a>
@@ -117,14 +117,14 @@ export function ContactPage() {
               <div className="p-3.5 rounded-xl bg-slate-900 border border-border/60 text-emerald-500 shrink-0">
                 <Phone className="h-5 w-5" />
               </div>
-              <div className="space-y-1">
-                <span className="text-[10px] text-slate-500 font-sans tracking-wide">
+              <div className="space-y-1 flex-1">
+                <span className="block text-[10px] text-slate-500 font-sans tracking-wide">
                   الاتصال الهاتفي الساخن:
                 </span>
                 <a
                   href="tel:+201035854329"
                   dir="ltr"
-                  className="block text-sm font-mono font-semibold text-slate-200 hover:text-[var(--gold-soft)] transition-colors"
+                  className="block text-sm font-mono font-semibold text-slate-200 hover:text-[var(--gold-soft)] transition-colors text-right"
                 >
                   +20 103 585 4329
                 </a>
@@ -150,7 +150,7 @@ export function ContactPage() {
                 </div>
                 <span
                   dir="ltr"
-                  className="block text-sm font-mono font-bold text-slate-200 group-hover:text-[var(--gold-soft)] transition-colors"
+                  className="block text-sm font-mono font-bold text-slate-200 group-hover:text-[var(--gold-soft)] transition-colors text-right"
                 >
                   +20 103 585 4329
                 </span>
