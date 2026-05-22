@@ -28,7 +28,7 @@ export function RefundPolicyPage() {
       </header>
 
       {/* Hero Header */}
-      <div className="relative border-b border-border/20 bg-gradient-to-b from-slate-950 to-[#07090e] py-10 md:py-16 px-4 text-center">
+      <div className="relative overflow-hidden border-b border-border/20 bg-gradient-to-b from-slate-950 to-[#07090e] py-10 md:py-16 px-4 text-center">
         {/* Subtle Decorative Background Gradients */}
         <div className="absolute -left-20 -top-20 h-60 w-60 rounded-full bg-amber-500/5 blur-3xl"></div>
         <div className="absolute -right-20 -bottom-20 h-60 w-60 rounded-full bg-indigo-500/5 blur-3xl"></div>

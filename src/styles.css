@@ -121,6 +121,8 @@
       sans-serif !important;
     -webkit-font-smoothing: antialiased;
     direction: rtl;
+    overflow-x: hidden;
+    width: 100%;
   }
 
   button,
