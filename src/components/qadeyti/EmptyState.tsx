@@ -22,7 +22,7 @@ export function EmptyState({
       <div className="pointer-events-none absolute -bottom-10 left-1/2 h-36 w-36 -translate-x-1/2 rounded-full bg-[var(--gold)]/5 blur-3xl transition-opacity duration-300 group-hover:bg-[var(--gold)]/10" />
 
       {icon && (
-        <motion.div 
+        <motion.div
           className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-b from-[#181822]/80 to-[#101016]/80 text-[var(--gold)] border border-border/80 shadow-sm"
           whileHover={{ scale: 1.05, rotate: 3 }}
           transition={{ type: "spring", stiffness: 400, damping: 15 }}
@@ -42,4 +42,3 @@ export function EmptyState({
     </motion.div>
   );
 }
-

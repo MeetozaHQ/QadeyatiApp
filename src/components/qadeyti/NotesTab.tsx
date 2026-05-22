@@ -114,7 +114,9 @@ export function NotesTab({ caseId, userId }: { caseId: string; userId: string })
                   </div>
                 ) : (
                   <>
-                    <p className="whitespace-pre-wrap text-sm text-foreground leading-relaxed">{n.content}</p>
+                    <p className="whitespace-pre-wrap text-sm text-foreground leading-relaxed">
+                      {n.content}
+                    </p>
                     <div className="mt-3.5 flex items-center justify-between border-t border-border/40 pt-2.5">
                       <span className="text-xs text-muted-foreground/80 font-medium">
                         {new Date(n.created_at).toLocaleString("ar-EG", {
@@ -133,8 +135,8 @@ export function NotesTab({ caseId, userId }: { caseId: string; userId: string })
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button 
-                          aria-label="حذف" 
+                        <button
+                          aria-label="حذف"
                           onClick={() => remove(n.id)}
                           className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-destructive/10 hover:text-destructive transition-all cursor-pointer"
                         >
@@ -152,4 +154,3 @@ export function NotesTab({ caseId, userId }: { caseId: string; userId: string })
     </div>
   );
 }
-

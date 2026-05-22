@@ -1312,22 +1312,37 @@ function LandingPage() {
                     info@Qadeyati.com
                   </a>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span className="font-mono">+20 103 585 4329</span>
+                <li className="flex flex-col gap-1 items-start">
+                  <span className="text-[10px] text-slate-500 font-sans tracking-wide">
+                    الهاتف:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <a
+                      href="tel:+201035854329"
+                      dir="ltr"
+                      className="hover:text-white transition-colors font-mono font-semibold"
+                    >
+                      +20 103 585 4329
+                    </a>
+                  </div>
                 </li>
-                <li className="flex items-center gap-2">
-                  {/* WhatsApp green icon indicator */}
-                  <span className="flex h-2 w-2 rounded-full bg-[#25D366] shrink-0"></span>
-                  <span className="text-slate-400">واتساب: </span>
-                  <a
-                    href="https://wa.me/201035854329"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-white transition-colors font-mono font-bold"
-                  >
-                    +20 103 585 4329
-                  </a>
+                <li className="flex flex-col gap-1 items-start">
+                  <span className="text-[10px] text-slate-500 font-sans tracking-wide">
+                    واتساب:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-1.5 w-1.5 rounded-full bg-[#25D366] shrink-0"></span>
+                    <a
+                      href="https://wa.me/201035854329"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      dir="ltr"
+                      className="hover:text-white transition-colors font-mono font-bold"
+                    >
+                      +20 103 585 4329
+                    </a>
+                  </div>
                 </li>
                 <li className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-slate-500 shrink-0" />

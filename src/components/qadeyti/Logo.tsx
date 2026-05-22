@@ -43,21 +43,20 @@ export function Logo({
     return (
       <div className={`relative shrink-0 ${sizeClass} ${className}`}>
         <img
-          src="/favicon.png"
+          src="/favicon.svg"
           alt="قضيتي Logo"
           referrerPolicy="no-referrer"
           className="h-full w-full object-contain"
           onError={(e) => {
             // Remove image if failed, showing fallback
             e.currentTarget.style.display = "none";
-            const parent = e.currentTarget.parentElement;
-            if (parent) {
-              const fallbackContainer = document.createElement("div");
-              fallbackContainer.className = "fallback-logo";
-              parent.appendChild(fallbackContainer);
+            const sibling = e.currentTarget.nextElementSibling;
+            if (sibling) {
+              sibling.classList.remove("hidden");
             }
           }}
         />
+        <div className="hidden">{iconFallback}</div>
       </div>
     );
   }
@@ -65,7 +64,7 @@ export function Logo({
   return (
     <div className={`relative shrink-0 flex items-center ${sizeClass} ${className}`}>
       <img
-        src="/logo.png"
+        src="/logo.svg"
         alt="قضيتي"
         referrerPolicy="no-referrer"
         className="h-full object-contain overflow-visible max-w-full"

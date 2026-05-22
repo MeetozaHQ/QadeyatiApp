@@ -16,7 +16,7 @@ export function LoadingSkeleton({ className = "", variant = "default" }: Loading
         variant === "text" && "h-4 w-3/4",
         variant === "circle" && "h-12 w-12 rounded-full",
         variant === "default" && "h-16",
-        className
+        className,
       )}
       aria-hidden
     >
@@ -36,4 +36,3 @@ export function LoadingSkeleton({ className = "", variant = "default" }: Loading
     </div>
   );
 }
-

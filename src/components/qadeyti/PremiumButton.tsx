@@ -25,14 +25,9 @@ export const PremiumButton = forwardRef<HTMLButtonElement, Props>(
         className={cn(base, styles[variant], className)}
         {...rest}
       >
-        {loading ? (
-          <Loader2 className="h-4.5 w-4.5 animate-spin" />
-        ) : (
-          children
-        )}
+        {loading ? <Loader2 className="h-4.5 w-4.5 animate-spin" /> : children}
       </button>
     );
   },
 );
 PremiumButton.displayName = "PremiumButton";
-
