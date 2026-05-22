@@ -13,6 +13,11 @@ import {
   History,
   CheckCircle2,
   Loader2,
+  Cloud,
+  CloudUpload,
+  Settings,
+  LogOut,
+  ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "./EmptyState";
@@ -20,6 +25,14 @@ import { useTrial } from "@/hooks/use-trial";
 import { FILE_CATEGORIES, type FileCategory, formatBytes } from "@/lib/file-constants";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  getCachedToken,
+  authenticateGoogleDrive,
+  uploadFileToGoogleDrive,
+  getGoogleClientId,
+  saveGoogleClientId,
+  logoutGoogle,
+} from "@/lib/google-drive-auth";
 
 interface Attachment {
   id: string;
@@ -73,6 +86,89 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
   const [moving, setMoving] = useState<Attachment | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Google Drive state variables
+  const [uploadingToDrive, setUploadingToDrive] = useState<string | null>(null);
+  const [gdriveToken, setGdriveToken] = useState<string | null>(getCachedToken());
+  const [showDriveSettings, setShowDriveSettings] = useState(false);
+  const [customClientId, setCustomClientId] = useState(getGoogleClientId());
+
+  const saveToGoogleDrive = async (a: Attachment) => {
+    try {
+      setUploadingToDrive(a.id);
+
+      const clientId = getGoogleClientId();
+      if (!clientId) {
+        toast.error(
+          "يرجى إدخال معرّف العميل (Google Client ID) أولاً من لوحة تحكم Google Drive بالصفحة.",
+        );
+        setShowDriveSettings(true);
+        setUploadingToDrive(null);
+        return;
+      }
+
+      let token = gdriveToken || getCachedToken();
+      if (!token) {
+        toast.info("يرجى إكمال تسجيل الدخول لـ Google Drive بالنافذة المنبثقة...");
+        try {
+          token = await authenticateGoogleDrive(clientId);
+          setGdriveToken(token);
+          toast.success("تم الاتصال بـ Google Drive بنجاح!");
+        } catch (err) {
+          const errMsg = (err as { message?: string }).message || String(err);
+          if (errMsg === "POPUP_BLOCKED") {
+            toast.error(
+              "تم حظر النافذة المنبثقة من قِبل المتصفح. يرجى تفعيل النوافذ المنبثقة وبدء الاتصال من جديد.",
+            );
+          } else if (errMsg === "WINDOW_CLOSED") {
+            toast.error("تم إغلاق نافذة تسجيل الدخول.");
+          } else {
+            toast.error(`فشل الاتصال بـ Google: ${errMsg}`);
+          }
+          setUploadingToDrive(null);
+          return;
+        }
+      }
+
+      toast.loading("جاري جلب الملف من التخزين السحابي للمنصة...", { id: "gdrive-upload" });
+      const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(a.file_url, 120);
+
+      if (!data?.signedUrl) {
+        toast.dismiss("gdrive-upload");
+        toast.error("فشل في الحصول على الملف من خادم التخزين.");
+        setUploadingToDrive(null);
+        return;
+      }
+
+      const fileResponse = await fetch(data.signedUrl);
+      const fileBlob = await fileResponse.blob();
+
+      toast.loading("جاري رفع واستيراد الملف إلى Google Drive الخاص بك...", {
+        id: "gdrive-upload",
+      });
+      const driveFile = await uploadFileToGoogleDrive(token, a.file_name, a.file_type, fileBlob);
+
+      toast.dismiss("gdrive-upload");
+      toast.success(`تم حفظ الملف "${a.file_name}" بنجاح في Google Drive!`);
+
+      if (driveFile.webViewLink) {
+        localStorage.setItem(`gdrive_saved_${a.id}`, driveFile.webViewLink);
+      } else {
+        localStorage.setItem(`gdrive_saved_${a.id}`, "true");
+      }
+
+      await logActivity("نسخ احتياطي (Google Drive)", a.file_name, a.id, "تم الرفع بنجاح");
+      load();
+    } catch (err) {
+      toast.dismiss("gdrive-upload");
+      console.error("Google Drive Upload Error:", err);
+      toast.error(
+        `خطأ أثناء الرفع إلى Google Drive: ${(err as { message?: string }).message || err}`,
+      );
+    } finally {
+      setUploadingToDrive(null);
+    }
+  };
 
   const load = () => {
     supabase
@@ -267,6 +363,129 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
 
   return (
     <div className="space-y-4">
+      {/* Google Drive Status Panel */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-xl",
+                gdriveToken ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-400",
+              )}
+            >
+              <Cloud className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-sans text-sm font-semibold text-foreground">
+                النسخ الاحتياطي السحابي (Google Drive)
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                {gdriveToken
+                  ? "متصل بحساب Google ومفعل للحفظ الفوري للوثائق"
+                  : "اربط حسابك لحفظ وثائق ومستندات القضية مباشرة بنقرة واحدة"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 font-sans">
+            <button
+              onClick={() => {
+                setCustomClientId(getGoogleClientId());
+                setShowDriveSettings(!showDriveSettings);
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="إعدادات الاتصال"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+            {gdriveToken ? (
+              <button
+                onClick={() => {
+                  logoutGoogle();
+                  setGdriveToken(null);
+                }}
+                className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs text-destructive hover:bg-destructive/20 transition-colors cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>فصل</span>
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  const clientId = getGoogleClientId();
+                  if (!clientId) {
+                    toast.error(
+                      "يرجى إدخال معرّف العميل (Google Client ID) في الإعدادات أدناه أولاً.",
+                    );
+                    setShowDriveSettings(true);
+                    return;
+                  }
+                  toast.loading("جاري فتح نافذة الاتصال بـ Google...", { id: "google-auth" });
+                  try {
+                    const token = await authenticateGoogleDrive(clientId);
+                    setGdriveToken(token);
+                    toast.dismiss("google-auth");
+                    toast.success("تم ربط حساب Google Drive بنجاح!");
+                  } catch (err) {
+                    toast.dismiss("google-auth");
+                    const errMsg = (err as { message?: string }).message || String(err);
+                    if (errMsg === "POPUP_BLOCKED") {
+                      toast.error("تم حظر الإطار المنبثق. يرجى تفعيل النوافذ المنبثقة لموقعنا.");
+                    } else if (errMsg === "WINDOW_CLOSED") {
+                      toast.error("تم إلغاء العملية.");
+                    } else {
+                      toast.error(`خطأ في ربط الحساب: ${errMsg}`);
+                    }
+                  }
+                }}
+                className="flex items-center gap-1 rounded-lg border border-[var(--gold)]/30 bg-[var(--gold)]/10 px-3 py-1 text-xs text-[var(--gold-soft)] hover:bg-[var(--gold)]/20 transition-colors font-medium cursor-pointer"
+              >
+                <span>ربط الحساب</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Dynamic client-id settings block under gear icon */}
+        {showDriveSettings && (
+          <div className="pt-2 border-t border-border/40 space-y-2 animate-in fade-in duration-200">
+            <label className="block text-[11px] text-muted-foreground font-sans">
+              لوحة تحكم المطورين ومعرّف عميل Google OAuth 2.0 (Client ID):
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                dir="ltr"
+                value={customClientId}
+                onChange={(e) => setCustomClientId(e.target.value)}
+                placeholder="مثال: 123456-abcdef.apps.googleusercontent.com"
+                className="flex-1 h-9 rounded-lg border border-border bg-background px-2.5 text-xs text-slate-200 font-mono outline-none focus:border-[var(--gold)]"
+              />
+              <button
+                onClick={() => {
+                  if (!customClientId.trim()) {
+                    toast.error("يرجى إدخال معرّف صحيح أولاً.");
+                    return;
+                  }
+                  saveGoogleClientId(customClientId.trim());
+                  toast.success("تم حفظ إعداد عميل Google بنجاح.");
+                  setShowDriveSettings(false);
+                }}
+                className="h-9 px-3 rounded-lg bg-[var(--gold)] text-slate-900 text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                حفظ
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+              * تم تكوين معرّف افتراضي تلقائياً لشركاء الخدمة. يمكنك تزويد المفتاح الخاص لتجاوزه
+              وتجربته. رابط التوجيه الفعلي المطلوب للتسجيل بـ Google API هو:{" "}
+              <code className="text-[var(--gold-soft)] bg-slate-950 px-1 py-0.5 rounded font-mono select-all">
+                {window.location.origin}/oauth-callback.html
+              </code>
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Category picker for upload */}
       <div className="rounded-2xl border border-border bg-card p-3">
         <p className="mb-2 text-xs text-muted-foreground">تصنيف الرفع:</p>
@@ -394,10 +613,51 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                       </span>
                       <span>{new Date(a.uploaded_at).toLocaleDateString("ar-EG")}</span>
                       <span>{formatBytes(a.file_size)}</span>
+                      {localStorage.getItem(`gdrive_saved_${a.id}`) && (
+                        <a
+                          href={
+                            localStorage.getItem(`gdrive_saved_${a.id}`) === "true"
+                              ? undefined
+                              : localStorage.getItem(`gdrive_saved_${a.id}`) || undefined
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-400 font-sans border border-emerald-500/20 px-1.5 py-0.5 rounded-md transition-colors hover:bg-emerald-500/25"
+                          onClick={(e) => {
+                            if (localStorage.getItem(`gdrive_saved_${a.id}`) === "true")
+                              e.preventDefault();
+                          }}
+                        >
+                          <Cloud className="h-3 w-3" />
+                          <span>Google Drive</span>
+                          {localStorage.getItem(`gdrive_saved_${a.id}`) !== "true" && (
+                            <ExternalLink className="h-2.5 w-2.5" />
+                          )}
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-end gap-1 border-t border-border pt-2">
+                  <IconBtn
+                    label={
+                      localStorage.getItem(`gdrive_saved_${a.id}`)
+                        ? "منسوخ في Google Drive"
+                        : "حفظ في Google Drive"
+                    }
+                    onClick={() => saveToGoogleDrive(a)}
+                    className={cn(
+                      localStorage.getItem(`gdrive_saved_${a.id}`)
+                        ? "text-emerald-500 hover:text-emerald-400 font-sans"
+                        : "text-slate-400 hover:text-white font-sans",
+                    )}
+                  >
+                    {uploadingToDrive === a.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-[var(--gold-soft)]" />
+                    ) : (
+                      <CloudUpload className="h-4 w-4" />
+                    )}
+                  </IconBtn>
                   <IconBtn label="معاينة" onClick={() => openPreview(a)}>
                     <Eye className="h-4 w-4" />
                   </IconBtn>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>جاري التوصيل بـ Google Drive...</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #07090e;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 2rem;
+            border-radius: 1rem;
+            background: #0f172a;
+            border: 1px solid rgba(234, 179, 8, 0.2);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .spinner {
+            border: 3px solid rgba(234, 179, 8, 0.1);
+            border-top: 3px solid #eab308;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h2>تم التحقق من الحساب بنجاح</h2>
+        <p>جاري ضبط الاتصال بـ Google Drive وإغلاق هذه النافذة تلقائياً...</p>
+    </div>
+
+    <script>
+        // Parse access_token from hash
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const access_token = params.get('access_token');
+        const error = params.get('error');
+
+        if (access_token) {
+            if (window.opener) {
+                window.opener.postMessage({ type: 'GOOGLE_DRIVE_AUTH_SUCCESS', token: access_token }, '*');
+                window.close();
+            } else {
+                localStorage.setItem('temp_gdrive_token', access_token);
+                document.querySelector('p').innerText = 'تم حفظ الاتصال! يمكنك العودة للتطبيق وإعادة المحاولة.';
+                setTimeout(() => window.close(), 2000);
+            }
+        } else if (error) {
+            if (window.opener) {
+                window.opener.postMessage({ type: 'GOOGLE_DRIVE_AUTH_FAILURE', error }, '*');
+                window.close();
+            } else {
+                document.querySelector('p').innerText = 'حدث خطأ أثناء الاتصال: ' + error;
+            }
+        } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenQuery = urlParams.get('access_token');
+            const errQuery = urlParams.get('error');
+            if (tokenQuery) {
+                if (window.opener) {
+                    window.opener.postMessage({ type: 'GOOGLE_DRIVE_AUTH_SUCCESS', token: tokenQuery }, '*');
+                    window.close();
+                }
+            } else if (errQuery) {
+                if (window.opener) {
+                    window.opener.postMessage({ type: 'GOOGLE_DRIVE_AUTH_FAILURE', error: errQuery }, '*');
+                    window.close();
+                }
+            } else {
+                document.querySelector('p').innerText = 'لم يتم العثور على رمز اتصال صالح.';
+            }
+        }
+    </script>
+</body>
+</html>
