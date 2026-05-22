@@ -85,6 +85,7 @@ function NewCasePage() {
         opponent_name: f.opponent_name.trim() || null,
         first_session_date: f.first_session_date || null,
         description: f.description.trim() || null,
+        status: "جديدة",
       })
       .select("id")
       .single();

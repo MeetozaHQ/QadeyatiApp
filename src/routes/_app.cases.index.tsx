@@ -16,6 +16,7 @@ type Row = {
   status: string;
   updated_at: string;
   first_session_date: string | null;
+  hasFutureSession?: boolean;
 };
 
 export const Route = createFileRoute("/_app/cases/")({
@@ -35,9 +36,6 @@ function CasesPage() {
         .is("archived_at", null)
         .order("updated_at", { ascending: false });
       const list = (data as Row[]) ?? [];
-      // Override status to "جلسة قادمة" for any case with a future session
-      // (unless it's in a terminal status). Keeps the tab in sync even if
-      // recomputeCaseStatus was never run for older cases.
       const ids = list.map((r) => r.id);
       if (ids.length) {
         const { data: futureSessions } = await supabase
@@ -47,9 +45,7 @@ function CasesPage() {
           .gt("session_date", new Date().toISOString());
         const futureSet = new Set((futureSessions ?? []).map((s) => s.case_id));
         list.forEach((r) => {
-          if (futureSet.has(r.id) && r.status !== "صدر حكم" && r.status !== "مغلقة") {
-            r.status = "جلسة قادمة";
-          }
+          r.hasFutureSession = futureSet.has(r.id);
         });
       }
       setRows(list);
@@ -60,7 +56,16 @@ function CasesPage() {
     if (!rows) return [];
     const text = q.trim();
     return rows.filter((r) => {
-      if (statusFilter && r.status !== statusFilter) return false;
+      if (statusFilter) {
+        if (statusFilter === "جلسة قادمة") {
+          const isUpcoming =
+            r.status === "جلسة قادمة" ||
+            (!!r.hasFutureSession && r.status !== "صدر حكم" && r.status !== "مغلقة");
+          if (!isUpcoming) return false;
+        } else {
+          if (r.status !== statusFilter) return false;
+        }
+      }
       if (!text) return true;
       const hay = `${r.title} ${r.case_number ?? ""} ${r.court_name ?? ""} ${r.client_name ?? ""}`;
       return hay.includes(text);
@@ -69,9 +74,26 @@ function CasesPage() {
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
-    (rows ?? []).forEach((r) => {
-      c[r.status] = (c[r.status] ?? 0) + 1;
+    if (!rows) return c;
+
+    CASE_STATUSES.forEach((s) => {
+      c[s] = 0;
     });
+
+    rows.forEach((r) => {
+      if (c[r.status] !== undefined) {
+        c[r.status]++;
+      }
+      const isUpcomingNotTerminal =
+        !!r.hasFutureSession &&
+        r.status !== "صدر حكم" &&
+        r.status !== "مغلقة" &&
+        r.status !== "جلسة قادمة";
+      if (isUpcomingNotTerminal) {
+        c["جلسة قادمة"] = (c["جلسة قادمة"] ?? 0) + 1;
+      }
+    });
+
     return c;
   }, [rows]);
 
@@ -123,11 +145,19 @@ function CasesPage() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Briefcase className="h-8 w-8" />}
-          title={rows.length === 0 ? "لا توجد قضايا بعد" : "لا نتائج مطابقة"}
+          title={
+            rows.length === 0
+              ? "لا توجد قضايا بعد"
+              : statusFilter
+                ? `لا توجد قضايا ${statusFilter}`
+                : "لا نتائج مطابقة"
+          }
           description={
             rows.length === 0
               ? "أضف أول قضية خلال أقل من دقيقة."
-              : "جرّب تغيير كلمات البحث أو إزالة الفلتر."
+              : statusFilter
+                ? `لم يتم العثور على قضايا مصنفة كـ "${statusFilter}" حالياً.`
+                : "جرّب تغيير كلمات البحث أو إزالة الفلتر."
           }
         />
       ) : (

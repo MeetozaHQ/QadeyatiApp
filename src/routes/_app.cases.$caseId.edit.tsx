@@ -4,7 +4,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { PremiumButton } from "@/components/qadeyti/PremiumButton";
-import { CASE_TYPES } from "@/lib/case-constants";
+import { CASE_TYPES, CASE_STATUSES } from "@/lib/case-constants";
 import { ensureFirstSession } from "@/lib/first-session";
 import { recomputeCaseStatus } from "@/lib/case-status";
 import { useAuth } from "@/lib/auth-context";
@@ -24,6 +24,7 @@ interface FormState {
   opponent_name: string;
   first_session_date: string;
   description: string;
+  status: string;
 }
 
 const empty: FormState = {
@@ -36,6 +37,7 @@ const empty: FormState = {
   opponent_name: "",
   first_session_date: "",
   description: "",
+  status: "جديدة",
 };
 
 function EditCasePage() {
@@ -67,6 +69,7 @@ function EditCasePage() {
           opponent_name: data.opponent_name ?? "",
           first_session_date: data.first_session_date ?? "",
           description: data.description ?? "",
+          status: data.status ?? "جديدة",
         });
       });
   }, [caseId]);
@@ -94,6 +97,7 @@ function EditCasePage() {
         opponent_name: f.opponent_name.trim() || null,
         first_session_date: f.first_session_date || null,
         description: f.description.trim() || null,
+        status: f.status || "جديدة",
         updated_at: new Date().toISOString(),
       })
       .eq("id", caseId);
@@ -186,6 +190,20 @@ function EditCasePage() {
           value={f.first_session_date}
           onChange={(e) => set("first_session_date", e.target.value)}
         />
+        <div className="space-y-2">
+          <label className="block text-sm text-muted-foreground">حالة القضية</label>
+          <select
+            value={f.status}
+            onChange={(e) => set("status", e.target.value)}
+            className="h-14 w-full rounded-xl border border-border bg-card px-4 text-base text-foreground outline-none transition-colors focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 cursor-pointer"
+          >
+            {CASE_STATUSES.map((status) => (
+              <option key={status} value={status} className="bg-card text-foreground">
+                {status}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="space-y-2">
           <label className="block text-sm text-muted-foreground">وصف مختصر</label>
           <textarea
