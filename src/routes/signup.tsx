@@ -53,8 +53,18 @@ function SignupPage() {
     if (error) return setError(error.message);
 
     // Check if user already exists
-    // Supabase returns a user object but with empty identities for security reasons when email is already registered and confirmed
-    if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+    // 1. Supabase returns empty identities array when email is already registered and confirmed (due to security/user enumeration protection)
+    // 2. Or we check the user's creation time vs current time. If user.created_at was created in the past (more than 15 seconds ago), it means this account was already registered in a previous signup session!
+    const isExistingUser =
+      data?.user &&
+      (!data.user.identities ||
+        data.user.identities.length === 0 ||
+        (data.user.created_at && Date.now() - new Date(data.user.created_at).getTime() > 15000) ||
+        data.user.identities.some(
+          (id) => id.created_at && Date.now() - new Date(id.created_at).getTime() > 15000,
+        ));
+
+    if (isExistingUser) {
       setError("هذا البريد الإلكتروني مسجل بالفعل لدينا. يرجى الذهاب لصفحة تسجيل الدخول.");
       return;
     }
