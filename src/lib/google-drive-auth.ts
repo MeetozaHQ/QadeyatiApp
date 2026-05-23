@@ -153,19 +153,8 @@ export function authenticateGoogleDrive(customClientId?: string): Promise<string
       return fallbackImplicitFlow(clientId).then(resolve).catch(reject);
     }
 
-    // Determine the optimal auth URL to solve third-party cookie issues on custom Vercel domains
-    const isCustomDomain =
-      !window.location.hostname.endsWith("firebaseapp.com") &&
-      !window.location.hostname.endsWith("web.app") &&
-      !window.location.hostname.endsWith("run.app") &&
-      window.location.hostname !== "localhost" &&
-      window.location.hostname !== "127.0.0.1";
-
-    const authBaseUrl = isCustomDomain
-      ? "https://gen-lang-client-0226596636.firebaseapp.com"
-      : window.location.origin;
-
-    const authUrl = `${authBaseUrl}/gdrive-auth`;
+    // Always open `/gdrive-auth` on the active origin, so the route loads from our actual hosted Vercel or local app
+    const authUrl = `${window.location.origin}/gdrive-auth`;
 
     // Calculate center coordinates for popup
     const width = 500;
