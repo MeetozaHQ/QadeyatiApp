@@ -142,42 +142,96 @@ function fallbackImplicitFlow(clientId: string): Promise<string> {
 }
 
 /**
- * Initiates either Google OAuth Implicit Flow or Firebase Auth popup.
+ * Initiates either Google OAuth Implicit Flow or the direct unified Firebase auth popup.
  * Returns a promise that resolves with the access token or rejects with an error.
  */
-export async function authenticateGoogleDrive(customClientId?: string): Promise<string> {
-  // We prefer Firebase Auth because it is fully preconfigured for the active applet
-  // and works flawlessly with zero requirements to pass a manual client-id.
-  try {
-    const app = getFirebaseApp();
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    // We request the Drive direct file scopes
-    provider.addScope("https://www.googleapis.com/auth/drive.file");
-
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (!credential?.accessToken) {
-      throw new Error("No access token returned from Google Auth provider.");
-    }
-
-    gdriveAccessToken = credential.accessToken;
-    return gdriveAccessToken;
-  } catch (err) {
-    console.warn("Firebase Google Auth failed, trying legacy custom OAuth callback fallback:", err);
-
+export function authenticateGoogleDrive(customClientId?: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // If a custom Client ID was configured by the developer/user, we let them use the standard implicit flow
     const clientId = customClientId || getGoogleClientId();
     if (clientId) {
-      return fallbackImplicitFlow(clientId);
+      return fallbackImplicitFlow(clientId).then(resolve).catch(reject);
     }
 
-    // If no client ID was specified and Firebase failed, let the user know what went wrong
-    const errMsg = (err as { message?: string }).message || String(err);
-    throw new Error(
-      `فشل الاتصال التلقائي بـ Google: ${errMsg}. يرجى إعداد معرّف العميل (Client ID) يدوياً في لوحة الإعدادات لتجربة الاتصال المخصص.`,
+    // Determine the optimal auth URL to solve third-party cookie issues on custom Vercel domains
+    const isCustomDomain =
+      !window.location.hostname.endsWith("firebaseapp.com") &&
+      !window.location.hostname.endsWith("web.app") &&
+      !window.location.hostname.endsWith("run.app") &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+
+    const authBaseUrl = isCustomDomain
+      ? "https://gen-lang-client-0226596636.firebaseapp.com"
+      : window.location.origin;
+
+    const authUrl = `${authBaseUrl}/gdrive-auth`;
+
+    // Calculate center coordinates for popup
+    const width = 500;
+    const height = 600;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+
+    const popup = window.open(
+      authUrl,
+      "google_drive_popup_auth",
+      `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes`,
     );
-  }
+
+    if (!popup) {
+      reject(new Error("POPUP_BLOCKED"));
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handleMessage);
+      reject(new Error("TIMEOUT"));
+    }, 180000); // 3 minutes
+
+    const handleMessage = (event: MessageEvent) => {
+      // Security check: allow messages from the current parent origin or our default firebaseapp domain
+      const allowedOrigins = [
+        window.location.origin,
+        "https://gen-lang-client-0226596636.firebaseapp.com",
+      ];
+      if (!allowedOrigins.includes(event.origin)) return;
+
+      if (event.data?.type === "GOOGLE_DRIVE_AUTH_SUCCESS") {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handleMessage);
+
+        const token = event.data.token;
+        setCachedToken(token);
+        resolve(token);
+      } else if (event.data?.type === "GOOGLE_DRIVE_AUTH_FAILURE") {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handleMessage);
+        reject(new Error(event.data.error || "AUTHORIZATION_FAILED"));
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    // Watch for window closure
+    const checkClosedInterval = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosedInterval);
+        setTimeout(() => {
+          clearTimeout(timeoutId);
+          window.removeEventListener("message", handleMessage);
+
+          // Check if resolved via on-disk token fallback
+          const finalToken = getCachedToken();
+          if (finalToken) {
+            resolve(finalToken);
+          } else {
+            reject(new Error("WINDOW_CLOSED"));
+          }
+        }, 500);
+      }
+    }, 1000);
+  });
 }
 
 /**
