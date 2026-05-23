@@ -44,13 +44,21 @@ function SignupPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: window.location.origin + "/dashboard" },
     });
     setLoading(false);
     if (error) return setError(error.message);
+
+    // Check if user already exists
+    // Supabase returns a user object but with empty identities for security reasons when email is already registered and confirmed
+    if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+      setError("هذا البريد الإلكتروني مسجل بالفعل لدينا. يرجى الذهاب لصفحة تسجيل الدخول.");
+      return;
+    }
+
     setSuccess(true);
   }
 
