@@ -1,14 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { Logo } from "@/components/qadeyti/Logo";
 import { Cloud, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import firebaseConfig from "../../firebase-applet-config.json";
 
-// Initialize Firebase App lazily
+// Initialize Firebase App lazily with dynamic authDomain override
 const getFirebaseApp = () => {
-  return getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  const config = {
+    ...firebaseConfig,
+    authDomain: "gen-lang-client-0226596636.firebaseapp.com",
+  };
+  const apps = getApps();
+  const existing = apps.find((app) => app.name === "gdrive_auth_app");
+  if (existing) return existing;
+  return initializeApp(config, "gdrive_auth_app");
 };
 
 export const Route = createFileRoute("/gdrive-auth")({
@@ -34,76 +41,44 @@ export function GDriveAuthPage() {
         prompt: "consent",
       });
 
-      sessionStorage.setItem("gdrive_redirect_attempted", "true");
-      await signInWithRedirect(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (!credential?.accessToken) {
+        throw new Error("لم يتم إرجاع رمز اتصال صالح من Google.");
+      }
+
+      const token = credential.accessToken;
+      setStatus("success");
+
+      // Post token back to the opener window
+      if (window.opener) {
+        window.opener.postMessage({ type: "GOOGLE_DRIVE_AUTH_SUCCESS", token }, "*");
+        // Give a brief moment for postMessage to complete, then close
+        setTimeout(() => {
+          window.close();
+        }, 1500);
+      } else {
+        localStorage.setItem("temp_gdrive_token", token);
+        setTimeout(() => {
+          window.close();
+        }, 1500);
+      }
     } catch (err) {
-      console.error("GDrive redirect trigger error:", err);
+      console.error("GDrive auth error:", err);
       const detail = (err as { message?: string }).message || String(err);
       setErrorMsg(detail);
       setStatus("error");
+
+      if (window.opener) {
+        window.opener.postMessage({ type: "GOOGLE_DRIVE_AUTH_FAILURE", error: detail }, "*");
+      }
     }
   };
 
   useEffect(() => {
     if (checkTriggeredRef.current) return;
     checkTriggeredRef.current = true;
-
-    const checkRedirectResult = async () => {
-      setStatus("authenticating");
-      try {
-        const app = getFirebaseApp();
-        const auth = getAuth(app);
-
-        // Check if we came back from a redirect callback
-        const result = await getRedirectResult(auth);
-        if (result) {
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          if (credential?.accessToken) {
-            const token = credential.accessToken;
-            setStatus("success");
-            sessionStorage.removeItem("gdrive_redirect_attempted");
-
-            // Post token back to the opener window
-            if (window.opener) {
-              window.opener.postMessage({ type: "GOOGLE_DRIVE_AUTH_SUCCESS", token }, "*");
-              // Give a brief moment for postMessage to complete, then close
-              setTimeout(() => {
-                window.close();
-              }, 1500);
-            } else {
-              localStorage.setItem("temp_gdrive_token", token);
-              setTimeout(() => {
-                window.close();
-              }, 1500);
-            }
-            return;
-          }
-        }
-
-        // If no redirect result, check if we've already tried redirecting in this session
-        const hasAttempted = sessionStorage.getItem("gdrive_redirect_attempted");
-        if (hasAttempted) {
-          // They came back but we got no result (cancelled, or reloaded manually)
-          setStatus("idle");
-          return;
-        }
-
-        // Otherwise auto-trigger the redirect
-        await startAuth();
-      } catch (err) {
-        console.error("GDrive redirect check error:", err);
-        sessionStorage.removeItem("gdrive_redirect_attempted");
-        const detail = (err as { message?: string }).message || String(err);
-        setErrorMsg(detail);
-        setStatus("error");
-
-        if (window.opener) {
-          window.opener.postMessage({ type: "GOOGLE_DRIVE_AUTH_FAILURE", error: detail }, "*");
-        }
-      }
-    };
-
-    checkRedirectResult();
+    setStatus("idle");
   }, []);
 
   return (
