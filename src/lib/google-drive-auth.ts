@@ -182,7 +182,10 @@ export function authenticateGoogleDrive(customClientId?: string): Promise<string
       // Security check: allow messages from the current parent origin or our default firebaseapp domain
       const allowedOrigins = [
         window.location.origin,
-        "https://gen-lang-client-0226596636.firebaseapp.com",
+        firebaseConfig.authDomain
+          ? `https://${firebaseConfig.authDomain}`
+          : "https://qadeyati-844c7.firebaseapp.com",
+        "https://gen-lang-client-0226596636.firebaseapp.com", // Keep backward compatibility
       ];
       if (!allowedOrigins.includes(event.origin)) return;
 

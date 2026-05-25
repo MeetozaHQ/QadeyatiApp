@@ -10,7 +10,7 @@ import firebaseConfig from "../../firebase-applet-config.json";
 const getFirebaseApp = () => {
   const config = {
     ...firebaseConfig,
-    authDomain: "gen-lang-client-0226596636.firebaseapp.com",
+    authDomain: firebaseConfig.authDomain || "qadeyati-844c7.firebaseapp.com",
   };
   const apps = getApps();
   const existing = apps.find((app) => app.name === "gdrive_auth_app");

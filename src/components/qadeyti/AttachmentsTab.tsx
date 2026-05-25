@@ -33,6 +33,7 @@ import {
   saveGoogleClientId,
   logoutGoogle,
 } from "@/lib/google-drive-auth";
+import firebaseConfig from "../../../firebase-applet-config.json";
 
 interface Attachment {
   id: string;
@@ -454,12 +455,12 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
               <div className="space-y-1 pl-1">
                 <p>1. افتح صفحة إعدادات الهوية لمشروع Firebase الخاص بك:</p>
                 <a
-                  href="https://console.firebase.google.com/u/0/project/gen-lang-client-0226596636/authentication/settings"
+                  href={`https://console.firebase.google.com/u/0/project/${firebaseConfig.projectId || "qadeyati-844c7"}/authentication/settings`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[var(--gold-soft)] underline hover:text-[var(--gold)] flex items-center gap-1 w-fit font-mono py-0.5 text-[10px]"
                 >
-                  <span>فتح إعدادات مشروع gen-lang-client-0226596636</span>
+                  <span>فتح إعدادات مشروع {firebaseConfig.projectId || "qadeyati-844c7"}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
                 <p className="mt-1">
