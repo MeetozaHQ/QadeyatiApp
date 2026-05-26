@@ -6,17 +6,28 @@ import { Logo } from "@/components/qadeyti/Logo";
 import { Cloud, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import firebaseConfig from "../../firebase-applet-config.json";
 
-// Initialize Firebase App lazily with dynamic authDomain override
-const getFirebaseApp = () => {
-  const config = {
-    ...firebaseConfig,
-    authDomain: firebaseConfig.authDomain || "qadeyati-844c7.firebaseapp.com",
-  };
-  const apps = getApps();
-  const existing = apps.find((app) => app.name === "gdrive_auth_app");
-  if (existing) return existing;
-  return initializeApp(config, "gdrive_auth_app");
-};
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "framework": null,
+  "buildCommand": "vite build",
+  "outputDirectory": "dist/client",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "dist/server/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/__/auth/:path*",
+      "destination": "https://qadeyati-844c7.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/((?!api/|assets/|favicon\\.png|logo\\.png|.*\\.[a-zA-Z0-9]+$).*)",
+      "destination": "/api/index"
+    }
+  ]
+}
 
 export const Route = createFileRoute("/gdrive-auth")({
   component: GDriveAuthPage,

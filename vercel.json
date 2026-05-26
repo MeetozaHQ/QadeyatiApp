@@ -12,7 +12,7 @@
   "rewrites": [
     {
       "source": "/__/auth/:path*",
-      "destination": "https://gen-lang-client-0226596636.firebaseapp.com/__/auth/:path*"
+      "destination": "https://qadeyati-844c7.firebaseapp.com/__/auth/:path*"
     },
     {
       "source": "/((?!api/|assets/|favicon\\.png|logo\\.png|.*\\.[a-zA-Z0-9]+$).*)",
