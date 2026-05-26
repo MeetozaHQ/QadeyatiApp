@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
-import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { Logo } from "@/components/qadeyti/Logo";
 import { Cloud, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
-import firebaseConfig from "../../firebase-applet-config.json";
+import { getFirebaseApp } from "../lib/google-drive-auth"; // استيراد الدالة الجاهزة مباشرة لمنع مشاكل التحليل
+
+export const Route = createFileRoute("/gdrive-auth")({
+  component: GDriveAuthPage,
+});
 
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",

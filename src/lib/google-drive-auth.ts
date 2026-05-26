@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import firebaseConfig from "../../firebase-applet-config.json";
 
 // Initialize Firebase App lazily to ensure robust startup and no side-effects on load
-const getFirebaseApp = () => {
+export const getFirebaseApp = () => {
   const isCustomDomain = typeof window !== "undefined" && 
     (window.location.hostname === "qadeyati.com" || window.location.hostname === "www.qadeyati.com");
   const finalAuthDomain = isCustomDomain ? window.location.hostname : (firebaseConfig.authDomain || "qadeyati-844c7.firebaseapp.com");
