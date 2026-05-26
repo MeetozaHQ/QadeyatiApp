@@ -569,6 +569,55 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
             </p>
           </div>
         )}
+
+        {/* Dynamic Activity Log right inside the container for immediate visual response */}
+        {showActivity && (
+          <div className="pt-4 border-t border-border/40 space-y-3 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <History className="h-4 w-4 text-[var(--gold-soft)]" />
+                سجل العمليات والنشاط الأخير:
+              </span>
+              <button
+                onClick={() => setShowActivity(false)}
+                className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
+            <ul className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+              {activity.length === 0 && (
+                <li className="rounded-xl border border-dashed border-border bg-black/20 p-4 text-center text-xs text-muted-foreground">
+                  لا يوجد نشاط بعد
+                </li>
+              )}
+              {activity.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex items-start gap-2 rounded-lg border border-border/40 bg-black/20 p-2.5 text-[11px]"
+                >
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--gold)]" />
+                  <div className="min-w-0 flex-1 text-right">
+                    <p className="text-foreground">
+                      <span className="text-[var(--gold-soft)] font-medium">{row.action}</span>
+                      {" : "}
+                      {row.file_name}
+                    </p>
+                    {row.details && (
+                      <p className="text-muted-foreground text-[10px] mt-0.5">{row.details}</p>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-muted-foreground text-[10px] font-sans">
+                    {new Date(row.created_at).toLocaleString("ar-EG", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Category picker for upload */}
