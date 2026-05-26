@@ -6,9 +6,13 @@ import firebaseConfig from "../../firebase-applet-config.json";
 
 // Initialize Firebase App lazily to ensure robust startup and no side-effects on load
 export const getFirebaseApp = () => {
-  const isCustomDomain = typeof window !== "undefined" && 
-    (window.location.hostname === "qadeyati.com" || window.location.hostname === "www.qadeyati.com");
-  const finalAuthDomain = isCustomDomain ? window.location.hostname : (firebaseConfig.authDomain || "qadeyati-844c7.firebaseapp.com");
+  const isCustomDomain =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "qadeyati.com" ||
+      window.location.hostname === "www.qadeyati.com");
+  const finalAuthDomain = isCustomDomain
+    ? window.location.hostname
+    : firebaseConfig.authDomain || "qadeyati-844c7.firebaseapp.com";
 
   const config = {
     ...firebaseConfig,
@@ -16,6 +20,8 @@ export const getFirebaseApp = () => {
   };
   return getApps().length === 0 ? initializeApp(config) : getApp();
 };
+
+let gdriveAccessToken: string | null = null;
 
 // Standard Client ID injected by AI Studio setup or configured in .env
 const DEFAULT_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
