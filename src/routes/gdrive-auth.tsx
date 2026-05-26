@@ -3,34 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { Logo } from "@/components/qadeyti/Logo";
 import { Cloud, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
-import { getFirebaseApp } from "../lib/google-drive-auth"; // استيراد الدالة الجاهزة مباشرة لمنع مشاكل التحليل
-
-export const Route = createFileRoute("/gdrive-auth")({
-  component: GDriveAuthPage,
-});
-
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true,
-  "framework": null,
-  "buildCommand": "vite build",
-  "outputDirectory": "dist/client",
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "dist/server/**"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/__/auth/:path*",
-      "destination": "https://qadeyati-844c7.firebaseapp.com/__/auth/:path*"
-    },
-    {
-      "source": "/((?!api/|assets/|favicon\\.png|logo\\.png|.*\\.[a-zA-Z0-9]+$).*)",
-      "destination": "/api/index"
-    }
-  ]
-}
+import { getFirebaseApp } from "../lib/google-drive-auth";
 
 export const Route = createFileRoute("/gdrive-auth")({
   component: GDriveAuthPage,
