@@ -242,11 +242,11 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
         const dot = file.name.lastIndexOf(".");
         const ext =
           dot >= 0
-              ? file.name
-                  .slice(dot)
-                  .toLowerCase()
-                  .replace(/[^a-z0-9.]/g, "")
-              : "";
+            ? file.name
+                .slice(dot)
+                .toLowerCase()
+                .replace(/[^a-z0-9.]/g, "")
+            : "";
         const safeBase =
           (dot >= 0 ? file.name.slice(0, dot) : file.name)
             .replace(/[^a-zA-Z0-9-_]+/g, "-")
@@ -398,8 +398,8 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
     <div className="space-y-4">
       {/* Google Drive Status Panel */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
-          <div className="space-y-1 text-right flex-1 min-w-0 w-full">
+        <div className="flex flex-col gap-4 w-full">
+          <div className="space-y-1 text-right w-full">
             <h3 className="font-sans text-base sm:text-lg font-bold text-foreground">
               إدارة ملفات ووثائق القضية
             </h3>
@@ -407,7 +407,7 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
               ارفع ملفات القضية أو قم بمزامنتها إلى سحاب Google Drive الخاص بك بضغطة زر.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 font-sans shrink-0 sm:justify-end w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 font-sans w-full pt-3 border-t border-border/40">
             <button
               onClick={() => {
                 setCustomClientId(getGoogleClientId());
@@ -491,12 +491,12 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
               <div className="space-y-1 pl-1">
                 <p>1. افتح صفحة إعدادات الهوية لمشروع Firebase الخاص بك:</p>
                 <a
-                  href={`https://console.firebase.google.com/u/0/project/${firebaseConfig.projectId || "qadeyti-844c7"}/authentication/settings`}
+                  href={`https://console.firebase.google.com/u/0/project/${firebaseConfig.projectId || "qadeyati-844c7"}/authentication/settings`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[var(--gold-soft)] underline hover:text-[var(--gold)] flex items-center gap-1 w-fit font-mono py-0.5 text-[10px]"
                 >
-                  <span>فتح إعدادات مشروع {firebaseConfig.projectId || "qadeyti-844c7"}</span>
+                  <span>فتح إعدادات مشروع {firebaseConfig.projectId || "qadeyati-844c7"}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
                 <p className="mt-1">
@@ -723,7 +723,7 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center gap-1.5 border-t border-border/50 pt-2.5">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2 border-t border-border/50 pt-2.5">
                   {/* Google Drive Kopierer */}
                   <button
                     onClick={() => saveToGoogleDrive(a)}
@@ -789,7 +789,7 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                   {/* Delete Button */}
                   <button
                     onClick={() => remove(a)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 bg-red-400/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-all cursor-pointer shrink-0 mr-auto"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 bg-red-400/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-all cursor-pointer shrink-0"
                     title="حذف"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
