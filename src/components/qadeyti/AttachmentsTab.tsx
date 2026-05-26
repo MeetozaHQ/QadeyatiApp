@@ -242,11 +242,11 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
         const dot = file.name.lastIndexOf(".");
         const ext =
           dot >= 0
-            ? file.name
-                .slice(dot)
-                .toLowerCase()
-                .replace(/[^a-z0-9.]/g, "")
-            : "";
+              ? file.name
+                  .slice(dot)
+                  .toLowerCase()
+                  .replace(/[^a-z0-9.]/g, "")
+              : "";
         const safeBase =
           (dot >= 0 ? file.name.slice(0, dot) : file.name)
             .replace(/[^a-zA-Z0-9-_]+/g, "-")
@@ -263,7 +263,14 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
           toast.error(`تعذّر رفع ${file.name}: ${upErr.message}`);
           setUploads((u) =>
             u.map((x) =>
-              x.key === uploadKey ? { ...x, status: "error", progress: 0, error: upErr.message } : x,
+              x.key === uploadKey
+                ? {
+                    ...x,
+                    status: "error",
+                    progress: 0,
+                    error: upErr.message,
+                  }
+                : x,
             ),
           );
           continue;
@@ -289,7 +296,14 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
           await supabase.storage.from(BUCKET).remove([path]);
           setUploads((u) =>
             u.map((x) =>
-              x.key === uploadKey ? { ...x, status: "error", progress: 0, error: dbErr.message } : x,
+              x.key === uploadKey
+                ? {
+                    ...x,
+                    status: "error",
+                    progress: 0,
+                    error: dbErr.message,
+                  }
+                : x,
             ),
           );
           continue;
@@ -300,9 +314,9 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
         setUploads((u) =>
           u.map((x) => (x.key === uploadKey ? { ...x, status: "done", progress: 100 } : x)),
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("[upload] unexpected exception", err);
-        const errMsg = err?.message || String(err);
+        const errMsg = (err as Error)?.message || String(err);
         toast.error(`خطأ غير متوقع أثناء الرفع: ${errMsg}`);
         setUploads((u) =>
           u.map((x) =>
@@ -384,16 +398,16 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
     <div className="space-y-4">
       {/* Google Drive Status Panel */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="space-y-1 text-right flex-1">
-            <h3 className="font-sans text-base font-bold text-foreground">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+          <div className="space-y-1 text-right flex-1 min-w-0 w-full">
+            <h3 className="font-sans text-base sm:text-lg font-bold text-foreground">
               إدارة ملفات ووثائق القضية
             </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               ارفع ملفات القضية أو قم بمزامنتها إلى سحاب Google Drive الخاص بك بضغطة زر.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 font-sans shrink-0">
+          <div className="flex flex-wrap items-center gap-2 font-sans shrink-0 sm:justify-end w-full sm:w-auto">
             <button
               onClick={() => {
                 setCustomClientId(getGoogleClientId());
@@ -477,12 +491,12 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
               <div className="space-y-1 pl-1">
                 <p>1. افتح صفحة إعدادات الهوية لمشروع Firebase الخاص بك:</p>
                 <a
-                  href={`https://console.firebase.google.com/u/0/project/${firebaseConfig.projectId || "qadeyati-844c7"}/authentication/settings`}
+                  href={`https://console.firebase.google.com/u/0/project/${firebaseConfig.projectId || "qadeyti-844c7"}/authentication/settings`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[var(--gold-soft)] underline hover:text-[var(--gold)] flex items-center gap-1 w-fit font-mono py-0.5 text-[10px]"
                 >
-                  <span>فتح إعدادات مشروع {firebaseConfig.projectId || "qadeyati-844c7"}</span>
+                  <span>فتح إعدادات مشروع {firebaseConfig.projectId || "qadeyti-844c7"}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
                 <p className="mt-1">
@@ -558,18 +572,18 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
       </div>
 
       {/* Category picker for upload */}
-      <div className="rounded-2xl border border-border bg-card p-3">
-        <p className="mb-2 text-xs text-muted-foreground">تصنيف الرفع:</p>
-        <div className="flex flex-wrap gap-2">
+      <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">تصنيف الرفع:</p>
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {FILE_CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setPendingCategory(cat)}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                "rounded-lg border px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs transition-colors duration-150 font-medium select-none cursor-pointer",
                 pendingCategory === cat
-                  ? "border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--gold-soft)]"
-                  : "border-border text-muted-foreground hover:border-[var(--gold)]/40",
+                  ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold-soft)] font-semibold"
+                  : "border-border text-muted-foreground hover:border-[var(--gold)]/30 hover:text-foreground",
               )}
             >
               {cat}
@@ -630,8 +644,8 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
               {u.status === "uploading" && (
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
                   <div
-                     className="h-full rounded-full bg-[var(--gold)] transition-all"
-                     style={{ width: `${u.progress}%` }}
+                    className="h-full rounded-full bg-[var(--gold)] transition-all"
+                    style={{ width: `${u.progress}%` }}
                   />
                 </div>
               )}
@@ -709,15 +723,15 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
+                <div className="mt-3 flex items-center gap-1.5 border-t border-border/50 pt-2.5">
                   {/* Google Drive Kopierer */}
                   <button
                     onClick={() => saveToGoogleDrive(a)}
                     className={cn(
-                      "flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-sans font-semibold transition-colors cursor-pointer border",
+                      "flex h-8 items-center gap-1 px-2.5 text-xs font-sans font-semibold transition-all cursor-pointer border rounded-lg select-none",
                       localStorage.getItem(`gdrive_saved_${a.id}`)
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/25"
-                        : "bg-blue-600/10 text-blue-400 border-blue-500/20 hover:bg-blue-600/20"
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                        : "bg-blue-600/10 text-blue-400 border-blue-500/20 hover:bg-blue-600/20",
                     )}
                     title={
                       localStorage.getItem(`gdrive_saved_${a.id}`)
@@ -736,19 +750,19 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                   {/* Preview Button */}
                   <button
                     onClick={() => openPreview(a)}
-                    className="flex items-center gap-1 rounded-lg border border-border bg-slate-950/40 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-900 transition-colors font-sans font-semibold cursor-pointer"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-slate-950/40 text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer shrink-0"
+                    title="معاينة"
                   >
                     <Eye className="h-3.5 w-3.5" />
-                    <span>معاينة</span>
                   </button>
 
                   {/* Download Button */}
                   <button
                     onClick={() => download(a)}
-                    className="flex items-center gap-1 rounded-lg border border-border bg-slate-950/40 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-900 transition-colors font-sans font-semibold cursor-pointer"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-slate-950/40 text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer shrink-0"
+                    title="تحميل"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    <span>تحميل</span>
                   </button>
 
                   {/* Rename (Edit) Button */}
@@ -757,28 +771,28 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                       setRenaming(a);
                       setRenameValue(a.file_name);
                     }}
-                    className="flex items-center gap-1 rounded-lg border border-border bg-slate-950/40 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-900 transition-colors font-sans font-semibold cursor-pointer"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-slate-950/40 text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer shrink-0"
+                    title="تعديل"
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    <span>تعديل</span>
                   </button>
 
                   {/* Move Button */}
                   <button
                     onClick={() => setMoving(a)}
-                    className="flex items-center gap-1 rounded-lg border border-border bg-slate-950/40 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-900 transition-colors font-sans font-semibold cursor-pointer"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-slate-950/40 text-slate-300 hover:text-white hover:bg-slate-900 transition-all cursor-pointer shrink-0"
+                    title="نقل"
                   >
                     <FolderInput className="h-3.5 w-3.5" />
-                    <span>نقل</span>
                   </button>
 
                   {/* Delete Button */}
                   <button
                     onClick={() => remove(a)}
-                    className="flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1.5 text-xs text-red-400 hover:bg-red-500/15 hover:border-red-500/30 transition-colors font-sans font-semibold cursor-pointer mr-auto"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 bg-red-400/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-all cursor-pointer shrink-0 mr-auto"
+                    title="حذف"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    <span>حذف</span>
                   </button>
                 </div>
               </li>
