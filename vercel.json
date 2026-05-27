@@ -16,7 +16,7 @@
     },
     {
       "source": "/((?!api/|assets/|favicon\\.png|logo\\.png|.*\\.[a-zA-Z0-9]+$).*)",
-      "destination": "/api/index"
+      "destination": "/api/index?__original_path=$1"
     }
   ]
 }

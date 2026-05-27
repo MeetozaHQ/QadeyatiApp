@@ -12,18 +12,49 @@ export default async function handler(req, res) {
     // 1. Determine URL (restoring original path in case of Vercel rewrites)
     const protocol = req.headers["x-forwarded-proto"] || "https";
     const host = req.headers.host;
-    const originalPath = req.headers["x-matched-path"] || req.url;
+    const base = `${protocol}://${host}`;
     
-    let url;
-    try {
-      const base = `${protocol}://${host}`;
-      const reqUrlParsed = new URL(req.url, base);
-      const originalPathParsed = new URL(originalPath, base);
-      reqUrlParsed.pathname = originalPathParsed.pathname;
-      url = reqUrlParsed.toString();
-    } catch (e) {
-      url = `${protocol}://${host}${originalPath}`;
+    // Parse the incoming rewritten URL
+    const reqUrlParsed = new URL(req.url, base);
+    
+    // Retrieve the original routing path using multiple bulletproof fallback layers
+    let originalPath = reqUrlParsed.searchParams.get("__original_path");
+    
+    if (originalPath === null) {
+      // Fallback A: parse from Vercel's route regex matches header
+      const routeMatches = req.headers["x-now-route-matches"];
+      if (routeMatches) {
+        const matches = new URLSearchParams(routeMatches);
+        const firstMatch = matches.get("1");
+        if (firstMatch !== null) {
+          originalPath = firstMatch;
+        }
+      }
     }
+    
+    if (originalPath === null) {
+      // Fallback B: parse from Vercel's matched path header
+      const matched = req.headers["x-matched-path"];
+      if (matched && matched !== "/api/index" && matched !== "/api/index.js") {
+        originalPath = matched;
+      }
+    }
+    
+    // Clean and normalize the pathname
+    let originalPathname = "/";
+    if (originalPath !== null && originalPath !== undefined) {
+      originalPathname = "/" + originalPath.replace(/^\//, "");
+    }
+    
+    // Reconstruct the perfect URL including query parameters
+    const ssrUrl = new URL(originalPathname, base);
+    reqUrlParsed.searchParams.forEach((val, key) => {
+      if (key !== "__original_path") {
+        ssrUrl.searchParams.append(key, val);
+      }
+    });
+    
+    const url = ssrUrl.toString();
 
     // 2. Build headers
     const headers = new Headers();
