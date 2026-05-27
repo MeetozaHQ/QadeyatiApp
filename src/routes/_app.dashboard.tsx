@@ -1,6 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Calendar, Briefcase, AlertCircle, Sparkles, ChevronLeft, Users, Shield, UserCheck, Plus, Clock } from "lucide-react";
+import {
+  Calendar,
+  Briefcase,
+  AlertCircle,
+  Sparkles,
+  ChevronLeft,
+  Users,
+  Shield,
+  UserCheck,
+  Plus,
+  Clock,
+  Trash,
+} from "lucide-react";
 import { StatCard } from "@/components/qadeyti/StatCard";
 import { DashboardAlerts } from "@/components/qadeyti/DashboardAlerts";
 import { StatusBadge } from "@/components/qadeyti/StatusBadge";
@@ -42,20 +54,13 @@ interface FirmLawyer {
 
 function Dashboard() {
   const { user } = useAuth();
-  const { plan, limits } = useTrial();
+  const { plan, limits, firmLawyers, addFirmLawyer, deleteFirmLawyer } = useTrial();
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [caseCount, setCaseCount] = useState(0);
   const [upcoming, setUpcoming] = useState<SessionRow[]>([]);
   const [overdueCount, setOverdueCount] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
   const [lawyerName, setLawyerName] = useState<string | null>(null);
-
-  // Enterprise details
-  const [firmLawyers, setFirmLawyers] = useState<FirmLawyer[]>([
-    { id: "1", name: "أ. نور الدين علي", role: "محامٍ شريك", status: "active", casesCount: 20, aiUsage: 34, avatarLetter: "ن" },
-    { id: "2", name: "أ. فاطمة الزهراء", role: "محامٍ استئناف", status: "active", casesCount: 15, aiUsage: 12, avatarLetter: "ف" },
-    { id: "3", name: "أ. أحمد الشاذلي", role: "محامٍ تحت التمرين", status: "active", casesCount: 12, aiUsage: 8, avatarLetter: "أ" }
-  ]);
 
   useEffect(() => {
     if (!user) return;
@@ -187,13 +192,17 @@ function Dashboard() {
           </div>
 
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            بصفتك مديراً للمكتب، يمكنك تتبع قضايا وجلسات جميع المحامين العاملين لديك واستهلاكهم للمستشار الذكي لحظياً:
+            بصفتك مديراً للمكتب، يمكنك تتبع قضايا وجلسات جميع المحامين العاملين لديك واستهلاكهم
+            للمستشار الذكي لحظياً:
           </p>
 
           {/* Members list */}
           <div className="space-y-2 pt-1">
             {firmLawyers.map((lawyer) => (
-              <div key={lawyer.id} className="flex items-center justify-between rounded-xl bg-[#0d121f] p-3 border border-slate-900">
+              <div
+                key={lawyer.id}
+                className="flex items-center justify-between rounded-xl bg-[#0d121f] p-3 border border-slate-900"
+              >
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-300">
                     {lawyer.avatarLetter}
@@ -203,13 +212,31 @@ function Dashboard() {
                     <p className="text-[9.5px] text-slate-500 leading-none mt-0.5">{lawyer.role}</p>
                   </div>
                 </div>
-                <div className="text-left space-y-1">
-                  <span className="block text-[10px] text-slate-300">
-                    قضايا: <span className="font-bold text-blue-400">{lawyer.casesCount}</span>
-                  </span>
-                  <span className="block text-[9px] text-slate-500 font-mono">
-                    ذكاء اصطناعي: <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٢٠٠٠</span>
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="text-left space-y-1">
+                    <span className="block text-[10px] text-slate-300">
+                      قضايا: <span className="font-bold text-blue-400">{lawyer.casesCount}</span>
+                    </span>
+                    <span className="block text-[9px] text-slate-500 font-sans">
+                      المساعد الذكي:{" "}
+                      <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٤٠٠</span>
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `هل أنت متأكد من إلغاء تنشيط وحذف المحامي (${lawyer.name}) من المكتب؟`,
+                        )
+                      ) {
+                        deleteFirmLawyer(lawyer.id);
+                      }
+                    }}
+                    className="p-1 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
+                    title="حذف المحامي"
+                  >
+                    <Trash className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -220,16 +247,7 @@ function Dashboard() {
               onClick={() => {
                 const name = prompt("أدخل اسم المحامي الجديد للانضمام إلى المكتب:");
                 if (name) {
-                  const newLawyer: FirmLawyer = {
-                    id: String(firmLawyers.length + 1),
-                    name: `أ. ${name}`,
-                    role: "محامٍ مشارك",
-                    status: "active",
-                    casesCount: 0,
-                    aiUsage: 0,
-                    avatarLetter: name[0]
-                  };
-                  setFirmLawyers([...firmLawyers, newLawyer]);
+                  addFirmLawyer(name, "محامٍ مشارك");
                 }
               }}
               className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-xs font-bold text-blue-400 hover:bg-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
@@ -238,7 +256,9 @@ function Dashboard() {
               <span>إضافة محامي للمكتب</span>
             </button>
             <button
-              onClick={() => alert("سيتم إرسال تقرير الأداء المالي والعملي لجميع المحامين بريدياً.")}
+              onClick={() =>
+                alert("سيتم إرسال تقرير الأداء المالي والعملي لجميع المحامين بريدياً.")
+              }
               className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 active:scale-[0.98] transition-all cursor-pointer"
             >
               <Clock className="h-3.5 w-3.5" />
