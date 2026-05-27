@@ -23,7 +23,8 @@ export default async function handler(req, res) {
     let ssrUrl;
     let originalPath = null;
     
-    if (originalUri) {
+    // Only trust the originalUri header if it does not point to our serverless handler endpoint paths itself
+    if (originalUri && !originalUri.includes("/api/index") && !originalUri.includes("/api/index.js")) {
       if (!originalUri.startsWith("/")) {
         originalUri = "/" + originalUri;
       }
