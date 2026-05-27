@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Wallet, Plus, Search, ChevronLeft, TrendingUp, AlertCircle } from "lucide-react";
+import { Wallet, Plus, Search, ChevronLeft, TrendingUp, AlertCircle, Lock } from "lucide-react";
 import { EmptyState } from "@/components/qadeyti/EmptyState";
 import { StatCard } from "@/components/qadeyti/StatCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useTrial } from "@/hooks/use-trial";
 import {
   PAYMENT_STATUSES,
   PAYMENT_STATUS_STYLES,
@@ -35,11 +36,13 @@ export const Route = createFileRoute("/_app/finance/")({
 });
 
 function FinancePage() {
+  const { limits } = useTrial();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!limits.hasFinancials) return;
     (async () => {
       const { data } = await supabase
         .from("payments")
@@ -90,6 +93,44 @@ function FinancePage() {
       return hay.includes(text);
     });
   }, [rows, q, filter]);
+
+  if (!limits.hasFinancials) {
+    return (
+      <div className="flex flex-col items-center justify-center py-14 px-4 text-center max-w-md mx-auto h-[70vh] space-y-6">
+        <div className="bg-[var(--gold)]/15 border border-[var(--gold)]/30 rounded-2xl p-4 text-[var(--gold-soft)] shadow-md shadow-amber-500/5">
+          <Lock className="h-10 w-10 animate-bounce" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            النظام المالي وإدارة الأتعاب
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            تتبع أتعاب القضايا والموكلين، نظّم الأقساط بطريقة ذكية، واحصل على إحصائيات مالية متكاملة
+            لمدفوعاتك ومستحقاتك المتأخرة.
+          </p>
+        </div>
+        <div className="w-full bg-slate-900/40 rounded-xl border border-border p-4 text-right space-y-2.5">
+          <p className="text-xs font-semibold text-[var(--gold-soft)] font-sans">
+            خصائص النظام المالي المتقدم:
+          </p>
+          <ul className="text-xs space-y-2 text-muted-foreground font-sans">
+            <li className="flex items-center gap-2">✓ إنشاء وتتبع الفواتير والأتعاب لكل قضية.</li>
+            <li className="flex items-center gap-2">
+              ✓ جدولة الأقساط وتلقي إشعارات بمتأخرات الدفع.
+            </li>
+            <li className="flex items-center gap-2">
+              ✓ تقارير تفصيلية لتتبع الأرباح والإيرادات الإجمالية للمكتب.
+            </li>
+          </ul>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          هذه الميزة متاحة فقط لـ{" "}
+          <b className="text-[var(--gold-soft)] font-sans">الباقة الفردية للـمُحامي</b> أو أعلى.
+          نشّط باقتك الآن لتتمكن من استخدامها.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

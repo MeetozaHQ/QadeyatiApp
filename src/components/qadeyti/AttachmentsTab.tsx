@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "./EmptyState";
@@ -74,7 +75,7 @@ type UploadState = {
 };
 
 export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: string }) {
-  const { isTrialExpired } = useTrial();
+  const { isTrialExpired, limits, plan } = useTrial();
   const [items, setItems] = useState<Attachment[] | null>(null);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [showActivity, setShowActivity] = useState(false);
@@ -107,6 +108,12 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
   const [authError, setAuthError] = useState<string | null>(null);
 
   const saveToGoogleDrive = async (a: Attachment) => {
+    if (!limits.hasGoogleDrive) {
+      toast.error(
+        "مزامنة حفظ ومشاركة الملفات سحابياً عبر Google Drive متوفرة فقط في الباقة الفردية أو أعلى. الرجاء ترقية الباقة لتمكينها.",
+      );
+      return;
+    }
     try {
       setUploadingToDrive(a.id);
 
@@ -397,7 +404,21 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
   return (
     <div className="space-y-4">
       {/* Google Drive Status Panel */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 relative overflow-hidden">
+        {!limits.hasGoogleDrive && (
+          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-4 text-center">
+            <div className="bg-[var(--gold)]/15 border border-[var(--gold)]/35 rounded-full p-2.5 text-[var(--gold-soft)] mb-2.5 shadow-md shadow-[var(--gold)]/5">
+              <Lock className="h-5 w-5 animate-pulse" />
+            </div>
+            <h4 className="font-sans text-sm font-bold text-white mb-1.5">
+              نسخ ومزامنة الوثائق سحابياً (Google Drive)
+            </h4>
+            <p className="text-[11px] sm:text-xs text-slate-300 max-w-sm leading-relaxed">
+              هذه الميزة لغير المشتركين مقفلة. قم بالترقية للـباقة الفردية أو باقة الشركات لتتمكن من
+              تصفح وتحميل ومزامنة وثائق قضاياك تلقائياً وبأمان على Google Drive.
+            </p>
+          </div>
+        )}
         <div className="flex flex-col gap-4 w-full">
           <div className="space-y-1 text-right w-full">
             <h3 className="font-sans text-base sm:text-lg font-bold text-foreground">
@@ -433,6 +454,10 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
             ) : (
               <button
                 onClick={async () => {
+                  if (!limits.hasGoogleDrive) {
+                    toast.error("ميزة ربط Google Drive متوفرة فقط في الباقة الفردية فما فوق.");
+                    return;
+                  }
                   toast.loading("جاري فتح نافذة الاتصال بـ Google...", { id: "google-auth" });
                   try {
                     const token = await authenticateGoogleDrive();

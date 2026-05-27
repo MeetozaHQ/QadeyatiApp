@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { PremiumButton } from "@/components/qadeyti/PremiumButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial } from "@/hooks/use-trial";
 import { computeStatus } from "@/lib/finance-constants";
 
 export const Route = createFileRoute("/_app/finance/new")({
@@ -16,6 +17,7 @@ type CaseOpt = { id: string; title: string; client_name: string | null };
 function NewPaymentPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { limits } = useTrial();
   const [cases, setCases] = useState<CaseOpt[]>([]);
   const [caseId, setCaseId] = useState<string>("");
   const [clientName, setClientName] = useState("");
@@ -27,13 +29,14 @@ function NewPaymentPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!limits.hasFinancials) return;
     supabase
       .from("cases")
       .select("id,title,client_name")
       .is("archived_at", null)
       .order("updated_at", { ascending: false })
       .then(({ data }) => setCases((data as CaseOpt[]) ?? []));
-  }, []);
+  }, [limits.hasFinancials]);
 
   const onPickCase = (id: string) => {
     setCaseId(id);
@@ -72,6 +75,31 @@ function NewPaymentPage() {
     }
     navigate({ to: "/finance/$paymentId", params: { paymentId: data.id } });
   };
+
+  if (!limits.hasFinancials) {
+    return (
+      <div className="flex flex-col items-center justify-center py-14 px-4 text-center max-w-md mx-auto h-[70vh] space-y-6">
+        <div className="bg-[var(--gold)]/15 border border-[var(--gold)]/30 rounded-2xl p-4 text-[var(--gold-soft)] shadow-md">
+          <Lock className="h-10 w-10 animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            الوصول للميزات المالية مقيد
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed font-sans">
+            إضافة الدفعات المالية وتتبع مستحقات الموكلين هي ميزة مخصصة لمشتركي الباقة الفردية أو
+            المكاتب القانونية.
+          </p>
+        </div>
+        <Link
+          to="/finance"
+          className="rounded-xl border border-border bg-slate-900/40 px-5 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-semibold"
+        >
+          العودة لوحة التحكم المالي
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

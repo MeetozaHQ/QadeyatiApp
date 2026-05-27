@@ -1,11 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, Plus, Trash2, Check, Printer, MessageCircle, Pencil } from "lucide-react";
+import {
+  ArrowRight,
+  Plus,
+  Trash2,
+  Check,
+  Printer,
+  MessageCircle,
+  Pencil,
+  Lock,
+} from "lucide-react";
 import { PremiumButton } from "@/components/qadeyti/PremiumButton";
 import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { EmptyState } from "@/components/qadeyti/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial } from "@/hooks/use-trial";
 import {
   PAYMENT_STATUS_STYLES,
   computeStatus,
@@ -44,6 +54,7 @@ function PaymentDetailPage() {
   const { paymentId } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { limits } = useTrial();
   const [payment, setPayment] = useState<Payment | null>(null);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -53,6 +64,7 @@ function PaymentDetailPage() {
   const [showReceipt, setShowReceipt] = useState(false);
 
   const load = useCallback(async () => {
+    if (!limits.hasFinancials) return;
     const { data: p } = await supabase
       .from("payments")
       .select("*,cases(title)")
@@ -144,6 +156,31 @@ function PaymentDetailPage() {
     await supabase.from("payments").delete().eq("id", payment.id);
     navigate({ to: "/finance" });
   };
+
+  if (!limits.hasFinancials) {
+    return (
+      <div className="flex flex-col items-center justify-center py-14 px-4 text-center max-w-md mx-auto h-[70vh] space-y-6">
+        <div className="bg-[var(--gold)]/15 border border-[var(--gold)]/30 rounded-2xl p-4 text-[var(--gold-soft)] shadow-md">
+          <Lock className="h-10 w-10 animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            الوصول للميزات المالية مقيد
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed font-sans">
+            إضافة الدفعات المالية وتتبع مستحقات الموكلين هي ميزة مخصصة لمشتركي الباقة الفردية أو
+            المكاتب القانونية.
+          </p>
+        </div>
+        <Link
+          to="/finance"
+          className="rounded-xl border border-border bg-slate-900/40 px-5 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-semibold font-sans"
+        >
+          العودة لوحة التحكم المالي
+        </Link>
+      </div>
+    );
+  }
 
   if (!payment) {
     return <p className="text-center text-sm text-muted-foreground">جاري التحميل...</p>;
