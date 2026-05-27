@@ -159,6 +159,11 @@ function SupabaseSetupAlert() {
 }
 
 function NotFoundComponent() {
+  const router = useRouter();
+  const currentPath = router.state.location.pathname;
+  const isServer = typeof window === "undefined";
+  const browserUrl = !isServer ? window.location.href : "Server SSR";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -167,6 +172,11 @@ function NotFoundComponent() {
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
+        <div className="mt-4 p-3 bg-muted rounded text-left font-mono text-xs">
+          <div>Router Path: <span className="text-amber-500 font-bold">{currentPath}</span></div>
+          <div>Location URL: <span className="text-blue-500">{browserUrl}</span></div>
+          <div>Context: <span className="text-emerald-500">{isServer ? "SSR (Server-Side)" : "Hydrated Client"}</span></div>
+        </div>
         <div className="mt-6">
           <Link
             to="/"

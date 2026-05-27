@@ -17,34 +17,56 @@ export default async function handler(req, res) {
     // Parse the incoming rewritten request URL
     const reqUrlParsed = new URL(req.url, base);
     
-    // Retrieve the original routing path using multiple fallback layers
-    let originalPath = reqUrlParsed.searchParams.get("__original_path");
+    // Get the original request URI (which contains/preserves the exact pathname and queries)
+    let originalUri = req.headers["x-rewrite-url"] || req.headers["x-original-url"];
     
-    if (originalPath === null) {
-      // Fallcamp A: parse from Vercel's route regex matches header
-      const routeMatches = req.headers["x-now-route-matches"];
-      if (routeMatches) {
-        const matches = new URLSearchParams(routeMatches);
-        const firstMatch = matches.get("1");
-        if (firstMatch !== null) {
-          originalPath = firstMatch;
+    let ssrUrl;
+    let originalPath = null;
+    
+    if (originalUri) {
+      if (!originalUri.startsWith("/")) {
+        originalUri = "/" + originalUri;
+      }
+      ssrUrl = new URL(originalUri, base);
+    } else {
+      // Retrieve the original routing path using multiple fallback layers
+      originalPath = reqUrlParsed.searchParams.get("__original_path");
+      
+      if (originalPath === null) {
+        // Fallcamp A: parse from Vercel's route regex matches header
+        const routeMatches = req.headers["x-now-route-matches"];
+        if (routeMatches) {
+          const matches = new URLSearchParams(routeMatches);
+          const firstMatch = matches.get("1");
+          if (firstMatch !== null) {
+            originalPath = firstMatch;
+          }
         }
       }
-    }
-    
-    if (originalPath === null) {
-      // Fallcamp B: parse from Vercel's matched path header
-      const matched = req.headers["x-matched-path"];
-      if (matched && matched !== "/api/index" && matched !== "/api/index.js") {
-        originalPath = matched;
+      
+      if (originalPath === null) {
+        // Fallcamp B: parse from Vercel's matched path header
+        const matched = req.headers["x-matched-path"];
+        if (matched && matched !== "/api/index" && matched !== "/api/index.js") {
+          originalPath = matched;
+        }
       }
+      
+      // Clean and normalize the pathname (ensure there is exactly one leading slash)
+      let originalPathname = "/";
+      if (originalPath !== null && originalPath !== undefined) {
+        originalPathname = "/" + originalPath.replace(/^\//, "");
+      }
+      
+      ssrUrl = new URL(originalPathname, base);
+      reqUrlParsed.searchParams.forEach((val, key) => {
+        if (key !== "__original_path") {
+          ssrUrl.searchParams.append(key, val);
+        }
+      });
     }
     
-    // Clean and normalize the pathname (ensure there is exactly one leading slash)
-    let originalPathname = "/";
-    if (originalPath !== null && originalPath !== undefined) {
-      originalPathname = "/" + originalPath.replace(/^\//, "");
-    }
+    const originalPathname = ssrUrl.pathname;
 
     // Add diagnostics endpoint to dynamically inspect route forwarding of headers to the custom server
     if (req.url.includes("/api/debug-routes")) {
@@ -53,21 +75,15 @@ export default async function handler(req, res) {
       res.end(JSON.stringify({
         url: req.url,
         headers: req.headers,
+        originalUri,
         originalPath,
         originalPathname,
         parsedURL: reqUrlParsed.toString(),
-        base
+        base,
+        ssrUrl: ssrUrl.toString()
       }, null, 2));
       return;
     }
-    
-    // Reconstruct the perfect URL including query parameters
-    const ssrUrl = new URL(originalPathname, base);
-    reqUrlParsed.searchParams.forEach((val, key) => {
-      if (key !== "__original_path") {
-        ssrUrl.searchParams.append(key, val);
-      }
-    });
     
     const url = ssrUrl.toString();
 
