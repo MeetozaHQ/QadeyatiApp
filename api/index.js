@@ -9,10 +9,21 @@ export const config = {
 
 export default async function handler(req, res) {
   try {
-    // 1. Determine URL
+    // 1. Determine URL (restoring original path in case of Vercel rewrites)
     const protocol = req.headers["x-forwarded-proto"] || "https";
     const host = req.headers.host;
-    const url = `${protocol}://${host}${req.url}`;
+    const originalPath = req.headers["x-matched-path"] || req.url;
+    
+    let url;
+    try {
+      const base = `${protocol}://${host}`;
+      const reqUrlParsed = new URL(req.url, base);
+      const originalPathParsed = new URL(originalPath, base);
+      reqUrlParsed.pathname = originalPathParsed.pathname;
+      url = reqUrlParsed.toString();
+    } catch (e) {
+      url = `${protocol}://${host}${originalPath}`;
+    }
 
     // 2. Build headers
     const headers = new Headers();
