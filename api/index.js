@@ -45,6 +45,21 @@ export default async function handler(req, res) {
     if (originalPath !== null && originalPath !== undefined) {
       originalPathname = "/" + originalPath.replace(/^\//, "");
     }
+
+    // Add debug endpoint
+    if (req.url.includes("/api/debug-routes")) {
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({
+        url: req.url,
+        headers: req.headers,
+        originalPath,
+        originalPathname,
+        parsedURL: reqUrlParsed.toString(),
+        base
+      }, null, 2));
+      return;
+    }
     
     // Reconstruct the perfect URL including query parameters
     const ssrUrl = new URL(originalPathname, base);
@@ -58,8 +73,21 @@ export default async function handler(req, res) {
 
     // 2. Build headers
     const headers = new Headers();
+    const headersToSkip = new Set([
+      "x-matched-path",
+      "x-vercel-matched-path",
+      "x-now-route-matches",
+      "x-now-route-matches-all",
+      "x-rewrite-url",
+      "x-original-url",
+    ]);
+
     for (const [key, value] of Object.entries(req.headers)) {
       if (value !== undefined) {
+        const lowerKey = key.toLowerCase();
+        if (headersToSkip.has(lowerKey) || lowerKey.startsWith("x-now-") || lowerKey.startsWith("x-vercel-")) {
+          continue;
+        }
         if (Array.isArray(value)) {
           for (const val of value) {
             headers.append(key, val);
@@ -69,6 +97,10 @@ export default async function handler(req, res) {
         }
       }
     }
+
+    // Explicitly set/normalize routing headers for H3 / Vinxi underlying layer
+    headers.set("x-forwarded-path", originalPathname);
+    headers.set("x-forwarded-uri", originalPathname);
 
     // 3. Prepare body if applicable (since bodyParser is disabled, we read the stream)
     let body = undefined;
