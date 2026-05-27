@@ -96,7 +96,9 @@ function Dashboard() {
       .then(({ data }) => {
         let list = (data as CaseRow[]) ?? [];
         if (simulatedLawyerId !== "owner") {
-          list = list.filter((c) => localStorage.getItem(`case_lawyer_${c.id}`) === simulatedLawyerId);
+          list = list.filter(
+            (c) => localStorage.getItem(`case_lawyer_${c.id}`) === simulatedLawyerId,
+          );
         }
         setCases(list.slice(0, 5));
         setCaseCount(list.length);
@@ -124,10 +126,12 @@ function Dashboard() {
           s.case_court = c?.court_name ?? null;
         });
       }
-      
+
       // Filter sessions based on case assignment
       if (simulatedLawyerId !== "owner") {
-        list = list.filter((s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId);
+        list = list.filter(
+          (s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId,
+        );
       }
       setUpcoming(list.slice(0, 5));
     })();
@@ -141,7 +145,9 @@ function Dashboard() {
       .then(({ data }) => {
         let list = data ?? [];
         if (simulatedLawyerId !== "owner") {
-          list = list.filter((s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId);
+          list = list.filter(
+            (s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId,
+          );
         }
         setTodayCount(list.length);
       });
@@ -161,10 +167,10 @@ function Dashboard() {
   const handleAddNewLawyerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLawyerName.trim()) return;
-    
+
     const emailToSet = newLawyerEmail.trim() || `${Date.now()}@qadeyti.eg`;
     addFirmLawyer(newLawyerName.trim(), emailToSet, newLawyerRole);
-    
+
     // Reset states
     setNewLawyerName("");
     setNewLawyerEmail("");
@@ -172,7 +178,9 @@ function Dashboard() {
     setShowAddLawyerModal(false);
 
     // Show temporary mock toast
-    setToastMessage(`📨 تم إضافة المحامي بنجاح وإرسال بريد تأكيد وتعيين كلمة المرور للمحامي: ${newLawyerName}`);
+    setToastMessage(
+      `📨 تم إضافة المحامي بنجاح وإرسال بريد تأكيد وتعيين كلمة المرور للمحامي: ${newLawyerName}`,
+    );
     setTimeout(() => setToastMessage(null), 5500);
   };
 
@@ -193,16 +201,18 @@ function Dashboard() {
         <h1 className="font-display text-2xl font-bold text-foreground">
           {simulatedLawyerId !== "owner"
             ? firmLawyers.find((l) => l.id === simulatedLawyerId)?.name
-            : (lawyerName
+            : lawyerName
               ? `أستاذ ${lawyerName.split(" ")[0]}`
-              : (user?.email?.split("@")[0] ?? "محامي"))}
+              : (user?.email?.split("@")[0] ?? "محامي")}
         </h1>
       </section>
 
       {/* Subscription Status or Active Package Info Badge */}
       <section className="rounded-2xl border border-slate-800 bg-[#090C15]/40 p-3.5 flex items-center justify-between">
         <div className="text-right">
-          <p className="text-[10px] text-slate-500 uppercase font-mono">الباقة المفعّلة حالياً للمكتب</p>
+          <p className="text-[10px] text-slate-500 uppercase font-mono">
+            الباقة المفعّلة حالياً للمكتب
+          </p>
           <span className="text-xs font-bold text-[var(--gold)]">{limits.label}</span>
         </div>
         <div className="flex items-center gap-1.5 rounded-lg bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold text-orange-400">
@@ -232,7 +242,7 @@ function Dashboard() {
         ) : (
           <StatCard
             label="مستشارك الذكي"
-            value={`${firmLawyers.find(l => l.id === simulatedLawyerId)?.aiUsage ?? 0}/٤٠٠`}
+            value={`${firmLawyers.find((l) => l.id === simulatedLawyerId)?.aiUsage ?? 0}/٤٠٠`}
             icon={<Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />}
           />
         )}
@@ -259,7 +269,8 @@ function Dashboard() {
 
           <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
             بصفتك مديراً للمكتب، يمكنك تتبع قضايا وجلسات جميع المحامين العاملين لديك واستهلاكهم
-            للمستشار الذكي لحظياً، كما يمكنك تجربة ودخول النظام بصلاحيات أي محامٍ لتجربة واختبار الواجهات:
+            للمستشار الذكي لحظياً، كما يمكنك تجربة ودخول النظام بصلاحيات أي محامٍ لتجربة واختبار
+            الواجهات:
           </p>
 
           {/* Members list */}
@@ -276,7 +287,9 @@ function Dashboard() {
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-100">{lawyer.name}</h4>
-                      <p className="text-[9px] text-slate-500 leading-none mt-0.5 font-mono">{lawyer.email}</p>
+                      <p className="text-[9px] text-slate-500 leading-none mt-0.5 font-mono">
+                        {lawyer.email}
+                      </p>
                       <p className="text-[9.5px] text-blue-400 leading-none mt-1">{lawyer.role}</p>
                     </div>
                   </div>
@@ -326,27 +339,206 @@ function Dashboard() {
 
           <div className="grid grid-cols-2 gap-2 pt-1 font-sans">
             <button
-              onClick={() => setShowAddLawyerModal(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-xs font-bold text-blue-400 hover:bg-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
+              onClick={() => {
+                setShowAddLawyerModal(true);
+                setShowReportModal(false);
+              }}
+              className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold active:scale-[0.98] transition-all cursor-pointer ${
+                showAddLawyerModal
+                  ? "bg-blue-500 text-white border border-blue-400"
+                  : "bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
+              }`}
             >
               <Plus className="h-3.5 w-3.5" />
               <span>إضافة محامي للمكتب</span>
             </button>
             <button
-              onClick={() => setShowReportModal(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 active:scale-[0.98] transition-all cursor-pointer"
+              onClick={() => {
+                setShowReportModal(true);
+                setShowAddLawyerModal(false);
+              }}
+              className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
+                showReportModal
+                  ? "bg-amber-500 text-black border border-amber-400"
+                  : "bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800"
+              }`}
             >
               <Clock className="h-3.5 w-3.5" />
               <span>تقارير النشاط</span>
             </button>
           </div>
+
+          {/* Inline Add Lawyer Card inside the panel */}
+          {showAddLawyerModal && (
+            <div className="rounded-2xl border border-blue-500/30 bg-[#090e18] p-4 space-y-3.5 mt-2 animate-in slide-in-from-top-3 duration-200">
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <div className="flex items-center gap-2 text-blue-400">
+                  <Plus className="h-4 w-4" />
+                  <h3 className="font-bold text-[11px] text-white">
+                    إضافة محامٍ جديد لطاقَم المكتب
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddLawyerModal(false)}
+                  className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={handleAddNewLawyerSubmit}
+                className="space-y-3.5 font-sans text-right"
+              >
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold text-slate-300 block">
+                    اسم المحامي (مثال: أ. محمد العشري):
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newLawyerName}
+                    onChange={(e) => setNewLawyerName(e.target.value)}
+                    placeholder="الاسم الثلاثي واللقب للمحامي"
+                    className="text-right w-full rounded-xl border border-slate-800 bg-[#06080d] px-3 py-2 text-xs text-white outline-none focus:border-blue-500 font-sans"
+                  />
+                </div>
+
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold text-slate-300 block">
+                    البريد الإلكتروني الخاص به (لتسجيل الدخول):
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={newLawyerEmail}
+                    onChange={(e) => setNewLawyerEmail(e.target.value)}
+                    placeholder="work@lawfirm.eg"
+                    className="w-full rounded-xl border border-slate-800 bg-[#06080d] px-3 py-2 text-xs text-white outline-none focus:border-blue-500 font-mono text-left"
+                    dir="ltr"
+                  />
+                  <span className="text-[9px] text-slate-500 leading-tight block mt-0.5 font-sans">
+                    * سنقوم بتوليد الحساب والـ login الخاص بالمحامي فوراً للتجريب والمحاكاة.
+                  </span>
+                </div>
+
+                <div className="space-y-1 text-right font-sans">
+                  <label className="text-[10px] font-bold text-slate-300 block">
+                    الدور الفني للمحامي بالمكتب:
+                  </label>
+                  <select
+                    value={newLawyerRole}
+                    onChange={(e) => setNewLawyerRole(e.target.value)}
+                    className="w-full rounded-xl border border-slate-800 bg-[#06080d] px-3 py-2 text-xs text-[#F5F1E8] outline-none focus:border-blue-500 font-sans cursor-pointer text-right"
+                  >
+                    <option value="محامٍ شريك">محامٍ شريك (Partner)</option>
+                    <option value="محامٍ استئناف">محامٍ استئناف (Appellate Lawyer)</option>
+                    <option value="محامٍ قضائي">محامٍ قضائي (Litigation specialist)</option>
+                    <option value="محامٍ تحت التمرين">محامٍ تحت التمرين (Trainee)</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-xl bg-blue-500 hover:bg-blue-600 py-2.5 text-xs font-bold text-white transition-all cursor-pointer font-sans"
+                  >
+                    حفظ وإرسال دعوة التفعيل 📨
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddLawyerModal(false)}
+                    className="rounded-xl bg-slate-900 border border-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Inline Activity Reports Card inside the panel */}
+          {showReportModal && (
+            <div className="rounded-2xl border border-amber-500/30 bg-[#090e18] p-4 space-y-3.5 mt-2 animate-in slide-in-from-top-3 duration-200">
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <div className="flex items-center gap-2 text-amber-500">
+                  <Clock className="h-4 w-4" />
+                  <h3 className="font-bold text-[11px] text-white">إصدار تقارير النشاط والأداء</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 font-sans text-right">
+                <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-2.5 flex gap-2 text-right">
+                  <Lock className="h-3.5 w-3.5 text-amber-505 shrink-0 mt-0.5" />
+                  <p className="text-[9.5px] text-slate-300 leading-normal text-right">
+                    <strong>نظام الحماية والسرية التامّة 🔒:</strong> البيانات المالية والإيرادات هي
+                    أسرار خاصة بصاحب المكتب. لذلك لا تشمل التقارير المرسلة للمحامين أي أرقام مالية،
+                    بل أداءً عملياً فقط.
+                  </p>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReportModal(false);
+                      setToastMessage(
+                        "✓ تم توليد تقارير الأداء العملي وإرسالها بنجاح إلى إيميلات جميع المحامين فرداً فرداً، مؤمّنة بالكامل وبدون أي أرقام مالية للمكتب.",
+                      );
+                      setTimeout(() => setToastMessage(null), 5500);
+                    }}
+                    className="w-full rounded-xl bg-[#06080d] border border-slate-800 hover:bg-slate-800 text-slate-100 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer"
+                  >
+                    <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-blue-400 text-right">
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      ١. إرسال تقارير الأداء العملي للمحامين العاملين
+                    </span>
+                    <span className="text-[9px] text-slate-400 leading-normal text-right">
+                      يولد تقريراً تخصصياً كلاً بمحاميه وقضاياه وجلساته مرسلاً لإيميلهم (بدون أرقام
+                      مالية).
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReportModal(false);
+                      setToastMessage(
+                        "✓ تم توليد التقرير المالي والإداري الشامل للمكتب والشركاء بنجاح وإرساله حصرياً إلى بريدك المسجل: meetozacoin@gmail.com",
+                      );
+                      setTimeout(() => setToastMessage(null), 5500);
+                    }}
+                    className="w-full rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-300 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer"
+                  >
+                    <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-amber-400 text-right">
+                      <Shield className="h-3.5 w-3.5 shrink-0" />
+                      ٢. طلب التقرير المالي والعملي الشامل للمكتب
+                    </span>
+                    <span className="text-[9px] text-blue-300 leading-normal text-right">
+                      شيت اكسل تفصيلي شامل للإيرادات وتوزيع العمل يرسل لمدير المكتب وصاحب العمل فقط.
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
       {/* Next session view */}
       {nextSession && (
         <section className="space-y-3">
-          <h2 className="font-display text-base font-semibold text-foreground text-right">الجلسة القادمة</h2>
+          <h2 className="font-display text-base font-semibold text-foreground text-right">
+            الجلسة القادمة
+          </h2>
           <Link
             to="/cases/$caseId"
             params={{ caseId: nextSession.case_id }}
@@ -432,142 +624,6 @@ function Dashboard() {
           </span>
         </Link>
       </section>
-
-      {/* MODAL 1: Polished "Add Lawyer" Overlay Dialog */}
-      {showAddLawyerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl border border-slate-800 bg-[#0c101a] p-5 space-y-4 text-right shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-900 pb-3">
-              <div className="flex items-center gap-2 font-sans">
-                <Users className="h-5 w-5 text-blue-400" />
-                <h3 className="font-semibold text-sm text-white">إضافة محامٍ جديد لطاقَم المكتب</h3>
-              </div>
-              <button
-                onClick={() => setShowAddLawyerModal(false)}
-                className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddNewLawyerSubmit} className="space-y-4 font-sans">
-              <div className="space-y-1.5 text-right">
-                <label className="text-[11px] font-bold text-slate-300">اسم المحامي (مثال: أ. محمد العشري):</label>
-                <input
-                  type="text"
-                  required
-                  value={newLawyerName}
-                  onChange={(e) => setNewLawyerName(e.target.value)}
-                  placeholder="الاسم الثلاثي للمحامي"
-                  className="text-right w-full rounded-xl border border-slate-805 bg-[#080b12] px-3.5 py-2 text-xs text-white outline-none focus:border-blue-500 font-sans"
-                />
-              </div>
-
-              <div className="space-y-1.5 text-right">
-                <label className="text-[11px] font-bold text-slate-300">البريد الإلكتروني الخاص به (لتسجيل حسابه):</label>
-                <input
-                  type="email"
-                  required
-                  value={newLawyerEmail}
-                  onChange={(e) => setNewLawyerEmail(e.target.value)}
-                  placeholder="work@lawfirm.eg"
-                  className="w-full rounded-xl border border-slate-805 bg-[#080b12] px-3.5 py-2 text-xs text-white outline-none focus:border-blue-500 font-mono text-left"
-                  dir="ltr"
-                />
-                <span className="text-[10px] text-slate-500 leading-tight block font-sans">
-                  * سيرسل التطبيق دعوة تنشيط وتعيين كلمة المرور والlogin الخاص به فوراً للتجريب.
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-right font-sans">
-                <label className="text-[11px] font-bold text-slate-300">الدور الفني للمحامي بالمكتب:</label>
-                <select
-                  value={newLawyerRole}
-                  onChange={(e) => setNewLawyerRole(e.target.value)}
-                  className="w-full rounded-xl border border-slate-805 bg-[#080b12] px-3.5 py-2 text-xs text-white outline-none focus:border-blue-500 font-sans cursor-pointer text-right"
-                >
-                  <option value="محامٍ شريك">محامٍ شريك (Partner)</option>
-                  <option value="محامٍ استئناف">محامٍ استئناف (Appellate Lawyer)</option>
-                  <option value="محامٍ قضائي">محامٍ قضائي (Litigation specialist)</option>
-                  <option value="محامٍ تحت التمرين">محامٍ تحت التمرين (Trainee)</option>
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-blue-500 hover:bg-blue-600 py-2.5 text-xs font-bold text-white transition-all cursor-pointer font-sans"
-              >
-                حفظ وإرسال دعوة التفعيل الإلكترونية
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: Confidential "Activity Reports" Menu Dialog */}
-      {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl border border-slate-800 bg-[#0c101a] p-5 space-y-4 text-right shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-900 pb-3">
-              <div className="flex items-center gap-2 font-sans">
-                <Clock className="h-5 w-5 text-amber-500" />
-                <h3 className="font-semibold text-sm text-white font-sans">إصدار تقارير النشاط والأداء</h3>
-              </div>
-              <button
-                onClick={() => setShowReportModal(false)}
-                className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3 font-sans">
-              <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-3 flex gap-2 text-right">
-                <Lock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-slate-300 leading-relaxed text-right">
-                  <strong>نظام الحماية والسرية التامّة 🔒:</strong> البيانات المالية والإيرادات هي أسرار خاصة بصاحب المكتب. لذلك لا تشمل التقارير المرسلة للمحامين أي أرقام مالية، بل أداءً عملياً فقط.
-                </p>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <button
-                  onClick={() => {
-                    setShowReportModal(false);
-                    setToastMessage("✓ تم توليد تقارير الأداء العملي وإرسالها بنجاح إلى إيميلات جميع المحامين فرداً فرداً، مؤمّنة بالكامل وبدون أي أرقام مالية للمكتب.");
-                    setTimeout(() => setToastMessage(null), 5500);
-                  }}
-                  className="w-full rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-100 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer"
-                >
-                  <span className="font-bold text-[11px] flex items-center gap-1.5 text-blue-400 text-right">
-                    <Mail className="h-3.5 w-3.5" />
-                    ١. إرسال تقارير الأداء العملي للمحامين العاملين
-                  </span>
-                  <span className="text-[9.5px] text-slate-400 leading-normal text-right">
-                    يولد تقريراً تخصصياً كلاً بمحاميه وقضاياه وجلساته مرسلاً لإيميلهم (بدون أرقام مالية).
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowReportModal(false);
-                    setToastMessage("✓ تم توليد التقرير المالي والإداري الشامل للمكتب والشركاء بنجاح وإرساله حصرياً إلى بريدك المسجل: meetozacoin@gmail.com");
-                    setTimeout(() => setToastMessage(null), 5500);
-                  }}
-                  className="w-full rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-300 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer"
-                >
-                  <span className="font-bold text-[11px] flex items-center gap-1.5 text-amber-400 text-right">
-                    <Shield className="h-3.5 w-3.5" />
-                    ٢. طلب التقرير المالي والعملي الشامل للمكتب
-                  </span>
-                  <span className="text-[9.5px] text-blue-300 leading-none text-right">
-                    شيت اكسل تفصيلي شامل للإيرادات وتوزيع العمل يرسل لمدير المكتب وصاحب العمل فقط.
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -106,15 +106,44 @@ export const DEFAULT_FIRM_LAWYERS: FirmLawyer[] = [
   },
 ];
 
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch (e) {
+      console.warn(`[SafeStorage] Failed to read ${key}:`, e);
+    }
+    return null;
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (e) {
+      console.warn(`[SafeStorage] Failed to set ${key}:`, e);
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {
+      console.warn(`[SafeStorage] Failed to remove ${key}:`, e);
+    }
+  },
+};
+
 // In-Memory Global Subscription Hub to prevent any disappearing state lag across pages
 let globalFirmLawyers: FirmLawyer[] | null = null;
 const globalListeners = new Set<(lawyers: FirmLawyer[]) => void>();
 
 function updateGlobalLawyers(next: FirmLawyer[]) {
   globalFirmLawyers = next;
-  if (typeof window !== "undefined") {
-    localStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(next));
-  }
+  safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(next));
   globalListeners.forEach((listener) => {
     try {
       listener(next);
@@ -127,104 +156,94 @@ function updateGlobalLawyers(next: FirmLawyer[]) {
 export function useTrial() {
   const { user } = useAuth();
   const [plan, setPlanState] = useState<QadeytiPlan>(() => {
-    if (typeof window !== "undefined") {
-      const storedPlan = localStorage.getItem("qadeyti_plan") as QadeytiPlan;
-      if (storedPlan && PLAN_LIMITS[storedPlan]) {
-        return storedPlan;
-      }
-      const isPremiumOld = localStorage.getItem("qadeyti_premium") === "true";
-      if (isPremiumOld) return "pro";
+    const storedPlan = safeStorage.getItem("qadeyti_plan") as QadeytiPlan;
+    if (storedPlan && PLAN_LIMITS[storedPlan]) {
+      return storedPlan;
     }
+    const isPremiumOld = safeStorage.getItem("qadeyti_premium") === "true";
+    if (isPremiumOld) return "pro";
     return "free";
   });
   const [aiCount, setAiCount] = useState<number>(0);
 
   // Impersonation Simulator State
   const [simulatedLawyerId, setSimulatedLawyerId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("qadeyti_simulated_lawyer_id") || "owner";
-    }
-    return "owner";
+    return safeStorage.getItem("qadeyti_simulated_lawyer_id") || "owner";
   });
 
   const [firmLawyers, setFirmLawyersState] = useState<FirmLawyer[]>(() => {
-    if (typeof window !== "undefined") {
-      if (globalFirmLawyers) {
-        return globalFirmLawyers;
-      }
-      const stored = localStorage.getItem("qadeyti_firm_lawyers");
-      let parsed: FirmLawyer[] = [];
-      if (stored) {
-        try {
-          parsed = JSON.parse(stored);
-        } catch {
-          parsed = [...DEFAULT_FIRM_LAWYERS];
-        }
-      } else {
+    if (globalFirmLawyers) {
+      return globalFirmLawyers;
+    }
+    const stored = safeStorage.getItem("qadeyti_firm_lawyers");
+    let parsed: FirmLawyer[] = [];
+    if (stored) {
+      try {
+        parsed = JSON.parse(stored);
+      } catch {
         parsed = [...DEFAULT_FIRM_LAWYERS];
       }
-
-      // Sync monthly usage for each lawyer on initial load
-      const now = new Date();
-      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      let changed = false;
-
-      const synced = parsed.map((lawyer) => {
-        const key = `ai_usage_lawyer_${lawyer.id}`;
-        const raw = localStorage.getItem(key);
-        let usage = lawyer.aiUsage;
-        if (raw) {
-          try {
-            const data = JSON.parse(raw);
-            if (data.month !== currentMonth) {
-              usage = 0;
-              localStorage.setItem(key, JSON.stringify({ month: currentMonth, count: 0 }));
-              changed = true;
-            } else {
-              if (usage !== data.count) {
-                usage = data.count;
-                changed = true;
-              }
-            }
-          } catch {
-            usage = 0;
-          }
-        } else {
-          const defaultCount =
-            lawyer.id === "1" ? 34 : lawyer.id === "2" ? 12 : lawyer.id === "3" ? 8 : 0;
-          localStorage.setItem(key, JSON.stringify({ month: currentMonth, count: defaultCount }));
-          usage = defaultCount;
-          changed = true;
-        }
-
-        // Maintain emails for defaults if they got deleted or lost
-        let email = lawyer.email;
-        if (!email) {
-          if (lawyer.id === "1") email = "nour.ali@qadeyti.eg";
-          else if (lawyer.id === "2") email = "fatima.zahra@qadeyti.eg";
-          else if (lawyer.id === "3") email = "ahmed.shazly@qadeyti.eg";
-          else email = `${lawyer.id}@qadeyti.eg`;
-          changed = true;
-        }
-
-        return { ...lawyer, aiUsage: usage, email };
-      });
-
-      globalFirmLawyers = synced;
-      if (changed) {
-        localStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(synced));
-      }
-      return synced;
+    } else {
+      parsed = [...DEFAULT_FIRM_LAWYERS];
     }
-    return DEFAULT_FIRM_LAWYERS;
+
+    // Sync monthly usage for each lawyer on initial load
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    let changed = false;
+
+    const synced = parsed.map((lawyer) => {
+      const key = `ai_usage_lawyer_${lawyer.id}`;
+      const raw = safeStorage.getItem(key);
+      let usage = lawyer.aiUsage;
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          if (data.month !== currentMonth) {
+            usage = 0;
+            safeStorage.setItem(key, JSON.stringify({ month: currentMonth, count: 0 }));
+            changed = true;
+          } else {
+            if (usage !== data.count) {
+              usage = data.count;
+              changed = true;
+            }
+          }
+        } catch {
+          usage = 0;
+        }
+      } else {
+        const defaultCount =
+          lawyer.id === "1" ? 34 : lawyer.id === "2" ? 12 : lawyer.id === "3" ? 8 : 0;
+        safeStorage.setItem(key, JSON.stringify({ month: currentMonth, count: defaultCount }));
+        usage = defaultCount;
+        changed = true;
+      }
+
+      // Maintain emails for defaults if they got deleted or lost
+      let email = lawyer.email;
+      if (!email) {
+        if (lawyer.id === "1") email = "nour.ali@qadeyti.eg";
+        else if (lawyer.id === "2") email = "fatima.zahra@qadeyti.eg";
+        else if (lawyer.id === "3") email = "ahmed.shazly@qadeyti.eg";
+        else email = `${lawyer.id}@qadeyti.eg`;
+        changed = true;
+      }
+
+      return { ...lawyer, aiUsage: usage, email };
+    });
+
+    globalFirmLawyers = synced;
+    if (changed) {
+      safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(synced));
+    }
+    return synced;
   });
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("qadeyti_firm_lawyers");
-      if (!stored) {
-        localStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(DEFAULT_FIRM_LAWYERS));
-      }
+    const stored = safeStorage.getItem("qadeyti_firm_lawyers");
+    if (!stored) {
+      safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(DEFAULT_FIRM_LAWYERS));
     }
 
     // Subscribe to global in-memory pub-sub registry changes - guarantees instant page synchronization
@@ -253,13 +272,13 @@ export function useTrial() {
     };
     const next = [...firmLawyers, newLawyer];
     updateGlobalLawyers(next);
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    safeStorage.setItem(
+      `ai_usage_lawyer_${newId}`,
+      JSON.stringify({ month: currentMonth, count: 0 }),
+    );
     if (typeof window !== "undefined") {
-      const now = new Date();
-      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      localStorage.setItem(
-        `ai_usage_lawyer_${newId}`,
-        JSON.stringify({ month: currentMonth, count: 0 }),
-      );
       window.dispatchEvent(new Event("storage"));
     }
   };
@@ -267,21 +286,20 @@ export function useTrial() {
   const deleteFirmLawyer = (id: string) => {
     const next = firmLawyers.filter((l) => l.id !== id);
     updateGlobalLawyers(next);
+    safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(next));
+    safeStorage.removeItem(`ai_usage_lawyer_${id}`);
+    if (simulatedLawyerId === id) {
+      safeStorage.setItem("qadeyti_simulated_lawyer_id", "owner");
+      setSimulatedLawyerId("owner");
+    }
     if (typeof window !== "undefined") {
-      localStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(next));
-      localStorage.removeItem(`ai_usage_lawyer_${id}`);
-      if (simulatedLawyerId === id) {
-        localStorage.setItem("qadeyti_simulated_lawyer_id", "owner");
-        setSimulatedLawyerId("owner");
-      }
       window.dispatchEvent(new Event("storage"));
     }
   };
 
   const getLawyerAIUsage = (lawyerId: string): number => {
-    if (typeof window === "undefined") return 0;
     const key = `ai_usage_lawyer_${lawyerId}`;
-    const raw = localStorage.getItem(key);
+    const raw = safeStorage.getItem(key);
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     if (!raw) {
@@ -302,13 +320,12 @@ export function useTrial() {
   };
 
   const incrementLawyerAIUsage = (lawyerId: string) => {
-    if (typeof window === "undefined") return;
     const key = `ai_usage_lawyer_${lawyerId}`;
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const currentCount = getLawyerAIUsage(lawyerId);
-    const nextCount = currentCount + 1;
-    localStorage.setItem(
+    const nextCount = Math.min(400, currentCount + 1);
+    safeStorage.setItem(
       key,
       JSON.stringify({
         month: currentMonth,
@@ -323,14 +340,15 @@ export function useTrial() {
       return l;
     });
     setFirmLawyersState(updatedLawyers);
-    localStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(updatedLawyers));
-    window.dispatchEvent(new Event("storage"));
+    safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(updatedLawyers));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
   };
 
   const getAIChatUsage = (userId: string): number => {
-    if (typeof window === "undefined") return 0;
     const key = `ai_usage_${userId}`;
-    const raw = localStorage.getItem(key);
+    const raw = safeStorage.getItem(key);
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -347,25 +365,25 @@ export function useTrial() {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (user?.email === "meetozacoin@gmail.com") {
-        setPlanState("enterprise");
-        localStorage.setItem("qadeyti_plan", "enterprise");
-        localStorage.setItem("qadeyti_premium", "true");
+    if (user?.email === "meetozacoin@gmail.com") {
+      setPlanState("enterprise");
+      safeStorage.setItem("qadeyti_plan", "enterprise");
+      safeStorage.setItem("qadeyti_premium", "true");
+      if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("storage"));
-      } else {
-        const storedPlan = localStorage.getItem("qadeyti_plan") as QadeytiPlan;
-        const isPremiumOld = localStorage.getItem("qadeyti_premium") === "true";
+      }
+    } else {
+      const storedPlan = safeStorage.getItem("qadeyti_plan") as QadeytiPlan;
+      const isPremiumOld = safeStorage.getItem("qadeyti_premium") === "true";
 
-        if (storedPlan && PLAN_LIMITS[storedPlan]) {
-          setPlanState(storedPlan);
-        } else if (isPremiumOld) {
-          setPlanState("pro");
-          localStorage.setItem("qadeyti_plan", "pro");
-        } else {
-          setPlanState("free");
-          localStorage.setItem("qadeyti_plan", "free");
-        }
+      if (storedPlan && PLAN_LIMITS[storedPlan]) {
+        setPlanState(storedPlan);
+      } else if (isPremiumOld) {
+        setPlanState("pro");
+        safeStorage.setItem("qadeyti_plan", "pro");
+      } else {
+        setPlanState("free");
+        safeStorage.setItem("qadeyti_plan", "free");
       }
     }
 
@@ -374,14 +392,14 @@ export function useTrial() {
     }
 
     const handleStorageChange = () => {
-      const storedPlan = localStorage.getItem("qadeyti_plan") as QadeytiPlan;
+      const storedPlan = safeStorage.getItem("qadeyti_plan") as QadeytiPlan;
       if (storedPlan && PLAN_LIMITS[storedPlan]) {
         setPlanState(storedPlan);
       }
       if (user) {
         setAiCount(getAIChatUsage(user.id));
       }
-      const storedLawyers = localStorage.getItem("qadeyti_firm_lawyers");
+      const storedLawyers = safeStorage.getItem("qadeyti_firm_lawyers");
       if (storedLawyers) {
         try {
           setFirmLawyersState(JSON.parse(storedLawyers));
@@ -391,38 +409,40 @@ export function useTrial() {
       }
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    }
   }, [user]);
 
   const togglePremium = (val: boolean) => {
     const nextPlan = val ? "pro" : "free";
     setPlanState(nextPlan);
+    safeStorage.setItem("qadeyti_plan", nextPlan);
+    safeStorage.setItem("qadeyti_premium", val ? "true" : "false");
     if (typeof window !== "undefined") {
-      localStorage.setItem("qadeyti_plan", nextPlan);
-      localStorage.setItem("qadeyti_premium", val ? "true" : "false");
       window.dispatchEvent(new Event("storage"));
     }
   };
 
   const setPlan = (nextPlan: QadeytiPlan) => {
     setPlanState(nextPlan);
+    safeStorage.setItem("qadeyti_plan", nextPlan);
+    safeStorage.setItem("qadeyti_premium", nextPlan !== "free" ? "true" : "false");
     if (typeof window !== "undefined") {
-      localStorage.setItem("qadeyti_plan", nextPlan);
-      localStorage.setItem("qadeyti_premium", nextPlan !== "free" ? "true" : "false");
       window.dispatchEvent(new Event("storage"));
     }
   };
 
   const incrementAIChatUsage = () => {
-    if (!user || typeof window === "undefined") return;
+    if (!user) return;
     const key = `ai_usage_${user.id}`;
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const currentCount = getAIChatUsage(user.id);
     const nextCount = currentCount + 1;
 
-    localStorage.setItem(
+    safeStorage.setItem(
       key,
       JSON.stringify({
         month: currentMonth,
@@ -430,31 +450,37 @@ export function useTrial() {
       }),
     );
     setAiCount(nextCount);
-    window.dispatchEvent(new Event("storage"));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
   };
 
   const impersonateLawyer = (lawyerId: string) => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("qadeyti_simulated_lawyer_id", lawyerId);
+    safeStorage.setItem("qadeyti_simulated_lawyer_id", lawyerId);
     setSimulatedLawyerId(lawyerId);
-    window.dispatchEvent(new Event("storage"));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
   };
 
   const cancelImpersonation = () => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("qadeyti_simulated_lawyer_id", "owner");
+    safeStorage.setItem("qadeyti_simulated_lawyer_id", "owner");
     setSimulatedLawyerId("owner");
-    window.dispatchEvent(new Event("storage"));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
   };
 
   // Synchronize impersonation changes if triggered elsewhere
   useEffect(() => {
     const handleStorageImpersonation = () => {
-      const active = localStorage.getItem("qadeyti_simulated_lawyer_id") || "owner";
+      const active = safeStorage.getItem("qadeyti_simulated_lawyer_id") || "owner";
       setSimulatedLawyerId(active);
     };
-    window.addEventListener("storage", handleStorageImpersonation);
-    return () => window.removeEventListener("storage", handleStorageImpersonation);
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorageImpersonation);
+      return () => window.removeEventListener("storage", handleStorageImpersonation);
+    }
   }, []);
 
   if (!user) {
