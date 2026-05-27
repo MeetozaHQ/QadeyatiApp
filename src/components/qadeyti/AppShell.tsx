@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
-import { useTrial } from "@/hooks/use-trial";
-import { Sparkles, Command, Check, Gift, ShieldAlert, X } from "lucide-react";
+import { useTrial, type QadeytiPlan } from "@/hooks/use-trial";
+import { Sparkles, Command, Check, ShieldAlert, X, Users, MessageSquare } from "lucide-react";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { isTrialExpired, daysRemaining, isPremium, togglePremium } = useTrial();
+  const { isTrialExpired, daysRemaining, isPremium, plan, setPlan, limits } = useTrial();
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponSuccess, setCouponSuccess] = useState(false);
@@ -14,26 +14,42 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleApplyCoupon = () => {
     setCouponError("");
     const cleaned = coupon.trim().toUpperCase();
-    if (cleaned === "EGYPT" || cleaned === "QADEYTI2026" || cleaned === "FREE") {
+    if (cleaned === "EGYPT") {
       setCouponSuccess(true);
       setTimeout(() => {
-        togglePremium(true);
+        setPlan("basic");
+        setShowBillingModal(false);
+        setCouponSuccess(false);
+        setCoupon("");
+      }, 1500);
+    } else if (cleaned === "FREE") {
+      setCouponSuccess(true);
+      setTimeout(() => {
+        setPlan("free");
+        setShowBillingModal(false);
+        setCouponSuccess(false);
+        setCoupon("");
+      }, 1500);
+    } else if (cleaned === "PRO" || cleaned === "QADEYTI2026") {
+      setCouponSuccess(true);
+      setTimeout(() => {
+        setPlan("pro");
         setShowBillingModal(false);
         setCouponSuccess(false);
         setCoupon("");
       }, 1500);
     } else {
-      setCouponError("كود الخصم غير صحيح. جرب كود: EGYPT");
+      setCouponError("كود الخصم غير صحيح. جرب كود: EGYPT لتفعيل الباقة الأساسية");
     }
   };
 
-  const handleSimulatedUpgrade = () => {
+  const handleSelectPlan = (selectedPlan: QadeytiPlan) => {
     setCouponSuccess(true);
     setTimeout(() => {
-      togglePremium(true);
+      setPlan(selectedPlan);
       setShowBillingModal(false);
       setCouponSuccess(false);
-    }, 1200);
+    }, 800);
   };
 
   return (
@@ -54,7 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span>لقد انتهت فترتك التجريبية (٧ أيام). الميزات الآن في وضع القراءة فقط.</span>
               <button
                 onClick={() => setShowBillingModal(true)}
-                className="mr-2 rounded-lg bg-red-500 text-black px-3 py-1 text-[11px] font-bold hover:bg-red-400 transition-colors"
+                className="mr-2 rounded-lg bg-red-500 text-black px-3 py-1 text-[11px] font-bold hover:bg-red-400 transition-colors cursor-pointer"
               >
                 تنشيط الحساب الآن
               </button>
@@ -67,7 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
               <button
                 onClick={() => setShowBillingModal(true)}
-                className="mr-2 rounded-lg bg-[var(--gold)] text-black px-3 py-1 text-[11px] font-bold hover:brightness-110 transition-all font-sans"
+                className="mr-2 rounded-lg bg-[var(--gold)] text-black px-3 py-1 text-[11px] font-bold hover:brightness-110 transition-all font-sans cursor-pointer"
               >
                 ترقية الحساب (تنشيط مجاني)
               </button>
@@ -80,15 +96,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       {isPremium && (
         <div
           dir="rtl"
-          className="w-full py-2 px-4 text-center text-xs font-bold bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-300 flex items-center justify-center gap-2"
+          className="w-full py-2 px-4 text-center text-xs font-bold bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-300 flex items-center justify-center gap-2 flex-wrap"
         >
           <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span>تم تفعيل الاشتراك المميز بالكامل لـ قضيتي (باقة الشريك القانوني)</span>
+          <span>تم تفعيل الاشتراك المميز بنجاح لـ قضيتي : <span className="text-[var(--gold)]">{limits.label}</span></span>
           <button
-            onClick={() => togglePremium(false)}
-            className="mr-3 text-[10px] text-slate-500 hover:text-slate-300 underline font-sans"
+            onClick={() => setPlan("free")}
+            className="mr-3 text-[10px] text-slate-500 hover:text-slate-300 underline font-sans cursor-pointer"
           >
-            (تبديل لوضع التجريبي للاختبار)
+            (تبديل لوضع التجريبي للمشترك)
           </button>
         </div>
       )}
@@ -100,60 +116,114 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Subscription/Billing Drawer Modal Container */}
       {showBillingModal && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/8 w-full backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 w-full backdrop-blur-sm overflow-y-auto"
           dir="rtl"
         >
-          <div className="relative w-full max-w-md rounded-t-3xl border-t border-border bg-[#0C101A] p-6 text-right shadow-2xl animate-in slide-in-from-bottom duration-350">
+          <div className="relative w-full max-w-md rounded-t-3xl border-t border-border bg-[#0C101A] p-5 text-right shadow-2xl animate-in slide-in-from-bottom duration-350 max-h-[90dvh] overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-900 pb-4 mb-5">
+            <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-[var(--gold)]">
                   <Command className="h-4 w-4" />
                 </div>
-                <h3 className="text-base font-bold text-white font-display">
-                  تفعيل باقة الشريك القانوني
+                <h3 className="text-sm font-bold text-white font-display">
+                  اختر وتنشيط باقتك المفضلة
                 </h3>
               </div>
               <button
                 onClick={() => setShowBillingModal(false)}
-                className="rounded-lg p-1.5 hover:bg-slate-900 text-slate-400 hover:text-white"
+                className="rounded-lg p-1.5 hover:bg-slate-900 text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Trial & Package Content */}
-            <div className="space-y-4">
-              <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-4">
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  بصفتك مستخدمًا حاليًا، يمكنك تجربة وتشغيل باقة قضيتي المتكاملة بقيمة{" "}
-                  <span className="font-bold text-[var(--gold)]">٢٩٩ جنيه/شهريًا</span> مجاناً
-                  بالكامل لأغراض الاختبار والعرض التقديمي.
+            <div className="space-y-3.5">
+              <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-3">
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  بصفتك مستخدمًا حاليًا، يمكنك تجربة وتفعيل أي من الباقات التالية مجاناً بالكامل لأغراض الاختبار والعرض التقديمي. بنقرة واحدة ستقوم بتفعيل الباقة المناسبة لك.
                 </p>
               </div>
 
+              {/* Plans List */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
-                  تفعيلات الاختبار السريعة:
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                  الباقات والاشتراكات المتاحة للاختبار:
                 </h4>
-                <button
-                  type="button"
-                  onClick={handleSimulatedUpgrade}
-                  className="w-full flex items-center justify-between rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] text-black font-bold p-3.5 text-xs text-right active:scale-[0.98] transition-all relative overflow-hidden"
+
+                {/* 1. Free Plan */}
+                <div
+                  onClick={() => handleSelectPlan("free")}
+                  className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right ${
+                    plan === "free" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                  }`}
                 >
-                  <span className="relative z-10">تنشيط فوري بنقرة واحدة (محاكاة الدفع)</span>
-                  <span className="relative z-10 font-mono"> مجاناً ✦</span>
-                  {couponSuccess && (
-                    <div className="absolute inset-0 bg-emerald-500 flex items-center justify-center gap-2 text-white text-xs font-bold">
-                      <Check className="h-4 w-4" /> تم التنشيط بنجاح!
-                    </div>
-                  )}
-                </button>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-white">الباقة المجانية (Free)</span>
+                    <span className="text-[10px] font-bold text-slate-400">مجانًا</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    محدودة بـ (٣ قضايا كحد أقصى، و ١٥ محادثة للمساعد الذكي شهرياً، وبدون ربط Google Drive).
+                  </p>
+                </div>
+
+                {/* 2. Basic Plan */}
+                <div
+                  onClick={() => handleSelectPlan("basic")}
+                  className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right relative overflow-hidden ${
+                    plan === "basic" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                  }`}
+                >
+                  <div className="absolute top-0 left-0 bg-red-500 text-white text-[8px] font-bold py-0.5 px-2 rounded-br-lg tracking-tight">
+                    الأكثر طلباً ⭐
+                  </div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-white">الباقة الفردية للـمُحامي (Basic)</span>
+                    <span className="text-[10px] font-bold text-[var(--gold-soft)]">١٤٩ ج.م / شهر</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    إدارة حتى ٥٠ قضية نشطة، وعملاء بلا حدود، المساعد القانوني (١٠٠ طلب/شهرياً)، مزامنة وحفظ المرفقات على سحابة Google Drive الشخصية.
+                  </p>
+                </div>
+
+                {/* 3. Pro Plan */}
+                <div
+                  onClick={() => handleSelectPlan("pro")}
+                  className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right ${
+                    plan === "pro" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-white">باقة المحامي المحترف (Pro)</span>
+                    <span className="text-[10px] font-bold text-emerald-400">٢٩٩ ج.م / شهر</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    للنشاط المكثف والذكاء الاصطناعي الدائم (٦٠٠ طلب/شهرياً بميزات تحليل وتلخيص الملفات الضخمة)، قضايا بلا حدود وتكامل Google Drive الكامل.
+                  </p>
+                </div>
+
+                {/* 4. Enterprise Plan */}
+                <div
+                  onClick={() => handleSelectPlan("enterprise")}
+                  className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right ${
+                    plan === "enterprise" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-white">باقة المكاتب والشركات (Enterprise)</span>
+                    <span className="text-[10px] font-bold text-blue-400">١٩٩ ج.م / محامٍ</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed flex items-center gap-1.5">
+                    <Users className="h-3 w-3 shrink-0 text-blue-400" />
+                    لوحة تحكم رئيسية لصاحب المكتب لإدارة قضايا وجلسات جميع المحامين، مساعد ذكي منفصل وشبكة متكاملة.
+                  </p>
+                </div>
               </div>
 
               {/* Coupon input */}
               <div className="space-y-2 pt-2 border-t border-slate-900">
-                <label className="text-xs font-semibold text-slate-300">
+                <label className="text-[11px] font-semibold text-slate-300">
                   أدخل كود كوبون التفعيل:
                 </label>
                 <div className="flex gap-2">
@@ -161,12 +231,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                     type="text"
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value)}
-                    placeholder="مثال: EGYPT أو FREE"
-                    className="flex-1 rounded-xl border border-slate-800 bg-[#090C14] px-3.5 py-2.5 text-xs font-bold font-mono text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
+                     placeholder="مثال: EGYPT أو FREE"
+                    className="flex-1 rounded-xl border border-slate-800 bg-[#090C14] px-3.5 py-2 text-xs font-bold font-mono text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
                   />
                   <button
                     onClick={handleApplyCoupon}
-                    className="rounded-xl bg-slate-900 border border-border px-4 py-2 text-xs font-bold text-slate-300 hover:text-white hover:border-slate-700"
+                    className="rounded-xl bg-slate-900 border border-border px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white hover:border-slate-700 cursor-pointer"
                   >
                     تطبيق
                   </button>
@@ -174,8 +244,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {couponError && (
                   <p className="text-[10px] font-semibold text-red-400">{couponError}</p>
                 )}
+                {couponSuccess && (
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold p-2 text-center">
+                    ✓ تم التنشيط وتحديث الباقة بنجاح!
+                  </div>
+                )}
                 <p className="text-[10px] text-slate-500">
-                  كود الخصم المتاح للاختبار هو:{" "}
+                  كود الخصم لتفعيل الباقة الأساسية:{" "}
                   <code className="bg-[#090C14] px-1 py-0.5 rounded text-[var(--gold)]">EGYPT</code>
                 </p>
               </div>

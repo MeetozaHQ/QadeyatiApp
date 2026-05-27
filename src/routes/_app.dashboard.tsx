@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Calendar, Briefcase, AlertCircle, Sparkles, ChevronLeft } from "lucide-react";
+import { Calendar, Briefcase, AlertCircle, Sparkles, ChevronLeft, Users, Shield, UserCheck, Plus, Clock } from "lucide-react";
 import { StatCard } from "@/components/qadeyti/StatCard";
 import { DashboardAlerts } from "@/components/qadeyti/DashboardAlerts";
 import { StatusBadge } from "@/components/qadeyti/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial } from "@/hooks/use-trial";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: Dashboard,
@@ -28,14 +29,33 @@ interface SessionRow {
   case_court?: string | null;
 }
 
+// Simulated data for auxiliary lawyers inside the Law Firm
+interface FirmLawyer {
+  id: string;
+  name: string;
+  role: string;
+  status: "active" | "offline";
+  casesCount: number;
+  aiUsage: number;
+  avatarLetter: string;
+}
+
 function Dashboard() {
   const { user } = useAuth();
+  const { plan, limits } = useTrial();
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [caseCount, setCaseCount] = useState(0);
   const [upcoming, setUpcoming] = useState<SessionRow[]>([]);
   const [overdueCount, setOverdueCount] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
   const [lawyerName, setLawyerName] = useState<string | null>(null);
+
+  // Enterprise details
+  const [firmLawyers, setFirmLawyers] = useState<FirmLawyer[]>([
+    { id: "1", name: "أ. نور الدين علي", role: "محامٍ شريك", status: "active", casesCount: 20, aiUsage: 34, avatarLetter: "ن" },
+    { id: "2", name: "أ. فاطمة الزهراء", role: "محامٍ استئناف", status: "active", casesCount: 15, aiUsage: 12, avatarLetter: "ف" },
+    { id: "3", name: "أ. أحمد الشاذلي", role: "محامٍ تحت التمرين", status: "active", casesCount: 12, aiUsage: 8, avatarLetter: "أ" }
+  ]);
 
   useEffect(() => {
     if (!user) return;
@@ -117,11 +137,16 @@ function Dashboard() {
         </h1>
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5">
-        <p className="text-sm text-muted-foreground">ملخّص يومك</p>
-        <p className="mt-1 font-display text-xl font-semibold text-foreground">
-          لديك <span className="text-[var(--gold)]">{todayCount} جلسات</span> اليوم
-        </p>
+      {/* Subscription Status or Active Package Info Badge */}
+      <section className="rounded-2xl border border-slate-800 bg-[#090C15]/40 p-3.5 flex items-center justify-between">
+        <div className="text-right">
+          <p className="text-[10px] text-slate-500 uppercase font-mono">الباقة المفعّلة حالياً</p>
+          <span className="text-xs font-bold text-[var(--gold)]">{limits.label}</span>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-lg bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold text-orange-400">
+          <Shield className="h-3.5 w-3.5" />
+          <span>حساب نشط</span>
+        </div>
       </section>
 
       <section className="grid grid-cols-3 gap-3">
@@ -143,6 +168,85 @@ function Dashboard() {
       </section>
 
       <DashboardAlerts />
+
+      {/* Enterprise Master Dashboard Panel — ONLY RENDERED IF PLAN IS ENTERPRISE */}
+      {plan === "enterprise" && (
+        <section className="rounded-3xl border-2 border-dashed border-blue-500/30 bg-[#070b13] p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-900 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
+                <Users className="h-4 w-4" />
+              </span>
+              <h2 className="font-display text-sm font-bold text-white">
+                لوحة تحكم صاحب المكتب والشركاء (الرئيسية)
+              </h2>
+            </div>
+            <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold text-blue-400">
+              باقة الشركات 🏢
+            </span>
+          </div>
+
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            بصفتك مديراً للمكتب، يمكنك تتبع قضايا وجلسات جميع المحامين العاملين لديك واستهلاكهم للمستشار الذكي لحظياً:
+          </p>
+
+          {/* Members list */}
+          <div className="space-y-2 pt-1">
+            {firmLawyers.map((lawyer) => (
+              <div key={lawyer.id} className="flex items-center justify-between rounded-xl bg-[#0d121f] p-3 border border-slate-900">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-300">
+                    {lawyer.avatarLetter}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-100">{lawyer.name}</h4>
+                    <p className="text-[9.5px] text-slate-500 leading-none mt-0.5">{lawyer.role}</p>
+                  </div>
+                </div>
+                <div className="text-left space-y-1">
+                  <span className="block text-[10px] text-slate-300">
+                    قضايا: <span className="font-bold text-blue-400">{lawyer.casesCount}</span>
+                  </span>
+                  <span className="block text-[9px] text-slate-500 font-mono">
+                    ذكاء اصطناعي: <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٢٠٠٠</span>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              onClick={() => {
+                const name = prompt("أدخل اسم المحامي الجديد للانضمام إلى المكتب:");
+                if (name) {
+                  const newLawyer: FirmLawyer = {
+                    id: String(firmLawyers.length + 1),
+                    name: `أ. ${name}`,
+                    role: "محامٍ مشارك",
+                    status: "active",
+                    casesCount: 0,
+                    aiUsage: 0,
+                    avatarLetter: name[0]
+                  };
+                  setFirmLawyers([...firmLawyers, newLawyer]);
+                }
+              }}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-xs font-bold text-blue-400 hover:bg-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>إضافة محامي للمكتب</span>
+            </button>
+            <button
+              onClick={() => alert("سيتم إرسال تقرير الأداء المالي والعملي لجميع المحامين بريدياً.")}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <Clock className="h-3.5 w-3.5" />
+              <span>تقارير النشاط</span>
+            </button>
+          </div>
+        </section>
+      )}
 
       {nextSession && (
         <section className="space-y-3">
