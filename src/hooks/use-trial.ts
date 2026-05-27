@@ -62,10 +62,86 @@ export const PLAN_LIMITS: Record<QadeytiPlan, PlanLimits> = {
   },
 };
 
+export interface FirmLawyer {
+  id: string;
+  name: string;
+  role: string;
+  status: "active" | "offline";
+  casesCount: number;
+  aiUsage: number;
+  avatarLetter: string;
+}
+
+export const DEFAULT_FIRM_LAWYERS: FirmLawyer[] = [
+  {
+    id: "1",
+    name: "أ. نور الدين علي",
+    role: "محامٍ شريك",
+    status: "active",
+    casesCount: 20,
+    aiUsage: 34,
+    avatarLetter: "ن",
+  },
+  {
+    id: "2",
+    name: "أ. فاطمة الزهراء",
+    role: "محامٍ استئناف",
+    status: "active",
+    casesCount: 15,
+    aiUsage: 12,
+    avatarLetter: "ف",
+  },
+  {
+    id: "3",
+    name: "أ. أحمد الشاذلي",
+    role: "محامٍ تحت التمرين",
+    status: "active",
+    casesCount: 12,
+    aiUsage: 8,
+    avatarLetter: "أ",
+  },
+];
+
 export function useTrial() {
   const { user } = useAuth();
   const [plan, setPlanState] = useState<QadeytiPlan>("free");
   const [aiCount, setAiCount] = useState<number>(0);
+  const [firmLawyers, setFirmLawyersState] = useState<FirmLawyer[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("qadeyti_firm_lawyers");
+      if (stored) {
+        try {
+          setFirmLawyersState(JSON.parse(stored));
+        } catch {
+          setFirmLawyersState(DEFAULT_FIRM_LAWYERS);
+        }
+      } else {
+        setFirmLawyersState(DEFAULT_FIRM_LAWYERS);
+        localStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(DEFAULT_FIRM_LAWYERS));
+      }
+    }
+  }, []);
+
+  const addFirmLawyer = (name: string, role: string) => {
+    const formattedName = name.startsWith("أ.") ? name : `أ. ${name}`;
+    const newLawyer: FirmLawyer = {
+      id: String(Date.now()),
+      name: formattedName,
+      role: role || "محامٍ مشارك",
+      status: "active",
+      casesCount: 0,
+      aiUsage: 0,
+      avatarLetter: name[0],
+    };
+    const next = [...firmLawyers, newLawyer];
+    setFirmLawyersState(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(next));
+      window.dispatchEvent(new Event("storage"));
+    }
+  };
 
   const getAIChatUsage = (userId: string): number => {
     if (typeof window === "undefined") return 0;
@@ -88,14 +164,10 @@ export function useTrial() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (
-        user?.email === "meetozacoin@gmail.com" &&
-        !localStorage.getItem("qadeyti_plan_initialized_meetozacoin")
-      ) {
+      if (user?.email === "meetozacoin@gmail.com") {
         setPlanState("enterprise");
         localStorage.setItem("qadeyti_plan", "enterprise");
         localStorage.setItem("qadeyti_premium", "true");
-        localStorage.setItem("qadeyti_plan_initialized_meetozacoin", "true");
         window.dispatchEvent(new Event("storage"));
       } else {
         const storedPlan = localStorage.getItem("qadeyti_plan") as QadeytiPlan;
@@ -124,6 +196,14 @@ export function useTrial() {
       }
       if (user) {
         setAiCount(getAIChatUsage(user.id));
+      }
+      const storedLawyers = localStorage.getItem("qadeyti_firm_lawyers");
+      if (storedLawyers) {
+        try {
+          setFirmLawyersState(JSON.parse(storedLawyers));
+        } catch (e) {
+          console.debug(e);
+        }
       }
     };
 
@@ -179,6 +259,8 @@ export function useTrial() {
       plan: "free" as QadeytiPlan,
       limits: PLAN_LIMITS["free"],
       aiCount: 0,
+      firmLawyers: [],
+      addFirmLawyer: () => {},
       togglePremium,
       setPlan,
       incrementAIChatUsage,
@@ -195,6 +277,8 @@ export function useTrial() {
     plan,
     limits: PLAN_LIMITS[plan] || PLAN_LIMITS["free"],
     aiCount,
+    firmLawyers,
+    addFirmLawyer,
     togglePremium,
     setPlan,
     incrementAIChatUsage,
