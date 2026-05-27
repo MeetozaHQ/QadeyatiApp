@@ -163,14 +163,18 @@ function NotFoundComponent() {
   const currentPath = router.state.location.pathname;
   const isServer = typeof window === "undefined";
   const browserUrl = !isServer ? window.location.href : "Server SSR";
-  const registeredRouteIds = router.flatRoutes.map((r) => `${r.id} [${r.fullPath}]`);
+  const registeredRouteIds = router.flatRoutes
+    ? router.flatRoutes.map((r) => `${r.id} [${r.fullPath || ""}]`)
+    : [];
 
   // Log detailed info to console for debugging
   if (!isServer) {
     console.warn("404 Router Path mismatch:", {
       currentPath,
       browserUrl,
-      flatRoutes: router.flatRoutes.map((r) => ({ id: r.id, path: r.path, fullPath: r.fullPath })),
+      flatRoutes: router.flatRoutes
+        ? router.flatRoutes.map((r) => ({ id: r.id, path: r.path, fullPath: r.fullPath }))
+        : [],
     });
   }
 
