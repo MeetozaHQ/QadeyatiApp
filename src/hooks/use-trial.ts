@@ -88,7 +88,10 @@ export function useTrial() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (user?.email === "meetozacoin@gmail.com" && !localStorage.getItem("qadeyti_plan_initialized_meetozacoin")) {
+      if (
+        user?.email === "meetozacoin@gmail.com" &&
+        !localStorage.getItem("qadeyti_plan_initialized_meetozacoin")
+      ) {
         setPlanState("enterprise");
         localStorage.setItem("qadeyti_plan", "enterprise");
         localStorage.setItem("qadeyti_premium", "true");
@@ -184,19 +187,10 @@ export function useTrial() {
 
   const isPremium = plan !== "free";
 
-  // Get registration date or default to now
-  const createdDate = user.created_at ? new Date(user.created_at) : new Date();
-  const now = new Date();
-  const diffTime = now.getTime() - createdDate.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const daysRemaining = Math.max(0, 7 - diffDays);
-  // Only free tier expires after trial (paid tiers stay active)
-  const isTrialExpired = diffDays >= 7 && plan === "free";
-
   return {
-    isTrialActive: !isTrialExpired,
-    daysRemaining,
-    isTrialExpired,
+    isTrialActive: false,
+    daysRemaining: 0,
+    isTrialExpired: false,
     isPremium,
     plan,
     limits: PLAN_LIMITS[plan] || PLAN_LIMITS["free"],

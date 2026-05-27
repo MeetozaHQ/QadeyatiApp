@@ -1,33 +1,46 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Check, AlertCircle, FileText, Scale, User, Mail, ShieldAlert } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { ArrowRight, ArrowLeft, Check, ShieldAlert } from "lucide-react";
+import { PremiumInput } from "@/components/qadeyti/PremiumInput";
+import { PremiumButton } from "@/components/qadeyti/PremiumButton";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { useTrial } from "@/hooks/use-trial";
+import { CASE_TYPES } from "@/lib/case-constants";
+import { createNotification } from "@/lib/notifications";
+import { ensureFirstSession } from "@/lib/first-session";
+import { recomputeCaseStatus } from "@/lib/case-status";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/cases/new")({
   component: NewCasePage,
 });
 
 interface FormState {
+  case_type: string;
   title: string;
   case_number: string;
   court_name: string;
+  circuit_name: string;
   client_name: string;
-  client_email: string;
-  client_phone: string;
-  notes: string;
+  opponent_name: string;
+  first_session_date: string;
+  description: string;
 }
 
 const initial: FormState = {
+  case_type: "",
   title: "",
   case_number: "",
   court_name: "",
+  circuit_name: "",
   client_name: "",
-  client_email: "",
-  client_phone: "",
-  notes: "",
+  opponent_name: "",
+  first_session_date: "",
+  description: "",
 };
+
+const STEPS = ["النوع", "المحكمة", "الأطراف", "التفاصيل"];
 
 function NewCasePage() {
   const navigate = useNavigate();
@@ -39,6 +52,15 @@ function NewCasePage() {
   const [error, setError] = useState<string | null>(null);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setF((p) => ({ ...p, [k]: v }));
+
+  const canNext =
+    step === 0
+      ? f.title.trim().length > 0 && f.case_type.length > 0
+      : step === 1
+        ? true
+        : step === 2
+          ? true
+          : true;
 
   const submit = async () => {
     if (!user) return;
@@ -67,215 +89,192 @@ function NewCasePage() {
       .from("cases")
       .insert({
         user_id: user.id,
-        title: f.title,
-        case_number: f.case_number || null,
-        court_name: f.court_name || null,
-        notes: f.notes || null,
+        title: f.title.trim(),
+        case_type: f.case_type || null,
+        case_number: f.case_number.trim() || null,
+        court_name: f.court_name.trim() || null,
+        circuit_name: f.circuit_name.trim() || null,
+        client_name: f.client_name.trim() || null,
+        opponent_name: f.opponent_name.trim() || null,
+        first_session_date: f.first_session_date || null,
+        description: f.description.trim() || null,
+        status: "جديدة",
       })
-      .select()
+      .select("id")
       .single();
-
+    setSaving(false);
     if (error) {
-      setError("فشل في إنشاء القضية. يرجى المحاولة مرة أخرى.");
-      setSaving(false);
+      setError(error.message);
       return;
     }
-
-    if (f.client_name) {
-      await supabase.from("contacts").insert({
-        user_id: user.id,
-        case_id: data.id,
-        full_name: f.client_name,
-        email: f.client_email || null,
-        phone_number: f.client_phone || null,
-        role: "خصم / موكل",
+    await createNotification({
+      user_id: user.id,
+      type: "تحديث قضية",
+      title: `قضية جديدة: ${f.title.trim()}`,
+      message: f.court_name ? `تمت إضافة القضية في ${f.court_name}` : "تمت إضافة القضية بنجاح.",
+      related_case_id: data.id,
+      priority: "عادي",
+    });
+    if (f.first_session_date) {
+      await ensureFirstSession({
+        caseId: data.id,
+        userId: user.id,
+        firstSessionDate: f.first_session_date,
+        courtName: f.court_name.trim() || null,
       });
+      await recomputeCaseStatus(data.id);
     }
-
-    setStep(2);
-    setSaving(false);
+    navigate({ to: "/cases/$caseId", params: { caseId: data.id } });
   };
 
   return (
-    <div className="space-y-6" dir="rtl text-right">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => (step === 1 ? setStep(0) : navigate({ to: "/cases" }))}
-          className="rounded-xl border border-slate-900 bg-secondary p-2.5 text-slate-400 hover:text-white"
-        >
-          <ArrowRight className="h-4 w-4" />
-        </button>
-        <div>
-          <h1 className="font-display text-lg font-bold text-foreground">إضافة قضية جديدة</h1>
-          <p className="text-xs text-muted-foreground">قم بإدخال بيانات الدعوى والعميل المرتبط بها</p>
-        </div>
+    <div className="space-y-6">
+      <header className="flex items-center justify-between">
+        <Link to="/cases" className="text-sm text-muted-foreground">
+          إلغاء
+        </Link>
+        <h1 className="font-display text-lg font-semibold text-foreground">قضية جديدة</h1>
+        <span className="w-12 text-xs text-muted-foreground text-left">
+          {step + 1}/{STEPS.length}
+        </span>
+      </header>
+
+      {/* Progress bar */}
+      <div className="flex gap-1.5">
+        {STEPS.map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "h-1.5 flex-1 rounded-full transition-colors",
+              i <= step
+                ? "bg-gradient-to-l from-[var(--gold-soft)] to-[var(--gold)]"
+                : "bg-secondary",
+            )}
+          />
+        ))}
+      </div>
+      <p className="text-center text-sm text-muted-foreground">{STEPS[step]}</p>
+
+      <div className="space-y-4">
+        {step === 0 && (
+          <>
+            <div className="space-y-2">
+              <label className="block text-sm text-muted-foreground">نوع القضية</label>
+              <div className="grid grid-cols-2 gap-2">
+                {CASE_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => set("case_type", t)}
+                    className={cn(
+                      "h-12 rounded-xl border text-sm transition-colors",
+                      f.case_type === t
+                        ? "border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--gold-soft)]"
+                        : "border-border bg-card text-foreground hover:border-[var(--gold)]/40",
+                    )}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <PremiumInput
+              label="عنوان القضية"
+              placeholder="مثال: شركة النيل ضد المقاول العام"
+              value={f.title}
+              onChange={(e) => set("title", e.target.value)}
+            />
+          </>
+        )}
+
+        {step === 1 && (
+          <>
+            <PremiumInput
+              label="رقم القضية"
+              placeholder="مثال: 2457 / 2025"
+              value={f.case_number}
+              onChange={(e) => set("case_number", e.target.value)}
+            />
+            <PremiumInput
+              label="المحكمة"
+              placeholder="مثال: محكمة جنوب القاهرة الابتدائية"
+              value={f.court_name}
+              onChange={(e) => set("court_name", e.target.value)}
+            />
+            <PremiumInput
+              label="الدائرة"
+              placeholder="مثال: الدائرة 12 تجاري"
+              value={f.circuit_name}
+              onChange={(e) => set("circuit_name", e.target.value)}
+            />
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <PremiumInput
+              label="اسم الموكل"
+              placeholder="الموكل الذي تمثله"
+              value={f.client_name}
+              onChange={(e) => set("client_name", e.target.value)}
+            />
+            <PremiumInput
+              label="اسم الخصم"
+              placeholder="الطرف الآخر في القضية"
+              value={f.opponent_name}
+              onChange={(e) => set("opponent_name", e.target.value)}
+            />
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <PremiumInput
+              label="تاريخ أول جلسة"
+              type="date"
+              value={f.first_session_date}
+              onChange={(e) => set("first_session_date", e.target.value)}
+            />
+            <div className="space-y-2">
+              <label className="block text-sm text-muted-foreground">وصف مختصر</label>
+              <textarea
+                value={f.description}
+                onChange={(e) => set("description", e.target.value)}
+                rows={5}
+                placeholder="ملاحظات أو ملخص الموضوع"
+                className="w-full rounded-xl border border-border bg-card p-4 text-base text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-[var(--gold)]"
+              />
+            </div>
+          </>
+        )}
+
+        {error && (
+          <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-foreground">
+            {error}
+          </p>
+        )}
       </div>
 
-      {/* Progress timeline indicator */}
-      {step < 2 && (
-        <div className="flex items-center gap-2 px-1">
-          <div className="flex-1 h-1.5 rounded-full bg-[var(--gold)]" />
-          <div className={`flex-1 h-1.5 rounded-full ${step === 1 ? "bg-[var(--gold)]" : "bg-slate-900"}`} />
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center gap-3 rounded-2xl bg-red-500/10 border border-red-500/20 p-4 text-xs text-red-400">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <p className="leading-relaxed">{error}</p>
-        </div>
-      )}
-
-      {step === 0 && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4 text-right">
-            <div className="flex items-center gap-2 text-xs font-bold text-[var(--gold-soft)] border-b border-border pb-3 mb-1">
-              <Scale className="h-4 w-4" />
-              <span>تفاصيل الملف القضائي والدعوى</span>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">موضوع أو عنوان القضية *</label>
-              <input
-                type="text"
-                value={f.title}
-                onChange={(e) => set("title", e.target.value)}
-                placeholder="مثال: دعوى فسخ عقد إيجار المحل"
-                className="w-full rounded-xl border border-slate-800 bg-[#0C101A] px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300 font-sans">رقم القضية / الجدول</label>
-                <input
-                  type="text"
-                  value={f.case_number}
-                  onChange={(e) => set("case_number", e.target.value)}
-                  placeholder="مثال: ١٢٩٤ لسنة ٢٠٢٦"
-                  className="w-full rounded-xl border border-slate-800 bg-[#0C101A] px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">المحكمة المختصة</label>
-                <input
-                  type="text"
-                  value={f.court_name}
-                  onChange={(e) => set("court_name", e.target.value)}
-                  placeholder="محكمة شمال القاهرة"
-                  className="w-full rounded-xl border border-slate-800 bg-[#0C101A] px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">ملخص أو مذكرات تمهيدية</label>
-              <textarea
-                value={f.notes}
-                onChange={(e) => set("notes", e.target.value)}
-                rows={3}
-                placeholder="تفاصيل الدعوى، الدفوع المبدئية أو الملاحظات الهامة..."
-                className="w-full rounded-xl border border-slate-800 bg-[#0C101A] px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              if (!f.title.trim()) {
-                setError("يرجى إدخال عنوان القضية الأساسي للمتابعة.");
-                return;
-              }
-              setError(null);
-              setStep(1);
-            }}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[var(--gold)] to-[var(--accent)] text-black font-bold py-3.5 text-xs hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
+      <div className="flex gap-3 pt-2">
+        {step > 0 && (
+          <PremiumButton variant="outline" onClick={() => setStep((s) => s - 1)} className="flex-1">
+            <ArrowRight className="ml-2 h-4 w-4" /> السابق
+          </PremiumButton>
+        )}
+        {step < STEPS.length - 1 ? (
+          <PremiumButton
+            disabled={!canNext}
+            onClick={() => setStep((s) => s + 1)}
+            className="flex-1"
           >
-            <span>الخطوة التالية (بيانات العميل)</span>
-          </button>
-        </div>
-      )}
-
-      {step === 1 && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4 text-right">
-            <div className="flex items-center gap-2 text-xs font-bold text-[var(--gold-soft)] border-b border-border pb-3 mb-1">
-              <User className="h-4 w-4" />
-              <span>معلومات العميل أو صاحب القضية</span>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">اسم الموكل كامل</label>
-              <input
-                type="text"
-                value={f.client_name}
-                onChange={(e) => set("client_name", e.target.value)}
-                placeholder="مثال: ممدوح عبد الرحمن الشاذلي"
-                className="w-full rounded-xl border border-slate-800 bg-[#0C101A] px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">البريد الإلكتروني</label>
-                <input
-                  type="email"
-                  value={f.client_email}
-                  onChange={(e) => set("client_email", e.target.value)}
-                  placeholder="name@server.com"
-                  className="w-full rounded-xl border border-slate-800 bg-[#0C101A] px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">رقم الهاتف الجوال</label>
-                <input
-                  type="text"
-                  value={f.client_phone}
-                  onChange={(e) => set("client_phone", e.target.value)}
-                  placeholder="01xxxxxxxxx"
-                  className="w-full rounded-xl border border-slate-800 bg-[#0C101A] px-4 py-3 text-xs text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setStep(0)}
-              className="flex-1 rounded-2xl bg-secondary border border-border py-3.5 text-xs font-bold text-slate-300 hover:text-white cursor-pointer"
-            >
-              السابق
-            </button>
-            <button
-              onClick={submit}
-              disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[var(--gold)] to-[var(--accent)] text-black font-bold py-3.5 text-xs hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-40 cursor-pointer"
-            >
-              {saving ? "جاري الحفظ والإنشاء..." : "إنشاء وحفظ القضية"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center space-y-5 animate-in fade-in zoom-in duration-300">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
-            <Check className="h-7 w-7" />
-          </div>
-          <div>
-            <h3 className="font-display text-lg font-bold text-white">تم إنشاء القضية والملف بنجاح!</h3>
-            <p className="mt-2 text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-              لقد سجلنا القضية وفتحنا ملف إلكتروني متكامل. يمكنك الآن البدء في صياغة الجلسات وتتبع المواعيد وربط المستندات بـ Google Drive.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate({ to: "/cases" })}
-            className="rounded-2xl bg-emerald-500 text-black px-8 py-3.5 text-xs font-bold hover:bg-emerald-400 active:scale-[0.98] transition-all cursor-pointer"
-          >
-            الانتقال لقائمة الملفات والقضايا
-          </button>
-        </div>
-      )}
+            التالي <ArrowLeft className="mr-2 h-4 w-4" />
+          </PremiumButton>
+        ) : (
+          <PremiumButton loading={saving} onClick={submit} className="flex-1">
+            حفظ القضية <Check className="mr-2 h-4 w-4" />
+          </PremiumButton>
+        )}
+      </div>
     </div>
   );
 }

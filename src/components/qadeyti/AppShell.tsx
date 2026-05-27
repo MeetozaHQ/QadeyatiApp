@@ -5,7 +5,7 @@ import { useTrial, type QadeytiPlan } from "@/hooks/use-trial";
 import { Sparkles, Command, Check, ShieldAlert, X, Users, MessageSquare } from "lucide-react";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { isTrialExpired, daysRemaining, isPremium, plan, setPlan, limits } = useTrial();
+  const { isPremium, plan, setPlan, limits } = useTrial();
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponSuccess, setCouponSuccess] = useState(false);
@@ -54,44 +54,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-[#F5F1E8] font-sans antialiased">
-      {/* 7-Days Trial Global Banner */}
-      {!isPremium && (
-        <div
-          dir="rtl"
-          className={`w-full py-2.5 px-4 text-center text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-            isTrialExpired
-              ? "bg-red-500/20 border-b border-red-500/30 text-red-300"
-              : "bg-amber-500/10 border-b border-amber-500/20 text-[var(--gold-soft)]"
-          }`}
-        >
-          {isTrialExpired ? (
-            <>
-              <ShieldAlert className="h-4 w-4 text-red-400 shrink-0" />
-              <span>لقد انتهت فترتك التجريبية (٧ أيام). الميزات الآن في وضع القراءة فقط.</span>
-              <button
-                onClick={() => setShowBillingModal(true)}
-                className="mr-2 rounded-lg bg-red-500 text-black px-3 py-1 text-[11px] font-bold hover:bg-red-400 transition-colors cursor-pointer"
-              >
-                تنشيط الحساب الآن
-              </button>
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4 text-[var(--gold)] shrink-0 animate-pulse" />
-              <span>
-                جرّب قضيتي لمدة ٧ أيام مجانًا — متبقي {daysRemaining} أيام على الفترة التجريبية.
-              </span>
-              <button
-                onClick={() => setShowBillingModal(true)}
-                className="mr-2 rounded-lg bg-[var(--gold)] text-black px-3 py-1 text-[11px] font-bold hover:brightness-110 transition-all font-sans cursor-pointer"
-              >
-                ترقية الحساب (تنشيط مجاني)
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
       {/* Global premium badge for active premium subscribers */}
       {isPremium && (
         <div
@@ -99,12 +61,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="w-full py-2 px-4 text-center text-xs font-bold bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-300 flex items-center justify-center gap-2 flex-wrap"
         >
           <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span>تم تفعيل الاشتراك المميز بنجاح لـ قضيتي : <span className="text-[var(--gold)]">{limits.label}</span></span>
+          <span>
+            تم تفعيل الاشتراك المميز بنجاح لـ قضيتي :{" "}
+            <span className="text-[var(--gold)]">{limits.label}</span>
+          </span>
           <button
             onClick={() => setPlan("free")}
             className="mr-3 text-[10px] text-slate-500 hover:text-slate-300 underline font-sans cursor-pointer"
           >
-            (تبديل لوضع التجريبي للمشترك)
+            (تبديل للباقة المجانية)
           </button>
         </div>
       )}
@@ -142,7 +107,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="space-y-3.5">
               <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-3">
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  بصفتك مستخدمًا حاليًا، يمكنك تجربة وتفعيل أي من الباقات التالية مجاناً بالكامل لأغراض الاختبار والعرض التقديمي. بنقرة واحدة ستقوم بتفعيل الباقة المناسبة لك.
+                  بصفتك مستخدمًا حاليًا، يمكنك تجربة وتفعيل أي من الباقات التالية مجاناً بالكامل
+                  لأغراض الاختبار والعرض التقديمي. بنقرة واحدة ستقوم بتفعيل الباقة المناسبة لك.
                 </p>
               </div>
 
@@ -156,7 +122,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div
                   onClick={() => handleSelectPlan("free")}
                   className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right ${
-                    plan === "free" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                    plan === "free"
+                      ? "border-[var(--gold)] bg-[var(--gold)]/5"
+                      : "border-slate-800 bg-[#070a12]"
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
@@ -164,7 +132,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <span className="text-[10px] font-bold text-slate-400">مجانًا</span>
                   </div>
                   <p className="text-[10px] text-slate-400 leading-relaxed">
-                    محدودة بـ (٣ قضايا كحد أقصى، و ١٥ محادثة للمساعد الذكي شهرياً، وبدون ربط Google Drive).
+                    محدودة بـ (٣ قضايا كحد أقصى، و ١٥ محادثة للمساعد الذكي شهرياً، وبدون ربط Google
+                    Drive).
                   </p>
                 </div>
 
@@ -172,18 +141,25 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div
                   onClick={() => handleSelectPlan("basic")}
                   className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right relative overflow-hidden ${
-                    plan === "basic" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                    plan === "basic"
+                      ? "border-[var(--gold)] bg-[var(--gold)]/5"
+                      : "border-slate-800 bg-[#070a12]"
                   }`}
                 >
                   <div className="absolute top-0 left-0 bg-red-500 text-white text-[8px] font-bold py-0.5 px-2 rounded-br-lg tracking-tight">
                     الأكثر طلباً ⭐
                   </div>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-bold text-white">الباقة الفردية للـمُحامي (Basic)</span>
-                    <span className="text-[10px] font-bold text-[var(--gold-soft)]">١٤٩ ج.م / شهر</span>
+                    <span className="text-xs font-bold text-white">
+                      الباقة الفردية للـمُحامي (Basic)
+                    </span>
+                    <span className="text-[10px] font-bold text-[var(--gold-soft)]">
+                      ١٤٩ ج.م / شهر
+                    </span>
                   </div>
                   <p className="text-[10px] text-slate-400 leading-relaxed">
-                    إدارة حتى ٥٠ قضية نشطة، وعملاء بلا حدود، المساعد القانوني (١٠٠ طلب/شهرياً)، مزامنة وحفظ المرفقات على سحابة Google Drive الشخصية.
+                    إدارة حتى ٥٠ قضية نشطة، وعملاء بلا حدود، المساعد القانوني (١٠٠ طلب/شهرياً)،
+                    مزامنة وحفظ المرفقات على سحابة Google Drive الشخصية.
                   </p>
                 </div>
 
@@ -191,7 +167,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div
                   onClick={() => handleSelectPlan("pro")}
                   className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right ${
-                    plan === "pro" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                    plan === "pro"
+                      ? "border-[var(--gold)] bg-[var(--gold)]/5"
+                      : "border-slate-800 bg-[#070a12]"
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
@@ -199,7 +177,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <span className="text-[10px] font-bold text-emerald-400">٢٩٩ ج.م / شهر</span>
                   </div>
                   <p className="text-[10px] text-slate-400 leading-relaxed">
-                    للنشاط المكثف والذكاء الاصطناعي الدائم (٦٠٠ طلب/شهرياً بميزات تحليل وتلخيص الملفات الضخمة)، قضايا بلا حدود وتكامل Google Drive الكامل.
+                    للنشاط المكثف والذكاء الاصطناعي الدائم (٦٠٠ طلب/شهرياً بميزات تحليل وتلخيص
+                    الملفات الضخمة)، قضايا بلا حدود وتكامل Google Drive الكامل.
                   </p>
                 </div>
 
@@ -207,16 +186,21 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div
                   onClick={() => handleSelectPlan("enterprise")}
                   className={`rounded-xl border p-3 cursor-pointer transition-all hover:bg-slate-900/40 text-right ${
-                    plan === "enterprise" ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-slate-800 bg-[#070a12]"
+                    plan === "enterprise"
+                      ? "border-[var(--gold)] bg-[var(--gold)]/5"
+                      : "border-slate-800 bg-[#070a12]"
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-bold text-white">باقة المكاتب والشركات (Enterprise)</span>
+                    <span className="text-xs font-bold text-white">
+                      باقة المكاتب والشركات (Enterprise)
+                    </span>
                     <span className="text-[10px] font-bold text-blue-400">١٩٩ ج.م / محامٍ</span>
                   </div>
                   <p className="text-[10px] text-slate-400 leading-relaxed flex items-center gap-1.5">
                     <Users className="h-3 w-3 shrink-0 text-blue-400" />
-                    لوحة تحكم رئيسية لصاحب المكتب لإدارة قضايا وجلسات جميع المحامين، مساعد ذكي منفصل وشبكة متكاملة.
+                    لوحة تحكم رئيسية لصاحب المكتب لإدارة قضايا وجلسات جميع المحامين، مساعد ذكي منفصل
+                    وشبكة متكاملة.
                   </p>
                 </div>
               </div>
@@ -231,7 +215,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     type="text"
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value)}
-                     placeholder="مثال: EGYPT أو FREE"
+                    placeholder="مثال: EGYPT أو FREE"
                     className="flex-1 rounded-xl border border-slate-800 bg-[#090C14] px-3.5 py-2 text-xs font-bold font-mono text-white placeholder:text-slate-600 focus:border-[var(--gold)] focus:outline-none"
                   />
                   <button
