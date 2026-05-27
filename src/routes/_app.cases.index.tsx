@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CASE_STATUSES } from "@/lib/case-constants";
 import { cn } from "@/lib/utils";
 
+import { useTrial } from "@/hooks/use-trial";
+
 type Row = {
   id: string;
   case_number: string | null;
@@ -24,6 +26,7 @@ export const Route = createFileRoute("/_app/cases/")({
 });
 
 function CasesPage() {
+  const { simulatedLawyerId } = useTrial();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -35,7 +38,14 @@ function CasesPage() {
         .select("id,case_number,title,court_name,client_name,status,updated_at,first_session_date")
         .is("archived_at", null)
         .order("updated_at", { ascending: false });
-      const list = (data as Row[]) ?? [];
+      let list = (data as Row[]) ?? [];
+      
+      if (simulatedLawyerId !== "owner") {
+        list = list.filter((r) => {
+          const assigned = localStorage.getItem(`case_lawyer_${r.id}`);
+          return assigned === simulatedLawyerId;
+        });
+      }
       const ids = list.map((r) => r.id);
       if (ids.length) {
         const { data: futureSessions } = await supabase

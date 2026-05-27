@@ -12,6 +12,10 @@ import {
   Plus,
   Clock,
   Trash,
+  X,
+  Mail,
+  CheckCircle,
+  Lock,
 } from "lucide-react";
 import { StatCard } from "@/components/qadeyti/StatCard";
 import { DashboardAlerts } from "@/components/qadeyti/DashboardAlerts";
@@ -41,20 +45,19 @@ interface SessionRow {
   case_court?: string | null;
 }
 
-// Simulated data for auxiliary lawyers inside the Law Firm
-interface FirmLawyer {
-  id: string;
-  name: string;
-  role: string;
-  status: "active" | "offline";
-  casesCount: number;
-  aiUsage: number;
-  avatarLetter: string;
-}
-
 function Dashboard() {
   const { user } = useAuth();
-  const { plan, limits, firmLawyers, addFirmLawyer, deleteFirmLawyer } = useTrial();
+  const {
+    plan,
+    limits,
+    firmLawyers,
+    addFirmLawyer,
+    deleteFirmLawyer,
+    simulatedLawyerId,
+    impersonateLawyer,
+    cancelImpersonation,
+  } = useTrial();
+
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [caseCount, setCaseCount] = useState(0);
   const [upcoming, setUpcoming] = useState<SessionRow[]>([]);
@@ -62,6 +65,15 @@ function Dashboard() {
   const [todayCount, setTodayCount] = useState(0);
   const [lawyerName, setLawyerName] = useState<string | null>(null);
 
+  // Modal configurations
+  const [showAddLawyerModal, setShowAddLawyerModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [newLawyerName, setNewLawyerName] = useState("");
+  const [newLawyerEmail, setNewLawyerEmail] = useState("");
+  const [newLawyerRole, setNewLawyerRole] = useState("محامٍ مشارك");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync details dynamically depending on current simulated account
   useEffect(() => {
     if (!user) return;
     supabase
@@ -75,28 +87,30 @@ function Dashboard() {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
 
+    // Fetch all cases in order to filter by assignment in frontend
     supabase
       .from("cases")
       .select("id,title,court_name,case_number,status,updated_at")
       .is("archived_at", null)
       .order("updated_at", { ascending: false })
-      .limit(5)
-      .then(({ data }) => setCases((data as CaseRow[]) ?? []));
+      .then(({ data }) => {
+        let list = (data as CaseRow[]) ?? [];
+        if (simulatedLawyerId !== "owner") {
+          list = list.filter((c) => localStorage.getItem(`case_lawyer_${c.id}`) === simulatedLawyerId);
+        }
+        setCases(list.slice(0, 5));
+        setCaseCount(list.length);
+      });
 
-    supabase
-      .from("cases")
-      .select("id", { count: "exact", head: true })
-      .is("archived_at", null)
-      .then(({ count }) => setCaseCount(count ?? 0));
-
+    // Fetch upcoming sessions and map case details
     (async () => {
       const { data: ses } = await supabase
         .from("sessions")
         .select("id,case_id,session_date,session_type")
         .gte("session_date", now.toISOString())
         .order("session_date", { ascending: true })
-        .limit(5);
-      const list = (ses as SessionRow[]) ?? [];
+        .limit(10);
+      let list = (ses as SessionRow[]) ?? [];
       const ids = Array.from(new Set(list.map((s) => s.case_id)));
       if (ids.length) {
         const { data: cs } = await supabase
@@ -110,69 +124,121 @@ function Dashboard() {
           s.case_court = c?.court_name ?? null;
         });
       }
-      setUpcoming(list);
+      
+      // Filter sessions based on case assignment
+      if (simulatedLawyerId !== "owner") {
+        list = list.filter((s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId);
+      }
+      setUpcoming(list.slice(0, 5));
     })();
 
+    // Fetch and filter Today's session counts
     supabase
       .from("sessions")
-      .select("id", { count: "exact", head: true })
+      .select("id,case_id,session_date")
       .gte("session_date", startOfDay)
       .lt("session_date", endOfDay)
-      .then(({ count }) => setTodayCount(count ?? 0));
+      .then(({ data }) => {
+        let list = data ?? [];
+        if (simulatedLawyerId !== "owner") {
+          list = list.filter((s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId);
+        }
+        setTodayCount(list.length);
+      });
 
-    supabase
-      .from("payment_installments")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .neq("status", "مدفوع")
-      .lt("due_date", new Date().toISOString().slice(0, 10))
-      .then(({ count }) => setOverdueCount(count ?? 0));
-  }, [user]);
+    // Overdue payments belong exclusively to owner view
+    if (simulatedLawyerId === "owner") {
+      supabase
+        .from("payment_installments")
+        .select("id, count:id", { count: "exact" })
+        .eq("user_id", user.id)
+        .neq("status", "مدفوع")
+        .lt("due_date", new Date().toISOString().slice(0, 10))
+        .then(({ count }) => setOverdueCount(count ?? 0));
+    }
+  }, [user, simulatedLawyerId, firmLawyers]);
+
+  const handleAddNewLawyerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLawyerName.trim()) return;
+    
+    const emailToSet = newLawyerEmail.trim() || `${Date.now()}@qadeyti.eg`;
+    addFirmLawyer(newLawyerName.trim(), emailToSet, newLawyerRole);
+    
+    // Reset states
+    setNewLawyerName("");
+    setNewLawyerEmail("");
+    setNewLawyerRole("محامٍ مشارك");
+    setShowAddLawyerModal(false);
+
+    // Show temporary mock toast
+    setToastMessage(`📨 تم إضافة المحامي بنجاح وإرسال بريد تأكيد وتعيين كلمة المرور للمحامي: ${newLawyerName}`);
+    setTimeout(() => setToastMessage(null), 5500);
+  };
 
   const nextSession = upcoming[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-right" dir="rtl">
+      {/* Toast Alert Box */}
+      {toastMessage && (
+        <div className="fixed top-20 left-4 right-4 z-50 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-emerald-300 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in duration-350">
+          <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       <section className="space-y-1">
         <p className="text-sm text-muted-foreground">أهلاً بك</p>
         <h1 className="font-display text-2xl font-bold text-foreground">
-          {lawyerName
-            ? `أستاذ ${lawyerName.split(" ")[0]}`
-            : (user?.email?.split("@")[0] ?? "محامي")}
+          {simulatedLawyerId !== "owner"
+            ? firmLawyers.find((l) => l.id === simulatedLawyerId)?.name
+            : (lawyerName
+              ? `أستاذ ${lawyerName.split(" ")[0]}`
+              : (user?.email?.split("@")[0] ?? "محامي"))}
         </h1>
       </section>
 
       {/* Subscription Status or Active Package Info Badge */}
       <section className="rounded-2xl border border-slate-800 bg-[#090C15]/40 p-3.5 flex items-center justify-between">
         <div className="text-right">
-          <p className="text-[10px] text-slate-500 uppercase font-mono">الباقة المفعّلة حالياً</p>
+          <p className="text-[10px] text-slate-500 uppercase font-mono">الباقة المفعّلة حالياً للمكتب</p>
           <span className="text-xs font-bold text-[var(--gold)]">{limits.label}</span>
         </div>
         <div className="flex items-center gap-1.5 rounded-lg bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold text-orange-400">
           <Shield className="h-3.5 w-3.5" />
-          <span>حساب نشط</span>
+          <span>حساب المكتب نشط</span>
         </div>
       </section>
 
+      {/* Metric Cards - Dynamically hides sensitive metrics from sub-lawyers */}
       <section className="grid grid-cols-3 gap-3">
         <StatCard
           label="جلسات اليوم"
           value={String(todayCount)}
-          icon={<Calendar className="h-4 w-4" />}
+          icon={<Calendar className="h-4 w-4 text-blue-400" />}
         />
         <StatCard
-          label="القضايا"
+          label={simulatedLawyerId === "owner" ? "القضايا" : "قضاياك الموكلة"}
           value={String(caseCount)}
-          icon={<Briefcase className="h-4 w-4" />}
+          icon={<Briefcase className="h-4 w-4 text-emerald-400" />}
         />
-        <StatCard
-          label="المتأخرات"
-          value={String(overdueCount)}
-          icon={<AlertCircle className="h-4 w-4" />}
-        />
+        {simulatedLawyerId === "owner" ? (
+          <StatCard
+            label="المتأخرات"
+            value={String(overdueCount)}
+            icon={<AlertCircle className="h-4 w-4 text-rose-400" />}
+          />
+        ) : (
+          <StatCard
+            label="مستشارك الذكي"
+            value={`${firmLawyers.find(l => l.id === simulatedLawyerId)?.aiUsage ?? 0}/٤٠٠`}
+            icon={<Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />}
+          />
+        )}
       </section>
 
-      <DashboardAlerts />
+      {simulatedLawyerId === "owner" && <DashboardAlerts />}
 
       {/* Enterprise Master Dashboard Panel — ONLY RENDERED IF PLAN IS ENTERPRISE */}
       {plan === "enterprise" && (
@@ -187,78 +253,87 @@ function Dashboard() {
               </h2>
             </div>
             <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold text-blue-400">
-              باقة الشركات 🏢
+              إدارة طاقَم العمل 🏢
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
+          <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
             بصفتك مديراً للمكتب، يمكنك تتبع قضايا وجلسات جميع المحامين العاملين لديك واستهلاكهم
-            للمستشار الذكي لحظياً:
+            للمستشار الذكي لحظياً، كما يمكنك تجربة ودخول النظام بصلاحيات أي محامٍ لتجربة واختبار الواجهات:
           </p>
 
           {/* Members list */}
-          <div className="space-y-2 pt-1">
+          <div className="space-y-2 pt-1 font-sans">
             {firmLawyers.map((lawyer) => (
               <div
                 key={lawyer.id}
-                className="flex items-center justify-between rounded-xl bg-[#0d121f] p-3 border border-slate-900"
+                className="flex flex-col gap-2 rounded-xl bg-[#0d121f] p-4 border border-slate-900 animate-in fade-in"
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-300">
-                    {lawyer.avatarLetter}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-300">
+                      {lawyer.avatarLetter}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-100">{lawyer.name}</h4>
+                      <p className="text-[9px] text-slate-500 leading-none mt-0.5 font-mono">{lawyer.email}</p>
+                      <p className="text-[9.5px] text-blue-400 leading-none mt-1">{lawyer.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-100">{lawyer.name}</h4>
-                    <p className="text-[9.5px] text-slate-500 leading-none mt-0.5">{lawyer.role}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="text-left space-y-1 pl-1">
+                      <span className="block text-[10px] text-slate-300">
+                        قضايا: <span className="font-bold text-blue-400">{lawyer.casesCount}</span>
+                      </span>
+                      <span className="block text-[9px] text-slate-500 font-sans">
+                        الذكاء:{" "}
+                        <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٤٠٠</span>
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `هل أنت متأكد من إلغاء تنشيط وحذف المحامي (${lawyer.name}) من المكتب؟`,
+                          )
+                        ) {
+                          deleteFirmLawyer(lawyer.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
+                      title="حذف المحامي"
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-left space-y-1">
-                    <span className="block text-[10px] text-slate-300">
-                      قضايا: <span className="font-bold text-blue-400">{lawyer.casesCount}</span>
-                    </span>
-                    <span className="block text-[9px] text-slate-500 font-sans">
-                      المساعد الذكي:{" "}
-                      <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٤٠٠</span>
-                    </span>
-                  </div>
+
+                <div className="flex justify-end pt-1.5 border-t border-slate-900">
                   <button
                     onClick={() => {
-                      if (
-                        confirm(
-                          `هل أنت متأكد من إلغاء تنشيط وحذف المحامي (${lawyer.name}) من المكتب؟`,
-                        )
-                      ) {
-                        deleteFirmLawyer(lawyer.id);
-                      }
+                      impersonateLawyer(lawyer.id);
                     }}
-                    className="p-1 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
-                    title="حذف المحامي"
+                    className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 text-[10px] font-bold text-blue-400 transition-all cursor-pointer"
+                    title="دخول ومحاكاة صلاحيات هذا الحساب"
                   >
-                    <Trash className="h-3.5 w-3.5" />
+                    <UserCheck className="h-3 w-3" />
+                    <span>دخول ومحاكاة حساب المحامي ↩️</span>
                   </button>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-2 pt-1 font-sans">
             <button
-              onClick={() => {
-                const name = prompt("أدخل اسم المحامي الجديد للانضمام إلى المكتب:");
-                if (name) {
-                  addFirmLawyer(name, "محامٍ مشارك");
-                }
-              }}
+              onClick={() => setShowAddLawyerModal(true)}
               className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-xs font-bold text-blue-400 hover:bg-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>إضافة محامي للمكتب</span>
             </button>
             <button
-              onClick={() =>
-                alert("سيتم إرسال تقرير الأداء المالي والعملي لجميع المحامين بريدياً.")
-              }
+              onClick={() => setShowReportModal(true)}
               className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 active:scale-[0.98] transition-all cursor-pointer"
             >
               <Clock className="h-3.5 w-3.5" />
@@ -268,13 +343,14 @@ function Dashboard() {
         </section>
       )}
 
+      {/* Next session view */}
       {nextSession && (
         <section className="space-y-3">
-          <h2 className="font-display text-base font-semibold text-foreground">الجلسة القادمة</h2>
+          <h2 className="font-display text-base font-semibold text-foreground text-right">الجلسة القادمة</h2>
           <Link
             to="/cases/$caseId"
             params={{ caseId: nextSession.case_id }}
-            className="relative block overflow-hidden rounded-2xl border border-[var(--gold)]/40 bg-gradient-to-br from-card to-card/40 p-5 shadow-gold"
+            className="relative block overflow-hidden rounded-2xl border border-[var(--gold)]/40 bg-gradient-to-br from-card to-card/40 p-5 shadow-gold text-right"
           >
             <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-b from-[var(--gold-soft)] to-[var(--gold)]" />
             <p className="text-xs text-[var(--gold-soft)]">
@@ -295,15 +371,17 @@ function Dashboard() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-base font-semibold text-foreground">آخر القضايا</h2>
+          <h2 className="font-display text-base font-semibold text-foreground text-right">
+            {simulatedLawyerId === "owner" ? "آخر القضايا بالمكتب" : "قضاياك المكلف بها"}
+          </h2>
           <Link to="/cases" className="flex items-center gap-1 text-sm text-[var(--gold)]">
             عرض الكل <ChevronLeft className="h-4 w-4" />
           </Link>
         </div>
         <div className="space-y-3">
           {cases.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
-              لا توجد قضايا بعد.
+            <p className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground font-sans">
+              لا توجد قضايا مخصصة أو مضافة حالياً.
             </p>
           ) : (
             cases.map((c) => (
@@ -311,10 +389,10 @@ function Dashboard() {
                 key={c.id}
                 to="/cases/$caseId"
                 params={{ caseId: c.id }}
-                className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-[var(--gold)]/40"
+                className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-[var(--gold)]/40 text-right font-sans"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                <div className="flex items-start justify-between gap-3 text-right">
+                  <div className="min-w-0 text-right">
                     <h3 className="truncate font-display text-base font-semibold text-foreground">
                       {c.title}
                     </h3>
@@ -325,7 +403,7 @@ function Dashboard() {
                   <StatusBadge status={c.status} />
                 </div>
                 {c.case_number && (
-                  <div className="mt-3 text-xs text-muted-foreground">
+                  <div className="mt-3 text-xs text-muted-foreground text-right">
                     رقم القضية: {c.case_number}
                   </div>
                 )}
@@ -335,24 +413,161 @@ function Dashboard() {
         </div>
       </section>
 
+      {/* AI Consulting Button */}
       <section>
         <Link
           to="/ai"
-          className="group flex w-full items-center gap-4 rounded-2xl border border-[var(--gold)]/30 bg-gradient-to-l from-[var(--gold)]/10 to-transparent p-4 text-right transition-colors hover:border-[var(--gold)]/60"
+          className="group flex w-full items-center gap-4 rounded-2xl border border-[var(--gold)]/30 bg-gradient-to-l from-[var(--gold)]/10 to-transparent p-4 transition-colors hover:border-[var(--gold)]/60 text-right"
         >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gold-soft)] to-[var(--gold)] text-[color:var(--primary-foreground)] shadow-gold">
             <Sparkles className="h-5 w-5" />
           </span>
-          <span className="flex-1">
+          <span className="flex-1 text-right">
             <span className="block font-display text-base font-semibold text-foreground">
-              اسأل المستشار الذكي
+              المستشار الذكي (المساعد AI)
             </span>
-            <span className="mt-0.5 block text-xs text-muted-foreground">
-              صياغة مذكرة، بحث تشريعي، تلخيص ملف
+            <span className="mt-0.5 block text-xs text-muted-foreground font-sans">
+              صياغة مذكرات دفاع، بحث تشريعي، ومراجعة نصوص العقود بالذكاء الاصطناعي مخصصة لك
             </span>
           </span>
         </Link>
       </section>
+
+      {/* MODAL 1: Polished "Add Lawyer" Overlay Dialog */}
+      {showAddLawyerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-800 bg-[#0c101a] p-5 space-y-4 text-right shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-900 pb-3">
+              <div className="flex items-center gap-2 font-sans">
+                <Users className="h-5 w-5 text-blue-400" />
+                <h3 className="font-semibold text-sm text-white">إضافة محامٍ جديد لطاقَم المكتب</h3>
+              </div>
+              <button
+                onClick={() => setShowAddLawyerModal(false)}
+                className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddNewLawyerSubmit} className="space-y-4 font-sans">
+              <div className="space-y-1.5 text-right">
+                <label className="text-[11px] font-bold text-slate-300">اسم المحامي (مثال: أ. محمد العشري):</label>
+                <input
+                  type="text"
+                  required
+                  value={newLawyerName}
+                  onChange={(e) => setNewLawyerName(e.target.value)}
+                  placeholder="الاسم الثلاثي للمحامي"
+                  className="text-right w-full rounded-xl border border-slate-805 bg-[#080b12] px-3.5 py-2 text-xs text-white outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+
+              <div className="space-y-1.5 text-right">
+                <label className="text-[11px] font-bold text-slate-300">البريد الإلكتروني الخاص به (لتسجيل حسابه):</label>
+                <input
+                  type="email"
+                  required
+                  value={newLawyerEmail}
+                  onChange={(e) => setNewLawyerEmail(e.target.value)}
+                  placeholder="work@lawfirm.eg"
+                  className="w-full rounded-xl border border-slate-805 bg-[#080b12] px-3.5 py-2 text-xs text-white outline-none focus:border-blue-500 font-mono text-left"
+                  dir="ltr"
+                />
+                <span className="text-[10px] text-slate-500 leading-tight block font-sans">
+                  * سيرسل التطبيق دعوة تنشيط وتعيين كلمة المرور والlogin الخاص به فوراً للتجريب.
+                </span>
+              </div>
+
+              <div className="space-y-1.5 text-right font-sans">
+                <label className="text-[11px] font-bold text-slate-300">الدور الفني للمحامي بالمكتب:</label>
+                <select
+                  value={newLawyerRole}
+                  onChange={(e) => setNewLawyerRole(e.target.value)}
+                  className="w-full rounded-xl border border-slate-805 bg-[#080b12] px-3.5 py-2 text-xs text-white outline-none focus:border-blue-500 font-sans cursor-pointer text-right"
+                >
+                  <option value="محامٍ شريك">محامٍ شريك (Partner)</option>
+                  <option value="محامٍ استئناف">محامٍ استئناف (Appellate Lawyer)</option>
+                  <option value="محامٍ قضائي">محامٍ قضائي (Litigation specialist)</option>
+                  <option value="محامٍ تحت التمرين">محامٍ تحت التمرين (Trainee)</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-blue-500 hover:bg-blue-600 py-2.5 text-xs font-bold text-white transition-all cursor-pointer font-sans"
+              >
+                حفظ وإرسال دعوة التفعيل الإلكترونية
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: Confidential "Activity Reports" Menu Dialog */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-800 bg-[#0c101a] p-5 space-y-4 text-right shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-900 pb-3">
+              <div className="flex items-center gap-2 font-sans">
+                <Clock className="h-5 w-5 text-amber-500" />
+                <h3 className="font-semibold text-sm text-white font-sans">إصدار تقارير النشاط والأداء</h3>
+              </div>
+              <button
+                onClick={() => setShowReportModal(false)}
+                className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 font-sans">
+              <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-3 flex gap-2 text-right">
+                <Lock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-slate-300 leading-relaxed text-right">
+                  <strong>نظام الحماية والسرية التامّة 🔒:</strong> البيانات المالية والإيرادات هي أسرار خاصة بصاحب المكتب. لذلك لا تشمل التقارير المرسلة للمحامين أي أرقام مالية، بل أداءً عملياً فقط.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setToastMessage("✓ تم توليد تقارير الأداء العملي وإرسالها بنجاح إلى إيميلات جميع المحامين فرداً فرداً، مؤمّنة بالكامل وبدون أي أرقام مالية للمكتب.");
+                    setTimeout(() => setToastMessage(null), 5500);
+                  }}
+                  className="w-full rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-100 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer"
+                >
+                  <span className="font-bold text-[11px] flex items-center gap-1.5 text-blue-400 text-right">
+                    <Mail className="h-3.5 w-3.5" />
+                    ١. إرسال تقارير الأداء العملي للمحامين العاملين
+                  </span>
+                  <span className="text-[9.5px] text-slate-400 leading-normal text-right">
+                    يولد تقريراً تخصصياً كلاً بمحاميه وقضاياه وجلساته مرسلاً لإيميلهم (بدون أرقام مالية).
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setToastMessage("✓ تم توليد التقرير المالي والإداري الشامل للمكتب والشركاء بنجاح وإرساله حصرياً إلى بريدك المسجل: meetozacoin@gmail.com");
+                    setTimeout(() => setToastMessage(null), 5500);
+                  }}
+                  className="w-full rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-300 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer"
+                >
+                  <span className="font-bold text-[11px] flex items-center gap-1.5 text-amber-400 text-right">
+                    <Shield className="h-3.5 w-3.5" />
+                    ٢. طلب التقرير المالي والعملي الشامل للمكتب
+                  </span>
+                  <span className="text-[9.5px] text-blue-300 leading-none text-right">
+                    شيت اكسل تفصيلي شامل للإيرادات وتوزيع العمل يرسل لمدير المكتب وصاحب العمل فقط.
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

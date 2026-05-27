@@ -5,11 +5,15 @@ import { useTrial, type QadeytiPlan } from "@/hooks/use-trial";
 import { Sparkles, Command, Check, ShieldAlert, X, Users, MessageSquare } from "lucide-react";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { isPremium, plan, setPlan, limits } = useTrial();
+  const { isPremium, plan, setPlan, limits, simulatedLawyerId, firmLawyers, cancelImpersonation } = useTrial();
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponSuccess, setCouponSuccess] = useState(false);
   const [couponError, setCouponError] = useState("");
+  
+  const activeSimulatedLawyer = simulatedLawyerId !== "owner" 
+    ? firmLawyers.find(l => l.id === simulatedLawyerId) 
+    : null;
 
   const handleApplyCoupon = () => {
     setCouponError("");
@@ -70,6 +74,28 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="mr-3 text-[10px] text-slate-500 hover:text-slate-300 underline font-sans cursor-pointer"
           >
             (تبديل للباقة المجانية)
+          </button>
+        </div>
+      )}
+
+      {/* Sub-Lawyer Simulation/Impersonation Banner */}
+      {activeSimulatedLawyer && (
+        <div
+          dir="rtl"
+          className="w-full py-2.5 px-4 text-center text-xs font-medium bg-blue-650/20 border-b border-blue-500/30 text-blue-300 flex items-center justify-between gap-3 flex-wrap"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
+            <span className="truncate text-[11px]">
+              أنت تتصفح الحساب الآن بصلاحيات:{" "}
+              <strong className="text-white font-bold">{activeSimulatedLawyer.name}</strong> ({activeSimulatedLawyer.role})
+            </span>
+          </div>
+          <button
+            onClick={() => cancelImpersonation()}
+            className="shrink-0 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/40 rounded px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer"
+          >
+            إنهاء المحاكاة ↩️
           </button>
         </div>
       )}
