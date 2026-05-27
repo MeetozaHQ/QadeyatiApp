@@ -9,19 +9,19 @@ export const config = {
 
 export default async function handler(req, res) {
   try {
-    // 1. Determine URL (restoring original path in case of Vercel rewrites)
+    // 1. Reconstruct the absolute base URL
     const protocol = req.headers["x-forwarded-proto"] || "https";
     const host = req.headers.host;
     const base = `${protocol}://${host}`;
     
-    // Parse the incoming rewritten URL
+    // Parse the incoming rewritten request URL
     const reqUrlParsed = new URL(req.url, base);
     
-    // Retrieve the original routing path using multiple bulletproof fallback layers
+    // Retrieve the original routing path using multiple fallback layers
     let originalPath = reqUrlParsed.searchParams.get("__original_path");
     
     if (originalPath === null) {
-      // Fallback A: parse from Vercel's route regex matches header
+      // Fallcamp A: parse from Vercel's route regex matches header
       const routeMatches = req.headers["x-now-route-matches"];
       if (routeMatches) {
         const matches = new URLSearchParams(routeMatches);
@@ -33,20 +33,20 @@ export default async function handler(req, res) {
     }
     
     if (originalPath === null) {
-      // Fallback B: parse from Vercel's matched path header
+      // Fallcamp B: parse from Vercel's matched path header
       const matched = req.headers["x-matched-path"];
       if (matched && matched !== "/api/index" && matched !== "/api/index.js") {
         originalPath = matched;
       }
     }
     
-    // Clean and normalize the pathname
+    // Clean and normalize the pathname (ensure there is exactly one leading slash)
     let originalPathname = "/";
     if (originalPath !== null && originalPath !== undefined) {
       originalPathname = "/" + originalPath.replace(/^\//, "");
     }
 
-    // Add debug endpoint
+    // Add diagnostics endpoint to dynamically inspect route forwarding of headers to the custom server
     if (req.url.includes("/api/debug-routes")) {
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
@@ -73,6 +73,19 @@ export default async function handler(req, res) {
 
     // 2. Build headers
     const headers = new Headers();
+    
+    // Overwrite all potential headers that Nitro/H3/Vinxi check to determine the current path.
+    // If any of these point to "/api/index" or "/api/index.js", Vinxi will match a 404 route.
+    // Overriding them to originalPathname guarantees successful SSR routing matching.
+    const headersToOverride = {
+      "x-matched-path": originalPathname,
+      "x-vercel-matched-path": originalPathname,
+      "x-rewrite-url": originalPathname,
+      "x-original-url": originalPathname,
+      "x-forwarded-path": originalPathname,
+      "x-forwarded-uri": originalPathname,
+    };
+
     const headersToSkip = new Set([
       "x-matched-path",
       "x-vercel-matched-path",
@@ -85,9 +98,12 @@ export default async function handler(req, res) {
     for (const [key, value] of Object.entries(req.headers)) {
       if (value !== undefined) {
         const lowerKey = key.toLowerCase();
-        if (headersToSkip.has(lowerKey) || lowerKey.startsWith("x-now-") || lowerKey.startsWith("x-vercel-")) {
+        
+        // Skip keys we will explicitly override or block to prevent "/api/index" leakages
+        if (headersToSkip.has(lowerKey) || headersToOverride[lowerKey] !== undefined || lowerKey.startsWith("x-now-") || lowerKey.startsWith("x-vercel-")) {
           continue;
         }
+        
         if (Array.isArray(value)) {
           for (const val of value) {
             headers.append(key, val);
@@ -98,9 +114,10 @@ export default async function handler(req, res) {
       }
     }
 
-    // Explicitly set/normalize routing headers for H3 / Vinxi underlying layer
-    headers.set("x-forwarded-path", originalPathname);
-    headers.set("x-forwarded-uri", originalPathname);
+    // Explicitly apply/force normalized routing headers for H3 / Vinxi underlying layer
+    for (const [key, value] of Object.entries(headersToOverride)) {
+      headers.set(key, value);
+    }
 
     // 3. Prepare body if applicable (since bodyParser is disabled, we read the stream)
     let body = undefined;
