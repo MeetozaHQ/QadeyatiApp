@@ -163,18 +163,22 @@ function NotFoundComponent() {
   const currentPath = router.state.location.pathname;
   const isServer = typeof window === "undefined";
   const browserUrl = !isServer ? window.location.href : "Server SSR";
-  const registeredRouteIds = router.flatRoutes
-    ? router.flatRoutes.map((r) => `${r.id} [${r.fullPath || ""}]`)
-    : [];
+
+  const customRouter = router as unknown as {
+    routesById?: Record<string, { fullPath?: string; path?: string }>;
+  };
+  const routesById = customRouter.routesById || {};
+  const registeredRouteIds = Object.keys(routesById).map((id) => {
+    const r = routesById[id];
+    return `${id} [${r?.fullPath || r?.path || ""}]`;
+  });
 
   // Log detailed info to console for debugging
   if (!isServer) {
     console.warn("404 Router Path mismatch:", {
       currentPath,
       browserUrl,
-      flatRoutes: router.flatRoutes
-        ? router.flatRoutes.map((r) => ({ id: r.id, path: r.path, fullPath: r.fullPath }))
-        : [],
+      routesByIdKeys: Object.keys(routesById),
     });
   }
 
