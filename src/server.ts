@@ -1,4 +1,5 @@
 import "./lib/error-capture";
+import * as fs from "node:fs";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -18,8 +19,17 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function brandedErrorResponse(): Response {
-  return new Response(renderErrorPage(), {
+function brandedErrorResponse(errorText?: string): Response {
+  try {
+    fs.appendFileSync(
+      "ssr-errors.log",
+      `[${new Date().toISOString()}] Server Error:\n${errorText}\n\n`,
+    );
+  } catch (err) {
+    // Ignore logging errors
+  }
+
+  return new Response(renderErrorPage(errorText), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
@@ -62,8 +72,15 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return brandedErrorResponse();
+  const captured = consumeLastCapturedError();
+  const errDesc =
+    captured instanceof Error
+      ? captured.stack || captured.message
+      : captured
+        ? String(captured)
+        : `h3 swallowed SSR error: ${body}`;
+  console.error(captured ?? new Error(`h3 swallowed SSR error: ${body}`));
+  return brandedErrorResponse(errDesc);
 }
 
 export default {
@@ -95,7 +112,8 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
-      return brandedErrorResponse();
+      const errText = error instanceof Error ? error.stack || error.message : String(error);
+      return brandedErrorResponse(errText);
     }
   },
 };
