@@ -107,8 +107,19 @@ export default {
         }
       }
 
+      let targetRequest = request;
+      const originalPath = url.searchParams.get("__original_path");
+      if (originalPath !== null) {
+        const normalizedPath = originalPath.startsWith("/") ? originalPath : `/${originalPath}`;
+        const newUrl = new URL(request.url);
+        newUrl.pathname = normalizedPath;
+        newUrl.searchParams.delete("__original_path");
+        targetRequest = new Request(newUrl.toString(), request);
+        console.warn(`[server.ts] Normalized rewritten Vercel URL from ${request.url} to ${newUrl.toString()}`);
+      }
+
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
+      const response = await handler.fetch(targetRequest, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
