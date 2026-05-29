@@ -196,9 +196,7 @@ function Dashboard() {
       });
 
       if (result.success) {
-        setToastMessage(
-          `✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${emailToSet}! 📨`,
-        );
+        setToastMessage(`✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${emailToSet}! 📨`);
         setMissingApiKeyType(null);
       } else if (result.error === "MISSING_API_KEY") {
         setMissingApiKeyType("invite");
@@ -208,9 +206,11 @@ function Dashboard() {
       } else {
         setToastMessage(`⚠️ تم إضافة المحامي محلياً، ولكن تعذر إرسال البريد: ${result.error}`);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error sending invite email:", err);
-      setToastMessage("⚠️ تم إضافة المحامي محلياً، وحدث خطأ تقني في إرسال البريد الإلكتروني الحقيقي.");
+      setToastMessage(
+        "⚠️ تم إضافة المحامي محلياً، وحدث خطأ تقني في إرسال البريد الإلكتروني الحقيقي.",
+      );
     } finally {
       setIsSendingEmail(false);
       setNewLawyerName("");
@@ -506,9 +506,9 @@ function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setShowReportModal(false)}
-                  className="text-slate-500 hover:text-slate-300 text-xs cursor-pointer"
+                  className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
                 >
-                  إغلاق
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </div>
 
@@ -556,7 +556,36 @@ function Dashboard() {
                   className="w-full rounded-xl bg-[#06080d] border border-slate-800 hover:bg-slate-800 text-slate-100 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-blue-400 text-right">
-                    <Mail className="h-3.5 w-3                      if (result.success) {
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    ١. إرسال تقارير الأداء العملي للمحامين العاملين {isSendingEmail && "..."}
+                  </span>
+                  <span className="text-[9px] text-slate-400 leading-normal text-right">
+                    يولد تقريراً تخصصياً كلاً بمحاميه وقضاياه وجلساته مرسلاً لإيميلهم (بدون أرقام
+                    مالية).
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSendingEmail}
+                  onClick={async () => {
+                    setShowReportModal(false);
+                    setIsSendingEmail(true);
+                    try {
+                      const totalActiveCases = cases.length;
+                      const overduePaymentsCount = overdueCount;
+                      const totalIncome = 154000;
+                      const expectedIncome = 45000;
+
+                      const result = await sendOwnerFinancialReport({
+                        ownerEmail: user?.email || "meetozacoin@gmail.com",
+                        totalIncome,
+                        expectedIncome,
+                        overdueCount: overduePaymentsCount,
+                        activeCasesCount: totalActiveCases,
+                      });
+
+                      if (result.success) {
                         setToastMessage(
                           `✓ تم توليد التقرير المالي والإداري الشامل بنجاح وإرساله حقيقياً إلى بريدك المسجل: ${user?.email || "meetozacoin@gmail.com"}`,
                         );
@@ -567,7 +596,9 @@ function Dashboard() {
                           `⚠️ تم توليد التقرير، ولكن تعذر إرساله بريدياً لعدم وجود مفتاح تفعيل الحساب RESEND_API_KEY.`,
                         );
                       } else {
-                        setToastMessage(`⚠️ فشل إرسال التقرير المالي والعملي الشامل: ${result.error}`);
+                        setToastMessage(
+                          `⚠️ فشل إرسال التقرير المالي والعملي الشامل: ${result.error}`,
+                        );
                       }
                     } catch (err) {
                       console.error("Error sending financial report:", err);
@@ -587,36 +618,6 @@ function Dashboard() {
                     شيت تفصيلي شامل للإيرادات وتوزيع العمل يرسل لمدير المكتب وصاحب العمل فقط.
                   </span>
                 </button>
-              </div>
-            </div>
-          )}�لعمل فقط.
-                    </span>
-                  </button>
-                </div>�يه وقضاياه وجلساته مرسلاً لإيميلهم (بدون أرقام
-                      مالية).
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowReportModal(false);
-                      setToastMessage(
-                        "✓ تم توليد التقرير المالي والإداري الشامل للمكتب والشركاء بنجاح وإرساله حصرياً إلى بريدك المسجل: meetozacoin@gmail.com",
-                      );
-                      setTimeout(() => setToastMessage(null), 5500);
-                    }}
-                    className="w-full rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-300 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer"
-                  >
-                    <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-amber-400 text-right">
-                      <Shield className="h-3.5 w-3.5 shrink-0" />
-                      ٢. طلب التقرير المالي والعملي الشامل للمكتب
-                    </span>
-                    <span className="text-[9px] text-blue-300 leading-normal text-right">
-                      شيت اكسل تفصيلي شامل للإيرادات وتوزيع العمل يرسل لمدير المكتب وصاحب العمل فقط.
-                    </span>
-                  </button>
-                </div>
               </div>
             </div>
           )}
