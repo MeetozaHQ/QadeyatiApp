@@ -24,6 +24,7 @@ import { StatusBadge } from "@/components/qadeyti/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTrial, FirmLawyer } from "@/hooks/use-trial";
+import { toast } from "sonner";
 import {
   sendLawyerInviteEmail,
   sendLawyersPerformanceReports,
@@ -41,6 +42,7 @@ interface CaseRow {
   case_number: string | null;
   status: string;
   updated_at: string;
+  assigned_lawyer_id?: string | null;
 }
 interface SessionRow {
   id: string;
@@ -49,6 +51,7 @@ interface SessionRow {
   session_type: string | null;
   case_title?: string | null;
   case_court?: string | null;
+  assigned_lawyer_id?: string | null;
 }
 
 function Dashboard() {
@@ -85,15 +88,19 @@ function Dashboard() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const handleOpenDeleteDialog = async (lawyer: FirmLawyer) => {
+    if (simulatedLawyerId !== "owner") {
+      toast.error("عذراً، صلاحية إضافة أو حذف المحامين مقتصرة فقط على صاحب الحساب/صاحب المكتب.");
+      return;
+    }
     try {
       const { data } = await supabase
         .from("cases")
-        .select("id,title,status")
+        .select("id,title,status,assigned_lawyer_id")
         .is("archived_at", null);
 
       const allCases = (data as CaseRow[]) ?? [];
       const activeAssigned = allCases.filter((c) => {
-        const assigned = localStorage.getItem(`case_lawyer_${c.id}`);
+        const assigned = c.assigned_lawyer_id || "none";
         const isActive = c.status !== "مغلقة" && c.status !== "صدر حكم";
         return assigned === lawyer.id && isActive;
       });
@@ -127,16 +134,25 @@ function Dashboard() {
     }
   };
 
-  const handleConfirmDeleteWithDelegation = () => {
+  const handleConfirmDeleteWithDelegation = async () => {
     if (!deletingLawyer) return;
 
-    activeCasesOfLawyer.forEach((c) => {
-      if (delegationTargetId === "none") {
-        localStorage.removeItem(`case_lawyer_${c.id}`);
-      } else {
-        localStorage.setItem(`case_lawyer_${c.id}`, delegationTargetId);
-      }
-    });
+    try {
+      const updates = activeCasesOfLawyer.map((c) => {
+        const targetValue = delegationTargetId === "none" ? null : delegationTargetId;
+        if (typeof window !== "undefined") {
+          if (targetValue === null) {
+            localStorage.removeItem(`case_lawyer_${c.id}`);
+          } else {
+            localStorage.setItem(`case_lawyer_${c.id}`, targetValue);
+          }
+        }
+        return supabase.from("cases").update({ assigned_lawyer_id: targetValue }).eq("id", c.id);
+      });
+      await Promise.all(updates);
+    } catch (e) {
+      console.error("Failed to delegate cases on Supabase:", e);
+    }
 
     deleteFirmLawyer(deletingLawyer.id);
 
@@ -201,15 +217,13 @@ function Dashboard() {
     // Fetch all cases in order to filter by assignment in frontend
     supabase
       .from("cases")
-      .select("id,title,court_name,case_number,status,updated_at")
+      .select("id,title,court_name,case_number,status,updated_at,assigned_lawyer_id")
       .is("archived_at", null)
       .order("updated_at", { ascending: false })
       .then(({ data }) => {
         let list = (data as CaseRow[]) ?? [];
         if (simulatedLawyerId !== "owner") {
-          list = list.filter(
-            (c) => localStorage.getItem(`case_lawyer_${c.id}`) === simulatedLawyerId,
-          );
+          list = list.filter((c) => (c.assigned_lawyer_id || "none") === simulatedLawyerId);
         }
         setCases(list.slice(0, 5));
         setCaseCount(list.length);
@@ -228,40 +242,47 @@ function Dashboard() {
       if (ids.length) {
         const { data: cs } = await supabase
           .from("cases")
-          .select("id,title,court_name")
+          .select("id,title,court_name,assigned_lawyer_id")
           .in("id", ids);
         const map = new Map((cs ?? []).map((c) => [c.id, c]));
         list.forEach((s) => {
           const c = map.get(s.case_id);
           s.case_title = c?.title ?? null;
           s.case_court = c?.court_name ?? null;
+          s.assigned_lawyer_id = c?.assigned_lawyer_id ?? "none";
         });
       }
 
       // Filter sessions based on case assignment
       if (simulatedLawyerId !== "owner") {
-        list = list.filter(
-          (s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId,
-        );
+        list = list.filter((s) => (s.assigned_lawyer_id || "none") === simulatedLawyerId);
       }
       setUpcoming(list.slice(0, 5));
     })();
 
     // Fetch and filter Today's session counts
-    supabase
-      .from("sessions")
-      .select("id,case_id,session_date")
-      .gte("session_date", startOfDay)
-      .lt("session_date", endOfDay)
-      .then(({ data }) => {
-        let list = data ?? [];
-        if (simulatedLawyerId !== "owner") {
-          list = list.filter(
-            (s) => localStorage.getItem(`case_lawyer_${s.case_id}`) === simulatedLawyerId,
-          );
-        }
-        setTodayCount(list.length);
-      });
+    (async () => {
+      const { data: ses } = await supabase
+        .from("sessions")
+        .select("id,case_id,session_date")
+        .gte("session_date", startOfDay)
+        .lt("session_date", endOfDay);
+      let list = ses ?? [];
+
+      if (simulatedLawyerId !== "owner" && list.length > 0) {
+        const ids = Array.from(new Set(list.map((s) => s.case_id)));
+        const { data: cs } = await supabase
+          .from("cases")
+          .select("id,assigned_lawyer_id")
+          .in("id", ids);
+        const map = new Map((cs ?? []).map((c) => [c.id, c]));
+        list = list.filter((s) => {
+          const c = map.get(s.case_id);
+          return (c?.assigned_lawyer_id || "none") === simulatedLawyerId;
+        });
+      }
+      setTodayCount(list.length);
+    })();
 
     // Overdue payments belong exclusively to owner view
     if (simulatedLawyerId === "owner") {
@@ -279,6 +300,11 @@ function Dashboard() {
     e.preventDefault();
     if (!newLawyerName.trim()) return;
 
+    if (simulatedLawyerId !== "owner") {
+      toast.error("عذراً، صلاحية إضافة أو حذف المحامين مقتصرة فقط على صاحب الحساب/صاحب المكتب.");
+      return;
+    }
+
     setIsSendingEmail(true);
     const emailToSet = newLawyerEmail.trim() || `${Date.now()}@qadeyti.eg`;
     addFirmLawyer(newLawyerName.trim(), emailToSet, newLawyerRole);
@@ -292,6 +318,10 @@ function Dashboard() {
       });
 
       if (result.success) {
+        toast.success(`✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${emailToSet}! 📨`, {
+          duration: 7000,
+          position: "top-center",
+        });
         setToastMessage(`✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${emailToSet}! 📨`);
         setMissingApiKeyType(null);
       } else if (result.error === "MISSING_API_KEY") {
@@ -303,10 +333,20 @@ function Dashboard() {
           lawyerName: newLawyerName.trim(),
           lawyerRole: newLawyerRole,
         });
+        toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح لطاقم المكتب!`, {
+          description: "⚠️ لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
+          duration: 7000,
+          position: "top-center",
+        });
         setToastMessage(
           `⚠️ تم إضافة المحامي محلياً بنجاح! ولكن لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY.`,
         );
       } else {
+        toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح!`, {
+          description: `⚠️ تعذر إرسال بريد التفعيل: ${result.error}`,
+          duration: 7000,
+          position: "top-center",
+        });
         setToastMessage(`⚠️ تم إضافة المحامي محلياً، ولكن تعذر إرسال البريد: ${result.error}`);
       }
     } catch (err) {
@@ -319,6 +359,11 @@ function Dashboard() {
         subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${newLawyerName.trim()}`,
         lawyerName: newLawyerName.trim(),
         lawyerRole: newLawyerRole,
+      });
+      toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح!`, {
+        description: "⚠️ لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
+        duration: 7000,
+        position: "top-center",
       });
       setToastMessage(
         `⚠️ تم إضافة المحامي محلياً بنجاح! ولكن لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY.`,
@@ -452,62 +497,68 @@ function Dashboard() {
                         <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٦٠٠</span>
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleOpenDeleteDialog(lawyer)}
-                      className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
-                      title="حذف المحامي وإعادة تفويض القضايا"
-                    >
-                      <Trash className="h-3.5 w-3.5" />
-                    </button>
+                    {simulatedLawyerId === "owner" && (
+                      <button
+                        onClick={() => handleOpenDeleteDialog(lawyer)}
+                        className="p-1.5 rounded-lg text-rose-500 bg-rose-500/10 hover:text-rose-400 hover:bg-rose-500/20 border border-rose-500/15 hover:border-rose-500/30 transition-all cursor-pointer shadow-sm shadow-rose-950/20"
+                        title="حذف المحامي وإعادة تفويض القضايا"
+                      >
+                        <Trash className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-1.5 border-t border-slate-900">
-                  <button
-                    onClick={() => {
-                      impersonateLawyer(lawyer.id);
-                    }}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 text-[10px] font-bold text-blue-400 transition-all cursor-pointer"
-                    title="دخول ومحاكاة صلاحيات هذا الحساب"
-                  >
-                    <UserCheck className="h-3 w-3" />
-                    <span>دخول ومحاكاة حساب المحامي ↩️</span>
-                  </button>
-                </div>
+                {simulatedLawyerId === "owner" && (
+                  <div className="flex justify-end pt-1.5 border-t border-slate-900">
+                    <button
+                      onClick={() => {
+                        impersonateLawyer(lawyer.id);
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 text-[10px] font-bold text-blue-400 transition-all cursor-pointer"
+                      title="دخول ومحاكاة صلاحيات هذا الحساب"
+                    >
+                      <UserCheck className="h-3 w-3" />
+                      <span>دخول ومحاكاة حساب المحامي ↩️</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1 font-sans">
-            <button
-              onClick={() => {
-                setShowAddLawyerModal(true);
-                setShowReportModal(false);
-              }}
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold active:scale-[0.98] transition-all cursor-pointer ${
-                showAddLawyerModal
-                  ? "bg-blue-500 text-white border border-blue-400"
-                  : "bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
-              }`}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>إضافة محامي للمكتب</span>
-            </button>
-            <button
-              onClick={() => {
-                setShowReportModal(true);
-                setShowAddLawyerModal(false);
-              }}
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
-                showReportModal
-                  ? "bg-amber-500 text-black border border-amber-400"
-                  : "bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800"
-              }`}
-            >
-              <Clock className="h-3.5 w-3.5" />
-              <span>تقارير النشاط</span>
-            </button>
-          </div>
+          {simulatedLawyerId === "owner" && (
+            <div className="grid grid-cols-2 gap-2 pt-1 font-sans">
+              <button
+                onClick={() => {
+                  setShowAddLawyerModal(true);
+                  setShowReportModal(false);
+                }}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold active:scale-[0.98] transition-all cursor-pointer ${
+                  showAddLawyerModal
+                    ? "bg-blue-500 text-white border border-blue-400"
+                    : "bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
+                }`}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>إضافة محامي للمكتب</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowReportModal(true);
+                  setShowAddLawyerModal(false);
+                }}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
+                  showReportModal
+                    ? "bg-amber-500 text-black border border-amber-400"
+                    : "bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                <Clock className="h-3.5 w-3.5" />
+                <span>تقارير النشاط</span>
+              </button>
+            </div>
+          )}
 
           {/* Inline Deletion & Case Delegation Card */}
           {deletingLawyer && (
@@ -672,9 +723,17 @@ function Dashboard() {
                 <div className="flex gap-2 pt-1">
                   <button
                     type="submit"
-                    className="flex-1 rounded-xl bg-blue-500 hover:bg-blue-600 py-2.5 text-xs font-bold text-white transition-all cursor-pointer font-sans"
+                    disabled={isSendingEmail}
+                    className="flex-1 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:hover:bg-blue-500 py-2.5 text-xs font-bold text-white transition-all cursor-pointer font-sans flex items-center justify-center gap-2"
                   >
-                    حفظ وإرسال دعوة التفعيل 📨
+                    {isSendingEmail ? (
+                      <>
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>جاري الحفظ وإرسال دعوة التفعيل...</span>
+                      </>
+                    ) : (
+                      <span>حفظ وإرسال دعوة التفعيل 📨</span>
+                    )}
                   </button>
                   <button
                     type="button"
