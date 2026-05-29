@@ -501,108 +501,95 @@ function Dashboard() {
               <div className="flex items-center justify-between border-b border-slate-900 pb-2">
                 <div className="flex items-center gap-2 text-amber-500">
                   <Clock className="h-4 w-4" />
-                  <h3 className="font-bold text-[11px] text-white">إصدار تقارير الن                 <div className="space-y-2 pt-1">
-                  <button
-                    type="button"
-                    disabled={isSendingEmail}
-                    onClick={async () => {
-                      setShowReportModal(false);
-                      setIsSendingEmail(true);
-                      try {
-                        const mappedLawyers = firmLawyers.map((l) => ({
-                          name: l.name,
-                          email: l.email,
-                          role: l.role,
-                          casesCount: l.casesCount,
-                          aiUsage: l.aiUsage,
-                        }));
+                  <h3 className="font-bold text-[11px] text-white">إصدار تقارير النشاط والأداء</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="text-slate-500 hover:text-slate-300 text-xs cursor-pointer"
+                >
+                  إغلاق
+                </button>
+              </div>
 
-                        const result = await sendLawyersPerformanceReports({
-                          lawyers: mappedLawyers,
-                        });
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isSendingEmail}
+                  onClick={async () => {
+                    setShowReportModal(false);
+                    setIsSendingEmail(true);
+                    try {
+                      const mappedLawyers = firmLawyers.map((l) => ({
+                        name: l.name,
+                        email: l.email,
+                        role: l.role,
+                        casesCount: l.casesCount,
+                        aiUsage: l.aiUsage,
+                      }));
 
-                        if (result.success) {
-                          setToastMessage(
-                            `✓ تم إرسال تقارير الأداء الحقيقية بنجاح إلى إيميلات المحامين المسجلين! (تم إرسال ${result.successCount} بريد بنجاح)`,
-                          );
-                          setMissingApiKeyType(null);
-                        } else if (result.error === "MISSING_API_KEY") {
-                          setMissingApiKeyType("lawyers-report");
-                          setToastMessage(
-                            "⚠️ تم توليد التقارير ولكن لم نرسلها حقيقياً لبريدهم لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
-                          );
-                        } else {
-                          setToastMessage(`⚠️ فشل إرسال التقارير لبعض المحامين: ${result.error}`);
-                        }
-                      } catch (err) {
-                        console.error("Error sending performance reports:", err);
-                        setToastMessage("⚠️ حدث خطأ تقني في إرسال تقارير أداء المحامين.");
-                      } finally {
-                        setIsSendingEmail(false);
-                        setTimeout(() => setToastMessage(null), 8500);
+                      const result = await sendLawyersPerformanceReports({
+                        lawyers: mappedLawyers,
+                      });
+
+                      if (result.success) {
+                        setToastMessage(
+                          `✓ تم إرسال تقارير الأداء الحقيقية بنجاح إلى إيميلات المحامين المسجلين! (تم إرسال ${result.successCount} بريد بنجاح)`,
+                        );
+                        setMissingApiKeyType(null);
+                      } else if (result.error === "MISSING_API_KEY") {
+                        setMissingApiKeyType("lawyers-report");
+                        setToastMessage(
+                          "⚠️ تم توليد التقارير ولكن لم نرسلها حقيقياً لبريدهم لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
+                        );
+                      } else {
+                        setToastMessage(`⚠️ فشل إرسال التقارير لبعض المحامين: ${result.error}`);
                       }
-                    }}
-                    className="w-full rounded-xl bg-[#06080d] border border-slate-800 hover:bg-slate-800 text-slate-100 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-blue-400 text-right">
-                      <Mail className="h-3.5 w-3.5 shrink-0" />
-                      ١. إرسال تقارير الأداء العملي للمحامين العاملين {isSendingEmail && "..."}
-                    </span>
-                    <span className="text-[9px] text-slate-400 leading-normal text-right">
-                      يولد تقريراً تخصصياً كلاً بمحاميه وقضاياه وجلساته مرسلاً لإيميلهم (بدون أرقام
-                      مالية).
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isSendingEmail}
-                    onClick={async () => {
-                      setShowReportModal(false);
-                      setIsSendingEmail(true);
-                      try {
-                        const totalActiveCases = cases.length;
-                        const overduePaymentsCount = overdueCount;
-                        const totalIncome = 154000;
-                        const expectedIncome = 45000;
-
-                        const result = await sendOwnerFinancialReport({
-                          ownerEmail: user?.email || "meetozacoin@gmail.com",
-                          totalIncome,
-                          expectedIncome,
-                          overdueCount: overduePaymentsCount,
-                          activeCasesCount: totalActiveCases,
-                        });
-
-                        if (result.success) {
-                          setToastMessage(
-                            `✓ تم توليد التقرير المالي والإداري الشامل بنجاح وإرساله حقيقياً إلى بريدك المسجل: ${user?.email || "meetozacoin@gmail.com"}`,
-                          );
-                          setMissingApiKeyType(null);
-                        } else if (result.error === "MISSING_API_KEY") {
-                          setMissingApiKeyType("owner-report");
-                          setToastMessage(
-                            `⚠️ تم توليد التقرير، ولكن تعذر إرساله بريدياً لعدم وجود مفتاح تفعيل الحساب RESEND_API_KEY.`,
-                          );
-                        } else {
-                          setToastMessage(`⚠️ فشل إرسال التقرير المالي والعملي الشامل: ${result.error}`);
-                        }
-                      } catch (err) {
-                        console.error("Error sending financial report:", err);
-                        setToastMessage("⚠️ حدث خطأ تقني في إرسال التقرير والبيان المالي.");
-                      } finally {
-                        setIsSendingEmail(false);
-                        setTimeout(() => setToastMessage(null), 8500);
+                    } catch (err) {
+                      console.error("Error sending performance reports:", err);
+                      setToastMessage("⚠️ حدث خطأ تقني في إرسال تقارير أداء المحامين.");
+                    } finally {
+                      setIsSendingEmail(false);
+                      setTimeout(() => setToastMessage(null), 8500);
+                    }
+                  }}
+                  className="w-full rounded-xl bg-[#06080d] border border-slate-800 hover:bg-slate-800 text-slate-100 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-blue-400 text-right">
+                    <Mail className="h-3.5 w-3                      if (result.success) {
+                        setToastMessage(
+                          `✓ تم توليد التقرير المالي والإداري الشامل بنجاح وإرساله حقيقياً إلى بريدك المسجل: ${user?.email || "meetozacoin@gmail.com"}`,
+                        );
+                        setMissingApiKeyType(null);
+                      } else if (result.error === "MISSING_API_KEY") {
+                        setMissingApiKeyType("owner-report");
+                        setToastMessage(
+                          `⚠️ تم توليد التقرير، ولكن تعذر إرساله بريدياً لعدم وجود مفتاح تفعيل الحساب RESEND_API_KEY.`,
+                        );
+                      } else {
+                        setToastMessage(`⚠️ فشل إرسال التقرير المالي والعملي الشامل: ${result.error}`);
                       }
-                    }}
-                    className="w-full rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-300 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-amber-400 text-right">
-                      <Shield className="h-3.5 w-3.5 shrink-0" />
-                      ٢. طلب التقرير المالي والعملي الشامل للمكتب {isSendingEmail && "..."}
-                    </span>
-                    <span className="text-[9px] text-blue-300 leading-normal text-right">
-                      شيت تفصيلي شامل للإيرادات وتوزيع العمل يرسل لمدير المكتب وصاحب العمل فقط.
+                    } catch (err) {
+                      console.error("Error sending financial report:", err);
+                      setToastMessage("⚠️ حدث خطأ تقني في إرسال التقرير والبيان المالي.");
+                    } finally {
+                      setIsSendingEmail(false);
+                      setTimeout(() => setToastMessage(null), 8500);
+                    }
+                  }}
+                  className="w-full rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-300 p-3 text-xs text-right font-medium flex flex-col gap-1 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <span className="font-bold text-[10.5px] flex items-center gap-1.5 text-amber-400 text-right">
+                    <Shield className="h-3.5 w-3.5 shrink-0" />
+                    ٢. طلب التقرير المالي والعملي الشامل للمكتب {isSendingEmail && "..."}
+                  </span>
+                  <span className="text-[9px] text-blue-300 leading-normal text-right">
+                    شيت تفصيلي شامل للإيرادات وتوزيع العمل يرسل لمدير المكتب وصاحب العمل فقط.
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}�لعمل فقط.
                     </span>
                   </button>
                 </div>�يه وقضاياه وجلساته مرسلاً لإيميلهم (بدون أرقام
