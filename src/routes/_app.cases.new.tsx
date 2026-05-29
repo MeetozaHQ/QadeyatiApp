@@ -45,7 +45,7 @@ const STEPS = ["النوع", "المحكمة", "الأطراف", "التفاصي
 function NewCasePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isTrialExpired, limits } = useTrial();
+  const { isTrialExpired, limits, ownerId } = useTrial();
   const [step, setStep] = useState(0);
   const [f, setF] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
@@ -90,7 +90,7 @@ function NewCasePage() {
     const { data, error } = await supabase
       .from("cases")
       .insert({
-        user_id: user.id,
+        user_id: ownerId,
         title: f.title.trim(),
         case_type: f.case_type || null,
         case_number: f.case_number.trim() || null,
@@ -110,7 +110,7 @@ function NewCasePage() {
       return;
     }
     await createNotification({
-      user_id: user.id,
+      user_id: ownerId,
       type: "تحديث قضية",
       title: `قضية جديدة: ${f.title.trim()}`,
       message: f.court_name ? `تمت إضافة القضية في ${f.court_name}` : "تمت إضافة القضية بنجاح.",
@@ -120,7 +120,7 @@ function NewCasePage() {
     if (f.first_session_date) {
       await ensureFirstSession({
         caseId: data.id,
-        userId: user.id,
+        userId: ownerId,
         firstSessionDate: f.first_session_date,
         courtName: f.court_name.trim() || null,
       });

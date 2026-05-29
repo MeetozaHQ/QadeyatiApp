@@ -141,6 +141,10 @@ export function useTrial() {
     return safeStorage.getItem("qadeyti_simulated_lawyer_id") || "owner";
   });
 
+  const [ownerId, setOwnerId] = useState<string>(() => {
+    return user?.id || "owner";
+  });
+
   const [firmLawyers, setFirmLawyersState] = useState<FirmLawyer[]>(() => {
     if (globalFirmLawyers) {
       return globalFirmLawyers;
@@ -230,10 +234,30 @@ export function useTrial() {
 
     const fetchAndSync = async () => {
       try {
+        // Resolve the firm owner ID in case this authenticated user is an invited lawyer
+        let targetedOwnerId = user.id;
+        try {
+          const { data: matchedAsLawyer } = await supabase
+            .from("firm_lawyers")
+            .select("user_id")
+            .eq("email", user.email)
+            .maybeSingle();
+
+          if (matchedAsLawyer?.user_id) {
+            targetedOwnerId = matchedAsLawyer.user_id;
+          }
+        } catch (authLookUpErr) {
+          console.warn("Could not execute firm lawyers owner lookup:", authLookUpErr);
+        }
+
+        if (isSubscribed) {
+          setOwnerId(targetedOwnerId);
+        }
+
         const { data, error } = await supabase
           .from("firm_lawyers")
           .select("*")
-          .eq("user_id", user.id);
+          .eq("user_id", targetedOwnerId);
 
         if (error) {
           console.error("Supabase load errors for firm lawyers:", error);
@@ -329,6 +353,11 @@ export function useTrial() {
 
         if (error) {
           console.error("Error adding lawyer to Supabase:", error);
+          // Revert optimistic UI update
+          const rollbacked = firmLawyers.filter((l) => l.id !== tempId);
+          setFirmLawyersState(rollbacked);
+          updateGlobalLawyers(rollbacked);
+          throw new Error(`خطأ قاعدة البيانات: ${error.message || JSON.stringify(error)}`);
         } else if (data) {
           const realLawyer: FirmLawyer = {
             id: data.id,
@@ -346,6 +375,11 @@ export function useTrial() {
         }
       } catch (err) {
         console.error("Exception adding firm lawyer:", err);
+        // Revert optimistic UI update if we haven't already
+        const rollbacked = firmLawyers.filter((l) => l.id !== tempId);
+        setFirmLawyersState(rollbacked);
+        updateGlobalLawyers(rollbacked);
+        throw err;
       }
     } else {
       const now = new Date();
@@ -651,6 +685,7 @@ export function useTrial() {
       setPlan,
       incrementAIChatUsage,
       simulatedLawyerId: "owner",
+      ownerId: "owner",
       impersonateLawyer: () => {},
       cancelImpersonation: () => {},
     };
@@ -675,6 +710,7 @@ export function useTrial() {
     setPlan,
     incrementAIChatUsage,
     simulatedLawyerId,
+    ownerId,
     impersonateLawyer,
     cancelImpersonation,
   };

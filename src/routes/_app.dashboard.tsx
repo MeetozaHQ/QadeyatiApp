@@ -358,25 +358,36 @@ function Dashboard() {
         });
         setToastMessage(`⚠️ تم إضافة المحامي محلياً، ولكن تعذر إرسال البريد: ${result.error}`);
       }
-    } catch (err) {
-      console.error("Error sending invite email:", err);
-      // Fallback gracefully so the system is fully functional in offline/trial sandbox modes
-      setMissingApiKeyType("invite");
-      setLastSentEmailInfo({
-        type: "invite",
-        to: emailToSet,
-        subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${newLawyerName.trim()}`,
-        lawyerName: newLawyerName.trim(),
-        lawyerRole: newLawyerRole,
-      });
-      toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح!`, {
-        description: "⚠️ لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
-        duration: 7000,
-        position: "top-center",
-      });
-      setToastMessage(
-        `⚠️ تم إضافة المحامي محلياً بنجاح! ولكن لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY.`,
-      );
+    } catch (err: unknown) {
+      console.error("Error adding lawyer or sending invite:", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isDbError = errMsg.includes("خطأ قاعدة البيانات");
+
+      if (isDbError) {
+        toast.error(`❌ فشل حفظ المحامي بـ Supabase: ${errMsg}`, {
+          duration: 9000,
+          position: "top-center",
+        });
+        setToastMessage(`❌ فشل الحفظ في قاعدة البيانات: ${errMsg}`);
+      } else {
+        // Fallback gracefully for email sending issues when DB insert succeeded
+        setMissingApiKeyType("invite");
+        setLastSentEmailInfo({
+          type: "invite",
+          to: emailToSet,
+          subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${newLawyerName.trim()}`,
+          lawyerName: newLawyerName.trim(),
+          lawyerRole: newLawyerRole,
+        });
+        toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح!`, {
+          description: "⚠️ لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
+          duration: 7000,
+          position: "top-center",
+        });
+        setToastMessage(
+          `⚠️ تم إضافة المحامي محلياً بنجاح! ولكن لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY.`,
+        );
+      }
     } finally {
       setIsSendingEmail(false);
       setNewLawyerName("");

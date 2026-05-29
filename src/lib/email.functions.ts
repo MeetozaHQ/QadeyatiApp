@@ -97,12 +97,19 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
     `;
 
     try {
-      const { data: sendData, error: sendError } = await resend.emails.send({
+      const emailPromise = resend.emails.send({
         from: "منصة قضيتي <info@qadeyti.com>",
         to: [lawyerEmail],
         subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${lawyerName}`,
         html: htmlContent,
       });
+
+      const timeoutPromise = new Promise<{ data: unknown; error: { message: string } | null }>(
+        (_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 5000),
+      );
+
+      const response = await Promise.race([emailPromise, timeoutPromise]);
+      const { error: sendError } = response as { error: { message: string } | null };
 
       if (sendError) {
         console.error("Resend delivery object error:", sendError);
@@ -112,9 +119,14 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
       return { success: true };
     } catch (error) {
       console.error("Resend send lawyer invite error:", error);
+      const isTimeout = error instanceof Error && error.message === "TIMEOUT";
       return {
         success: false,
-        error: error instanceof Error ? error.message : "حدث خطأ أثناء الإرسال",
+        error: isTimeout
+          ? "انتهت مهلة الاتصال بالخادم عند محاولة إرسال البريد الإلكتروني"
+          : error instanceof Error
+            ? error.message
+            : "حدث خطأ أثناء الإرسال",
       };
     }
   });
@@ -190,12 +202,20 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
       `;
 
       try {
-        const { data: sendData, error: sendError } = await resend.emails.send({
+        const emailPromise = resend.emails.send({
           from: "منصة قضيتي <info@qadeyti.com>",
           to: [lawyer.email],
           subject: `📊 تقرير الأداء العملي والأجهزة المسندة إليك - ${lawyer.name}`,
           html: htmlContent,
         });
+
+        const timeoutPromise = new Promise<{ data: unknown; error: { message: string } | null }>(
+          (_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 5000),
+        );
+
+        const response = await Promise.race([emailPromise, timeoutPromise]);
+        const { error: sendError } = response as { error: { message: string } | null };
+
         if (sendError) {
           console.error(
             `Resend send lawyer performance delivery error for ${lawyer.email}:`,
@@ -280,12 +300,19 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
     `;
 
     try {
-      const { data: sendData, error: sendError } = await resend.emails.send({
+      const emailPromise = resend.emails.send({
         from: "منصة قضيتي <info@qadeyti.com>",
         to: [ownerEmail],
         subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
         html: htmlContent,
       });
+
+      const timeoutPromise = new Promise<{ data: unknown; error: { message: string } | null }>(
+        (_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 5000),
+      );
+
+      const response = await Promise.race([emailPromise, timeoutPromise]);
+      const { error: sendError } = response as { error: { message: string } | null };
 
       if (sendError) {
         console.error("Resend delivery object error:", sendError);
@@ -295,9 +322,14 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
       return { success: true };
     } catch (error) {
       console.error("Resend send financial report error:", error);
+      const isTimeout = error instanceof Error && error.message === "TIMEOUT";
       return {
         success: false,
-        error: error instanceof Error ? error.message : "حدث خروج أو عطل أثناء إرسال البيان",
+        error: isTimeout
+          ? "انتهت مهلة المزامنة والارتباط بخوادم البريد الإلكتروني"
+          : error instanceof Error
+            ? error.message
+            : "حدث خروج أو عطل أثناء إرسال البيان",
       };
     }
   });
