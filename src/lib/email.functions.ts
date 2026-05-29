@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { Resend } from "resend";
 
 interface InviteInput {
   lawyerName: string;
@@ -28,14 +27,16 @@ interface FinancialReportInput {
 }
 
 // Lazy initialization of Resend client to avoid crashing if key is missing on start
-let resendClient: Resend | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let resendClient: any = null;
 
-function getResendClient() {
+async function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return null;
   }
   if (!resendClient) {
+    const { Resend } = await import("resend");
     resendClient = new Resend(apiKey);
   }
   return resendClient;
@@ -48,7 +49,7 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: InviteInput) => input)
   .handler(async ({ data }) => {
-    const resend = getResendClient();
+    const resend = await getResendClient();
     if (!resend) {
       return { success: false, error: "MISSING_API_KEY" };
     }
@@ -106,7 +107,10 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
       return { success: true };
     } catch (error) {
       console.error("Resend send lawyer invite error:", error);
-      return { success: false, error: error instanceof Error ? error.message : "حدث خطأ أثناء الإرسال" };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "حدث خطأ أثناء الإرسال",
+      };
     }
   });
 
@@ -117,7 +121,7 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: PerformanceReportInput) => input)
   .handler(async ({ data }) => {
-    const resend = getResendClient();
+    const resend = await getResendClient();
     if (!resend) {
       return { success: false, error: "MISSING_API_KEY" };
     }
@@ -204,7 +208,7 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: FinancialReportInput) => input)
   .handler(async ({ data }) => {
-    const resend = getResendClient();
+    const resend = await getResendClient();
     if (!resend) {
       return { success: false, error: "MISSING_API_KEY" };
     }
@@ -273,6 +277,9 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
       return { success: true };
     } catch (error) {
       console.error("Resend send financial report error:", error);
-      return { success: false, error: error instanceof Error ? error.message : "حدث خروج أو عطل أثناء إرسال البيان" };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "حدث خروج أو عطل أثناء إرسال البيان",
+      };
     }
   });
