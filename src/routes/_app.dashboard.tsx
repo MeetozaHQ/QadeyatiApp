@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useTrial, FirmLawyer } from "@/hooks/use-trial";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import {
   sendLawyerInviteEmail,
   sendLawyersPerformanceReports,
@@ -66,6 +67,10 @@ function Dashboard() {
     impersonateLawyer,
     cancelImpersonation,
   } = useTrial();
+
+  const callSendLawyerInvite = useServerFn(sendLawyerInviteEmail);
+  const callSendLawyersPerformanceReports = useServerFn(sendLawyersPerformanceReports);
+  const callSendOwnerFinancialReport = useServerFn(sendOwnerFinancialReport);
 
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [caseCount, setCaseCount] = useState(0);
@@ -307,14 +312,18 @@ function Dashboard() {
 
     setIsSendingEmail(true);
     const emailToSet = newLawyerEmail.trim() || `${Date.now()}@qadeyti.eg`;
-    addFirmLawyer(newLawyerName.trim(), emailToSet, newLawyerRole);
 
     try {
-      const result = await sendLawyerInviteEmail({
-        lawyerName: newLawyerName.trim(),
-        lawyerEmail: emailToSet,
-        lawyerRole: newLawyerRole,
-        ownerEmail: user?.email || "meetozacoin@gmail.com",
+      // First ensure the lawyer is added/persisted to Supabase safely before sending the email invite
+      await addFirmLawyer(newLawyerName.trim(), emailToSet, newLawyerRole);
+
+      const result = await callSendLawyerInvite({
+        data: {
+          lawyerName: newLawyerName.trim(),
+          lawyerEmail: emailToSet,
+          lawyerRole: newLawyerRole,
+          ownerEmail: user?.email || "meetozacoin@gmail.com",
+        },
       });
 
       if (result.success) {
@@ -780,8 +789,10 @@ function Dashboard() {
                         aiUsage: l.aiUsage,
                       }));
 
-                      const result = await sendLawyersPerformanceReports({
-                        lawyers: mappedLawyers,
+                      const result = await callSendLawyersPerformanceReports({
+                        data: {
+                          lawyers: mappedLawyers,
+                        },
                       });
 
                       if (result.success) {
@@ -844,12 +855,14 @@ function Dashboard() {
                       const totalIncome = 154000;
                       const expectedIncome = 45000;
 
-                      const result = await sendOwnerFinancialReport({
-                        ownerEmail: user?.email || "meetozacoin@gmail.com",
-                        totalIncome,
-                        expectedIncome,
-                        overdueCount: overduePaymentsCount,
-                        activeCasesCount: totalActiveCases,
+                      const result = await callSendOwnerFinancialReport({
+                        data: {
+                          ownerEmail: user?.email || "meetozacoin@gmail.com",
+                          totalIncome,
+                          expectedIncome,
+                          overdueCount: overduePaymentsCount,
+                          activeCasesCount: totalActiveCases,
+                        },
                       });
 
                       if (result.success) {

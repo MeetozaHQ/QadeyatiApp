@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type QadeytiPlan = "free" | "basic" | "pro" | "enterprise";
 
@@ -73,38 +74,7 @@ export interface FirmLawyer {
   avatarLetter: string;
 }
 
-export const DEFAULT_FIRM_LAWYERS: FirmLawyer[] = [
-  {
-    id: "1",
-    name: "أ. نور الدين علي",
-    email: "nour.ali@qadeyti.eg",
-    role: "محامٍ شريك",
-    status: "active",
-    casesCount: 20,
-    aiUsage: 34,
-    avatarLetter: "ن",
-  },
-  {
-    id: "2",
-    name: "أ. فاطمة الزهراء",
-    email: "fatima.zahra@qadeyti.eg",
-    role: "محامٍ استئناف",
-    status: "active",
-    casesCount: 15,
-    aiUsage: 12,
-    avatarLetter: "ف",
-  },
-  {
-    id: "3",
-    name: "أ. أحمد الشاذلي",
-    email: "ahmed.shazly@qadeyti.eg",
-    role: "محامٍ تحت التمرين",
-    status: "active",
-    casesCount: 12,
-    aiUsage: 8,
-    avatarLetter: "أ",
-  },
-];
+export const DEFAULT_FIRM_LAWYERS: FirmLawyer[] = [];
 
 const safeStorage = {
   getItem: (key: string): string | null => {
@@ -241,11 +211,6 @@ export function useTrial() {
   });
 
   useEffect(() => {
-    const stored = safeStorage.getItem("qadeyti_firm_lawyers");
-    if (!stored) {
-      safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(DEFAULT_FIRM_LAWYERS));
-    }
-
     // Subscribe to global in-memory pub-sub registry changes - guarantees instant page synchronization
     const handleGlobalUpdate = (nextArray: FirmLawyer[]) => {
       setFirmLawyersState(nextArray);
@@ -257,47 +222,178 @@ export function useTrial() {
     };
   }, []);
 
-  const addFirmLawyer = (name: string, email: string, role: string) => {
+  // Load and sync lawyers from Supabase when user is logged in
+  useEffect(() => {
+    if (!user) return;
+
+    let isSubscribed = true;
+
+    const fetchAndSync = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("firm_lawyers")
+          .select("*")
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Supabase load errors for firm lawyers:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          // Fetch case list to count real assignments in real time!
+          const { data: casesData } = await supabase
+            .from("cases")
+            .select("id, assigned_lawyer_id")
+            .is("archived_at", null);
+
+          const caseCounts: Record<string, number> = {};
+          if (casesData) {
+            casesData.forEach((c) => {
+              if (c.assigned_lawyer_id) {
+                caseCounts[c.assigned_lawyer_id] = (caseCounts[c.assigned_lawyer_id] || 0) + 1;
+              }
+            });
+          }
+
+          const mapped: FirmLawyer[] = data.map((l) => ({
+            id: l.id,
+            name: l.name,
+            email: l.email || "",
+            role: l.role,
+            status: l.status as "active" | "offline",
+            casesCount: caseCounts[l.id] || 0,
+            aiUsage: l.ai_usage,
+            avatarLetter: l.avatar_letter || l.name.replace("أ.", "").trim()[0] || "م",
+          }));
+
+          if (isSubscribed) {
+            setFirmLawyersState(mapped);
+            updateGlobalLawyers(mapped);
+          }
+        } else {
+          // Empty DB indicates no registered firm lawyers for this user
+          if (isSubscribed) {
+            setFirmLawyersState([]);
+            updateGlobalLawyers([]);
+          }
+        }
+      } catch (e) {
+        console.error("Failed in fetchAndSync:", e);
+      }
+    };
+
+    fetchAndSync();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [user]);
+
+  const addFirmLawyer = async (name: string, email: string, role: string) => {
     const formattedName = name.startsWith("أ.") ? name : `أ. ${name}`;
-    const newId = String(Date.now());
+    const avatar = name.replace("أ.", "").trim()[0] || "م";
+    const tempId = String(Date.now());
+
     const newLawyer: FirmLawyer = {
-      id: newId,
+      id: tempId,
       name: formattedName,
-      email: email || `${newId}@qadeyti.eg`,
+      email: email || `${tempId}@qadeyti.eg`,
       role: role || "محامٍ مشارك",
       status: "active",
       casesCount: 0,
       aiUsage: 0,
-      avatarLetter: name.replace("أ.", "").trim()[0] || "م",
+      avatarLetter: avatar,
     };
+
+    // Smooth optimistic UI update
     const next = [...firmLawyers, newLawyer];
+    setFirmLawyersState(next);
     updateGlobalLawyers(next);
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    safeStorage.setItem(
-      `ai_usage_lawyer_${newId}`,
-      JSON.stringify({ month: currentMonth, count: 0 }),
-    );
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("storage"));
+
+    if (user) {
+      try {
+        const { data, error } = await supabase
+          .from("firm_lawyers")
+          .insert({
+            user_id: user.id,
+            name: formattedName,
+            email: email || `${tempId}@qadeyti.eg`,
+            role: role || "محامٍ مشارك",
+            status: "active",
+            avatar_letter: avatar,
+            ai_usage: 0,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error adding lawyer to Supabase:", error);
+        } else if (data) {
+          const realLawyer: FirmLawyer = {
+            id: data.id,
+            name: data.name,
+            email: data.email || "",
+            role: data.role,
+            status: data.status as "active" | "offline",
+            casesCount: 0,
+            aiUsage: data.ai_usage,
+            avatarLetter: data.avatar_letter || avatar,
+          };
+          const finalArray = next.map((l) => (l.id === tempId ? realLawyer : l));
+          setFirmLawyersState(finalArray);
+          updateGlobalLawyers(finalArray);
+        }
+      } catch (err) {
+        console.error("Exception adding firm lawyer:", err);
+      }
+    } else {
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      safeStorage.setItem(
+        `ai_usage_lawyer_${tempId}`,
+        JSON.stringify({ month: currentMonth, count: 0 }),
+      );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("storage"));
+      }
     }
   };
 
-  const deleteFirmLawyer = (id: string) => {
+  const deleteFirmLawyer = async (id: string) => {
     const next = firmLawyers.filter((l) => l.id !== id);
+    setFirmLawyersState(next);
     updateGlobalLawyers(next);
-    safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(next));
     safeStorage.removeItem(`ai_usage_lawyer_${id}`);
+
     if (simulatedLawyerId === id) {
       safeStorage.setItem("qadeyti_simulated_lawyer_id", "owner");
       setSimulatedLawyerId("owner");
     }
+
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("storage"));
+    }
+
+    if (user) {
+      try {
+        const { error } = await supabase.from("firm_lawyers").delete().eq("id", id);
+
+        if (error) {
+          console.error("Failed to delete firm lawyer in Supabase:", error);
+        }
+      } catch (err) {
+        console.error("Exception deleting firm lawyer:", err);
+      }
     }
   };
 
   const getLawyerAIUsage = (lawyerId: string): number => {
+    const dbLawyer = firmLawyers.find((l) => l.id === lawyerId);
+    if (dbLawyer && user) {
+      return dbLawyer.aiUsage;
+    }
+
     const key = `ai_usage_lawyer_${lawyerId}`;
     const raw = safeStorage.getItem(key);
     const now = new Date();
@@ -319,7 +415,7 @@ export function useTrial() {
     return 0;
   };
 
-  const incrementLawyerAIUsage = (lawyerId: string) => {
+  const incrementLawyerAIUsage = async (lawyerId: string) => {
     const key = `ai_usage_lawyer_${lawyerId}`;
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -340,9 +436,25 @@ export function useTrial() {
       return l;
     });
     setFirmLawyersState(updatedLawyers);
-    safeStorage.setItem("qadeyti_firm_lawyers", JSON.stringify(updatedLawyers));
+    updateGlobalLawyers(updatedLawyers);
+
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("storage"));
+    }
+
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from("firm_lawyers")
+          .update({ ai_usage: nextCount })
+          .eq("id", lawyerId);
+
+        if (error) {
+          console.error("Failed to increment lawyer AI usage in Supabase:", error);
+        }
+      } catch (err) {
+        console.error("Exception incrementing lawyer AI usage:", err);
+      }
     }
   };
 
@@ -394,11 +506,14 @@ export function useTrial() {
         }
       }
     } else {
-      const storedPlan = safeStorage.getItem("qadeyti_plan") as QadeytiPlan;
+      const userMetadataPlan = user?.user_metadata?.qadeyti_plan as QadeytiPlan;
+      const storedPlan = (userMetadataPlan || safeStorage.getItem("qadeyti_plan")) as QadeytiPlan;
       const isPremiumOld = safeStorage.getItem("qadeyti_premium") === "true";
 
       if (storedPlan && PLAN_LIMITS[storedPlan]) {
         setPlanState(storedPlan);
+        safeStorage.setItem("qadeyti_plan", storedPlan);
+        safeStorage.setItem("qadeyti_premium", storedPlan !== "free" ? "true" : "false");
       } else if (isPremiumOld) {
         setPlanState("pro");
         safeStorage.setItem("qadeyti_plan", "pro");
@@ -441,6 +556,13 @@ export function useTrial() {
     setPlanState(nextPlan);
     safeStorage.setItem("qadeyti_plan", nextPlan);
     safeStorage.setItem("qadeyti_premium", val ? "true" : "false");
+    if (user) {
+      supabase.auth
+        .updateUser({
+          data: { qadeyti_plan: nextPlan },
+        })
+        .catch((err) => console.error("Error saving plan to user metadata:", err));
+    }
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("storage"));
     }
@@ -450,6 +572,13 @@ export function useTrial() {
     setPlanState(nextPlan);
     safeStorage.setItem("qadeyti_plan", nextPlan);
     safeStorage.setItem("qadeyti_premium", nextPlan !== "free" ? "true" : "false");
+    if (user) {
+      supabase.auth
+        .updateUser({
+          data: { qadeyti_plan: nextPlan },
+        })
+        .catch((err) => console.error("Error saving plan to user metadata:", err));
+    }
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("storage"));
     }
