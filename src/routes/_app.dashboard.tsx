@@ -87,6 +87,26 @@ function Dashboard() {
   const [showPreviewType, setShowPreviewType] = useState<
     "invite" | "lawyers-report" | "owner-report" | null
   >(null);
+  const [lastSentEmailInfo, setLastSentEmailInfo] = useState<{
+    to: string;
+    subject: string;
+    type: "invite" | "lawyers-report" | "owner-report";
+    lawyerName?: string;
+    lawyerRole?: string;
+    details?: {
+      totalIncome?: number;
+      expectedIncome?: number;
+      overdueCount?: number;
+      activeCasesCount?: number;
+      lawyers?: Array<{
+        name: string;
+        email: string;
+        role: string;
+        casesCount: number;
+        aiUsage: number;
+      }>;
+    };
+  } | null>(null);
 
   // Sync details dynamically depending on current simulated account
   useEffect(() => {
@@ -200,6 +220,13 @@ function Dashboard() {
         setMissingApiKeyType(null);
       } else if (result.error === "MISSING_API_KEY") {
         setMissingApiKeyType("invite");
+        setLastSentEmailInfo({
+          type: "invite",
+          to: emailToSet,
+          subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${newLawyerName.trim()}`,
+          lawyerName: newLawyerName.trim(),
+          lawyerRole: newLawyerRole,
+        });
         setToastMessage(
           `⚠️ تم إضافة المحامي محلياً بنجاح! ولكن لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY.`,
         );
@@ -539,6 +566,12 @@ function Dashboard() {
                         setMissingApiKeyType(null);
                       } else if (result.error === "MISSING_API_KEY") {
                         setMissingApiKeyType("lawyers-report");
+                        setLastSentEmailInfo({
+                          type: "lawyers-report",
+                          to: "جميع المحامين المسجلين بالمكتب",
+                          subject: `📊 تقارير الأداء العملي للمحامين العاملين`,
+                          details: { lawyers: mappedLawyers },
+                        });
                         setToastMessage(
                           "⚠️ تم توليد التقارير ولكن لم نرسلها حقيقياً لبريدهم لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
                         );
@@ -592,6 +625,17 @@ function Dashboard() {
                         setMissingApiKeyType(null);
                       } else if (result.error === "MISSING_API_KEY") {
                         setMissingApiKeyType("owner-report");
+                        setLastSentEmailInfo({
+                          type: "owner-report",
+                          to: user?.email || "owner@qadeyti.eg",
+                          subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
+                          details: {
+                            totalIncome,
+                            expectedIncome,
+                            overdueCount: overduePaymentsCount,
+                            activeCasesCount: totalActiveCases,
+                          },
+                        });
                         setToastMessage(
                           `⚠️ تم توليد التقرير، ولكن تعذر إرساله بريدياً لعدم وجود مفتاح تفعيل الحساب RESEND_API_KEY.`,
                         );
@@ -621,6 +665,183 @@ function Dashboard() {
               </div>
             </div>
           )}
+        </section>
+      )}
+
+      {/* Sandbox Simulated Mailbox */}
+      {lastSentEmailInfo && (
+        <section className="rounded-2xl border border-amber-500/30 bg-[#0c0f1d] p-5 space-y-4 animate-in slide-in-from-top-3 duration-200">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2 text-amber-400">
+              <Mail className="h-4 w-4" />
+              <h3 className="font-bold text-xs text-white">
+                صندوق بريد المنظومة المحاكي (Sandbox Simulated Mailbox)
+              </h3>
+            </div>
+            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-400 border border-amber-500/20">
+              وضع المحاكاة نشط
+            </span>
+          </div>
+
+          <div className="rounded-xl bg-orange-500/5 border border-orange-500/10 p-3 text-xs leading-normal text-slate-300">
+            <span className="font-bold text-amber-500 block mb-1">
+              💡 كيف تفعل الإرسال الحقيقي؟
+            </span>
+            لحل هذه المشكلة وإرسال إيميلات حقيقية مباشرة للمحامين، يرجى ملء مفتاح
+            <code className="mx-1 px-1 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-400 font-mono">
+              RESEND_API_KEY
+            </code>
+            من خلال إعدادات البيئة في لوحة تحكم التطبيق بالمنصة (Settings &gt; Secrets)، أو في ملف{" "}
+            <code className="font-mono">.env</code> الخاص بك.
+            <p className="mt-1.5 text-slate-400">
+              وتسهيلاً لك ومراعاة لخصوصية حسابك أثناء التجريب، قام النظام بمحاكاة وتوليد محتوى
+              البريد الإلكتروني بالكامل لتتمكن من فحص الروابط ونظام العمل فوراً دون الحاجة لأي
+              تهيئة:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="rounded-xl border border-slate-900 bg-slate-950/60 p-3 text-right">
+              <span className="text-slate-500 block uppercase font-mono text-[10px]">
+                المرسل إليه (To)
+              </span>
+              <strong className="text-white font-mono">{lastSentEmailInfo.to}</strong>
+            </div>
+            <div className="rounded-xl border border-slate-900 bg-slate-950/60 p-3 text-right">
+              <span className="text-slate-500 block uppercase font-mono text-[10px]">
+                عنوان الرسالة (Subject)
+              </span>
+              <strong className="text-amber-300">{lastSentEmailInfo.subject}</strong>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-900 bg-[#060810] p-4 text-xs space-y-3 text-right">
+            <span className="text-slate-400 font-semibold block border-b border-slate-900 pb-2">
+              📂 محتوى البريد الإلكتروني الناتج:
+            </span>
+
+            {lastSentEmailInfo.type === "invite" && (
+              <div className="space-y-3 font-sans leading-relaxed">
+                <p className="text-slate-300">
+                  مرحباً بك الزميل العزيز{" "}
+                  <strong className="text-[var(--gold)]">{lastSentEmailInfo.lawyerName}</strong>،
+                  لقد تم دعوتك بصفة{" "}
+                  <strong className="text-blue-400">{lastSentEmailInfo.lawyerRole}</strong> للانضمام
+                  إلى مكتب المحاماة ببريد تفعيل:{" "}
+                  <code className="bg-slate-900 px-1 py-0.5 rounded text-white font-mono">
+                    {lastSentEmailInfo.to}
+                  </code>
+                  .
+                </p>
+                <div className="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3 text-slate-400 space-y-2">
+                  <p className="font-bold text-slate-300">خطوات تشغيل المحاكي والتحقق السريع:</p>
+                  <ul className="list-disc list-inside space-y-1 text-[11px] pr-2">
+                    <li>يمكنك تسجيل الدخول بالبريد المدعو وتجربة النظام فوراً.</li>
+                    <li>رابط تسجيل الحساب المولد لدعوة المحامي هو (اضغط نسخ أو افتحه مباشرة):</li>
+                  </ul>
+                  <div className="mt-2 flex gap-1.5 items-center bg-slate-950 p-2 rounded-lg border border-slate-900 justify-between">
+                    <button
+                      onClick={() => {
+                        const val = `${window?.location?.origin || ""}/signup?email=${encodeURIComponent(lastSentEmailInfo.to)}&role=${encodeURIComponent(lastSentEmailInfo.lawyerRole || "")}`;
+                        navigator.clipboard.writeText(val);
+                        setToastMessage("✓ تم نسخ الرابط بنجاح! 📋");
+                        setTimeout(() => setToastMessage(null), 3500);
+                      }}
+                      className="rounded bg-blue-500 hover:bg-blue-600 text-white px-2.5 py-1 text-[10px] cursor-pointer font-bold shrink-0"
+                    >
+                      نسخ الرابط
+                    </button>
+                    <input
+                      readOnly
+                      value={`${window?.location?.origin || ""}/signup?email=${encodeURIComponent(lastSentEmailInfo.to)}&role=${encodeURIComponent(lastSentEmailInfo.lawyerRole || "")}`}
+                      className="flex-1 bg-transparent text-left font-mono text-[10px] text-zinc-400 outline-none select-all mr-2"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {lastSentEmailInfo.type === "lawyers-report" && (
+              <div className="space-y-2">
+                <p className="text-slate-300">
+                  تقرير إجمالي المحامين العاملين بالمكتب، يتضمن أعداد القضايا ومعدلات إنجاز الذكاء
+                  الاصطناعي المسندة لكل زميل بخصوصية تامة:
+                </p>
+                <div className="overflow-x-auto rounded-lg border border-slate-900 bg-slate-950/40">
+                  <table className="w-full text-right text-[11px] border-collapse">
+                    <thead>
+                      <tr className="bg-slate-900 border-b border-slate-800 text-slate-400">
+                        <th className="p-2">المحامي</th>
+                        <th className="p-2 text-center">البريد</th>
+                        <th className="p-2 text-center">القضايا مخصصة</th>
+                        <th className="p-2 text-center">استخدام AI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lastSentEmailInfo.details?.lawyers?.map((l, idx) => (
+                        <tr
+                          key={idx}
+                          className="border-b border-slate-900 hover:bg-slate-900/30 text-slate-300"
+                        >
+                          <td className="p-2 font-bold text-white">{l.name}</td>
+                          <td className="p-2 font-mono text-center text-slate-400">{l.email}</td>
+                          <td className="p-2 text-center text-blue-400 font-bold">
+                            {l.casesCount} قضية
+                          </td>
+                          <td className="p-2 text-center text-emerald-400">{l.aiUsage} استشارة</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {lastSentEmailInfo.type === "owner-report" && (
+              <div className="space-y-3 text-slate-300">
+                <p>
+                  بيان إجمالي تحليلي موجه لإدارة المكتب يتضمن المقاييس المالية والأقساط المتأخرة
+                  والفاعلية التشغيلية الإجمالية:
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-900 text-right">
+                    <span className="text-slate-500 block">الإيرادات المحصلة بالفعل</span>
+                    <strong className="text-emerald-400 text-xs font-mono">
+                      {lastSentEmailInfo.details.totalIncome?.toLocaleString()} ج.م
+                    </strong>
+                  </div>
+                  <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-900 text-right">
+                    <span className="text-slate-500 block">مستحقات معلقة</span>
+                    <strong className="text-blue-400 text-xs font-mono">
+                      {lastSentEmailInfo.details.expectedIncome?.toLocaleString()} ج.م
+                    </strong>
+                  </div>
+                  <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-900 text-right">
+                    <span className="text-slate-500 block">أقساط متأخرة</span>
+                    <strong className="text-red-400 text-xs font-bold">
+                      {lastSentEmailInfo.details.overdueCount} أقساط فواتير
+                    </strong>
+                  </div>
+                  <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-900 text-right">
+                    <span className="text-slate-500 block">إجمالي الدعاوى النشطة</span>
+                    <strong className="text-amber-400 text-xs font-bold">
+                      {lastSentEmailInfo.details.activeCasesCount} قضية حية
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-1 font-sans">
+            <button
+              onClick={() => setLastSentEmailInfo(null)}
+              className="rounded-xl bg-amber-500 hover:bg-amber-600 text-black px-4 py-1.5 text-xs font-bold transition-all cursor-pointer font-sans"
+            >
+              فهمت، إغلاق المعاينة ✕
+            </button>
+          </div>
         </section>
       )}
 
