@@ -74,8 +74,9 @@ function EditCasePage() {
       });
   }, [caseId]);
 
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+  function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setF((p) => (p ? { ...p, [k]: v } : p));
+  }
 
   const save = async () => {
     if (!f) return;

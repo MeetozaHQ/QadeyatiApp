@@ -1,11 +1,24 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial } from "@/hooks/use-trial";
 import { supabase } from "@/integrations/supabase/client";
 import { PremiumButton } from "@/components/qadeyti/PremiumButton";
 import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { toast } from "sonner";
-import { ExternalLink, Copy, Upload, BadgeCheck, Check, X, Loader2 } from "lucide-react";
+import {
+  ExternalLink,
+  Copy,
+  Upload,
+  BadgeCheck,
+  Check,
+  X,
+  Loader2,
+  Sparkles,
+  Database,
+  Mail,
+  PhoneCall,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_app/profile")({
   component: Profile,
@@ -55,6 +68,7 @@ function slugify(s: string) {
 function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { plan } = useTrial();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [p, setP] = useState<Profile | null>(null);
@@ -122,8 +136,9 @@ function Profile() {
     return () => clearTimeout(t);
   }, [p?.slug, user]);
 
-  const update = <K extends keyof Profile>(k: K, v: Profile[K]) =>
+  function update<K extends keyof Profile>(k: K, v: Profile[K]) {
     setP((prev) => (prev ? { ...prev, [k]: v } : prev));
+  }
 
   async function handleUploadImage(
     e: React.ChangeEvent<HTMLInputElement>,
@@ -244,6 +259,59 @@ function Profile() {
   return (
     <div className="space-y-6 pb-10">
       <h1 className="font-display text-2xl font-bold text-foreground">الملف الشخصي</h1>
+
+      {plan === "enterprise" && (
+        <div className="rounded-2xl border border-[var(--gold)]/30 bg-gradient-to-l from-[var(--gold)]/10 via-[var(--gold)]/5 to-transparent p-5 text-right space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-[var(--gold)] animate-pulse" />
+              باقة المكاتب والشركات القانونية
+            </h2>
+            <span className="rounded-full bg-[var(--gold)]/10 border border-[var(--gold)]/30 px-3 py-1 text-xs font-semibold text-[var(--gold-soft)]">
+              نشط ومفعّل مدى الحياة
+            </span>
+          </div>
+
+          <p className="text-sm text-slate-300 leading-relaxed">
+            مرحباً بك في المستوى الاحترافي الأعلى لمنصة قضيتي. حسابك يمتلك وصولاً كاملاً لجميع
+            الأدوات، مع تفعيل ميزات التعاون والرقابة للمكتب بالكامل.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-3.5 space-y-1.5">
+              <span className="text-xs text-slate-500 font-bold block">مساحة التخزين الشاملة</span>
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-[var(--gold-soft)]" />
+                <span className="text-sm text-slate-200 font-sans font-semibold">
+                  0.2 جيجابايت مستهلكة / غير محدودة
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                جميع الملفات وصور التوكيلات ترفع على خوادم سحابية آمنة ومحمية.
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-3.5 space-y-1.5">
+              <span className="text-xs text-slate-500 font-bold block">
+                مدير الحساب المخصص لمكتبكم
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-200 font-semibold text-right">
+                  المستشار م. عاصم التهامي
+                </span>
+              </div>
+              <div className="flex gap-2.5 pt-1 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1">
+                  <PhoneCall className="h-3.5 w-3.5 text-blue-400" /> +201012345678
+                </span>
+                <span className="flex items-center gap-1">
+                  <Mail className="h-3.5 w-3.5 text-blue-400" /> support@qadeyti.eg
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Avatar + public link */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
