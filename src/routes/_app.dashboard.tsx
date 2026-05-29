@@ -23,7 +23,7 @@ import { DashboardAlerts } from "@/components/qadeyti/DashboardAlerts";
 import { StatusBadge } from "@/components/qadeyti/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { useTrial } from "@/hooks/use-trial";
+import { useTrial, FirmLawyer } from "@/hooks/use-trial";
 import {
   sendLawyerInviteEmail,
   sendLawyersPerformanceReports,
@@ -71,6 +71,11 @@ function Dashboard() {
   const [todayCount, setTodayCount] = useState(0);
   const [lawyerName, setLawyerName] = useState<string | null>(null);
 
+  // Deletion with Delegation states
+  const [deletingLawyer, setDeletingLawyer] = useState<FirmLawyer | null>(null);
+  const [delegationTargetId, setDelegationTargetId] = useState<string>("none");
+  const [activeCasesOfLawyer, setActiveCasesOfLawyer] = useState<CaseRow[]>([]);
+
   // Modal configurations
   const [showAddLawyerModal, setShowAddLawyerModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -78,6 +83,77 @@ function Dashboard() {
   const [newLawyerEmail, setNewLawyerEmail] = useState("");
   const [newLawyerRole, setNewLawyerRole] = useState("محامٍ مشارك");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleOpenDeleteDialog = async (lawyer: FirmLawyer) => {
+    try {
+      const { data } = await supabase
+        .from("cases")
+        .select("id,title,status")
+        .is("archived_at", null);
+
+      const allCases = (data as CaseRow[]) ?? [];
+      const activeAssigned = allCases.filter((c) => {
+        const assigned = localStorage.getItem(`case_lawyer_${c.id}`);
+        const isActive = c.status !== "مغلقة" && c.status !== "صدر حكم";
+        return assigned === lawyer.id && isActive;
+      });
+
+      if (activeAssigned.length === 0) {
+        if (
+          confirm(
+            `هل أنت متأكد من حذف وإلغاء تنشيط الحساب للمحامي (${lawyer.name}) من المكتب؟ (لا توجد قضايا نشطة بعهدته حالياً)`,
+          )
+        ) {
+          deleteFirmLawyer(lawyer.id);
+          setToastMessage(`✓ تم حذف المحامي ${lawyer.name} بنجاح.`);
+          setTimeout(() => setToastMessage(null), 4000);
+        }
+      } else {
+        setDeletingLawyer(lawyer);
+        setActiveCasesOfLawyer(activeAssigned);
+
+        const others = firmLawyers.filter((l) => l.id !== lawyer.id);
+        if (others.length > 0) {
+          setDelegationTargetId(others[0].id);
+        } else {
+          setDelegationTargetId("none");
+        }
+
+        setShowAddLawyerModal(false);
+        setShowReportModal(false);
+      }
+    } catch (err) {
+      console.error("Error setting up lawyer deletion delegation:", err);
+    }
+  };
+
+  const handleConfirmDeleteWithDelegation = () => {
+    if (!deletingLawyer) return;
+
+    activeCasesOfLawyer.forEach((c) => {
+      if (delegationTargetId === "none") {
+        localStorage.removeItem(`case_lawyer_${c.id}`);
+      } else {
+        localStorage.setItem(`case_lawyer_${c.id}`, delegationTargetId);
+      }
+    });
+
+    deleteFirmLawyer(deletingLawyer.id);
+
+    const targetName =
+      delegationTargetId === "none"
+        ? "قيد التوزيع (غير مسندة)"
+        : firmLawyers.find((l) => l.id === delegationTargetId)?.name || "";
+
+    setToastMessage(
+      `✓ تم حذف المحامي ${deletingLawyer.name} وإلغاء تنشيطه بنجاح! تم تحويل وإعادة إسناد ${activeCasesOfLawyer.length} من القضايا النشطة بعهدته لكادر العمل بقسم: ${targetName}.`,
+    );
+    setTimeout(() => setToastMessage(null), 8500);
+
+    setDeletingLawyer(null);
+    setActiveCasesOfLawyer([]);
+    setDelegationTargetId("none");
+  };
 
   // States for Real Email Delivery Integration
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -315,7 +391,7 @@ function Dashboard() {
         ) : (
           <StatCard
             label="مستشارك الذكي"
-            value={`${firmLawyers.find((l) => l.id === simulatedLawyerId)?.aiUsage ?? 0}/٤٠٠`}
+            value={`${firmLawyers.find((l) => l.id === simulatedLawyerId)?.aiUsage ?? 0}/٦٠٠`}
             icon={<Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />}
           />
         )}
@@ -373,21 +449,13 @@ function Dashboard() {
                       </span>
                       <span className="block text-[9px] text-slate-500 font-sans">
                         الذكاء:{" "}
-                        <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٤٠٠</span>
+                        <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٦٠٠</span>
                       </span>
                     </div>
                     <button
-                      onClick={() => {
-                        if (
-                          confirm(
-                            `هل أنت متأكد من إلغاء تنشيط وحذف المحامي (${lawyer.name}) من المكتب؟`,
-                          )
-                        ) {
-                          deleteFirmLawyer(lawyer.id);
-                        }
-                      }}
+                      onClick={() => handleOpenDeleteDialog(lawyer)}
                       className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
-                      title="حذف المحامي"
+                      title="حذف المحامي وإعادة تفويض القضايا"
                     >
                       <Trash className="h-3.5 w-3.5" />
                     </button>
@@ -440,6 +508,95 @@ function Dashboard() {
               <span>تقارير النشاط</span>
             </button>
           </div>
+
+          {/* Inline Deletion & Case Delegation Card */}
+          {deletingLawyer && (
+            <div className="rounded-2xl border border-red-500/30 bg-[#12090d] p-4 space-y-4 mt-2 animate-in slide-in-from-top-3 duration-200">
+              <div className="flex items-center justify-between border-b border-red-950/40 pb-2">
+                <div className="flex items-center gap-2 text-rose-400">
+                  <Trash className="h-4 w-4 bg-red-500/10 p-0.5 rounded" />
+                  <h3 className="font-bold text-[11px] text-white">
+                    إعادة تفويض قضايا: {deletingLawyer.name}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingLawyer(null);
+                    setActiveCasesOfLawyer([]);
+                  }}
+                  className="rounded-lg p-1 hover:bg-[#2c1417] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 font-sans text-right">
+                <p className="text-[10px] text-slate-300 leading-normal">
+                  ⚠️ المحامي <strong className="text-white">{deletingLawyer.name}</strong> مكلف
+                  حالياً بـ{" "}
+                  <strong className="text-rose-400">{activeCasesOfLawyer.length} قضية نشطة</strong>{" "}
+                  لم تغلق بعد. للمحافظة على سير العمل، يرجى ترحيل وتوطين هذه الملفات القانونية لزميل
+                  آخر بالمكتب:
+                </p>
+
+                {/* List of active cases to delegate */}
+                <div className="rounded-xl bg-black/40 border border-red-950/40 p-2.5 max-h-24 overflow-y-auto space-y-1">
+                  {activeCasesOfLawyer.map((c) => (
+                    <div
+                      key={c.id}
+                      className="text-[9px] text-slate-400 flex items-center justify-between"
+                    >
+                      <span className="truncate max-w-[170px]">⚖️ {c.title}</span>
+                      <span className="rounded bg-slate-900 border border-slate-800 px-1 py-0.5 font-mono leading-none">
+                        نشطة
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-1 pt-1">
+                  <label className="text-[9px] font-bold text-slate-400 block pb-1">
+                    المحامي الجديد المستلم للملفات:
+                  </label>
+                  <select
+                    value={delegationTargetId}
+                    onChange={(e) => setDelegationTargetId(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 text-xs text-white placeholder:text-muted-foreground/60 outline-none focus:border-red-500"
+                  >
+                    {firmLawyers
+                      .filter((l) => l.id !== deletingLawyer.id)
+                      .map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.name} ({l.role})
+                        </option>
+                      ))}
+                    <option value="none">قيد التوزيع (غير مسندة لأحد حالياً)</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-1.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeletingLawyer(null);
+                      setActiveCasesOfLawyer([]);
+                    }}
+                    className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-[10px] font-bold text-slate-300 hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    إلغاء التراجع
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmDeleteWithDelegation}
+                    className="rounded-xl bg-red-600 text-white px-3 py-2 text-[10px] font-bold active:scale-[0.98] hover:bg-red-500 transition-all cursor-pointer"
+                  >
+                    حذف المحامي وإعادة الإسناد
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Inline Add Lawyer Card inside the panel */}
           {showAddLawyerModal && (

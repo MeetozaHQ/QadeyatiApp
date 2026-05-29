@@ -1232,7 +1232,7 @@ function LandingPage() {
                 </p>
 
                 <div className="flex items-baseline gap-1.5 mb-6">
-                  <span className="text-3xl font-black text-white font-mono">١٩٩</span>
+                  <span className="text-3xl font-black text-white font-mono">٢٤٩</span>
                   <span className="text-xs font-semibold text-slate-300">جنيه مصرى</span>
                   <span className="text-xs text-slate-500">/ للمحامي نشط / شهر</span>
                 </div>
@@ -1242,6 +1242,12 @@ function LandingPage() {
                     خصائص باقة الشركات:
                   </p>
                   <ul className="space-y-2.5 text-xs text-slate-300">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
+                      <span>
+                        <strong>٦٠٠ استشارة ذكية شهرياً</strong> لكل مستخدم فرعي بشكل مستقل
+                      </span>
+                    </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
                       <span>

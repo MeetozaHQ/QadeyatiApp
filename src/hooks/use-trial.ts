@@ -52,7 +52,7 @@ export const PLAN_LIMITS: Record<QadeytiPlan, PlanLimits> = {
   enterprise: {
     label: "باقة المكاتب والشركات القانونية",
     maxCases: Infinity,
-    maxAIChats: 2000,
+    maxAIChats: 600,
     hasGoogleDrive: true,
     googleDriveMode: "full",
     hasFinancials: true,
@@ -324,7 +324,7 @@ export function useTrial() {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const currentCount = getLawyerAIUsage(lawyerId);
-    const nextCount = Math.min(400, currentCount + 1);
+    const nextCount = Math.min(600, currentCount + 1);
     safeStorage.setItem(
       key,
       JSON.stringify({
@@ -365,12 +365,33 @@ export function useTrial() {
   };
 
   useEffect(() => {
-    if (user?.email === "meetozacoin@gmail.com") {
+    const isFirmLawyer = firmLawyers.some(
+      (l) => l.email?.toLowerCase().trim() === user?.email?.toLowerCase().trim(),
+    );
+
+    if (user?.email === "meetozacoin@gmail.com" || isFirmLawyer) {
       setPlanState("enterprise");
       safeStorage.setItem("qadeyti_plan", "enterprise");
       safeStorage.setItem("qadeyti_premium", "true");
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("storage"));
+      }
+
+      // Automatically impersonate the lawyer if they are signed in as a firm lawyer
+      if (isFirmLawyer && user) {
+        const matchingLawyer = firmLawyers.find(
+          (l) => l.email?.toLowerCase().trim() === user.email?.toLowerCase().trim(),
+        );
+        if (matchingLawyer && simulatedLawyerId !== matchingLawyer.id) {
+          setSimulatedLawyerId(matchingLawyer.id);
+          safeStorage.setItem("qadeyti_simulated_lawyer_id", matchingLawyer.id);
+        }
+      } else if (user?.email === "meetozacoin@gmail.com") {
+        // Owner can proceed with whatever is stored, default to owner
+        const cur = safeStorage.getItem("qadeyti_simulated_lawyer_id") || "owner";
+        if (simulatedLawyerId !== cur) {
+          setSimulatedLawyerId(cur);
+        }
       }
     } else {
       const storedPlan = safeStorage.getItem("qadeyti_plan") as QadeytiPlan;
@@ -413,7 +434,7 @@ export function useTrial() {
       window.addEventListener("storage", handleStorageChange);
       return () => window.removeEventListener("storage", handleStorageChange);
     }
-  }, [user]);
+  }, [user, firmLawyers]);
 
   const togglePremium = (val: boolean) => {
     const nextPlan = val ? "pro" : "free";

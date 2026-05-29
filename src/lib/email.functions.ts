@@ -98,7 +98,7 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
 
     try {
       await resend.emails.send({
-        from: "قضيتي <onboarding@resend.dev>",
+        from: "منصة قضيتي <info@qadeyti.com>",
         to: [lawyerEmail],
         subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${lawyerName}`,
         html: htmlContent,
@@ -164,7 +164,7 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
                 </tr>
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                   <td style="padding: 10px; color: #1e293b;">استشارات المستشار الذكي المنجزة (AI)</td>
-                  <td style="padding: 10px; text-align: center; font-weight: bold; color: #10b981;">${lawyer.aiUsage} / 400 طلب شهري</td>
+                  <td style="padding: 10px; text-align: center; font-weight: bold; color: #10b981;">${lawyer.aiUsage} / 600 طلب شهري</td>
                 </tr>
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                   <td style="padding: 10px; color: #1e293b;">مستوى الالتزام بتحديث الملاحظات والجلسات</td>
@@ -186,7 +186,7 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
 
       try {
         await resend.emails.send({
-          from: "قضيتي <onboarding@resend.dev>",
+          from: "منصة قضيتي <info@qadeyti.com>",
           to: [lawyer.email],
           subject: `📊 تقرير الأداء العملي والأجهزة المسندة إليك - ${lawyer.name}`,
           html: htmlContent,
@@ -268,7 +268,7 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
 
     try {
       await resend.emails.send({
-        from: "قضيتي للمحاماة <onboarding@resend.dev>",
+        from: "منصة قضيتي <info@qadeyti.com>",
         to: [ownerEmail],
         subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
         html: htmlContent,
