@@ -25,6 +25,11 @@ export default defineConfig({
       strictPort: true,
       host: "0.0.0.0",
     },
+    build: {
+      rollupOptions: {
+        external: ["resend"],
+      },
+    },
     ssr: {
       external: ["resend"],
     },
