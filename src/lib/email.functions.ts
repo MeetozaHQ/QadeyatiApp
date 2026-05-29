@@ -97,12 +97,17 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
     `;
 
     try {
-      await resend.emails.send({
+      const { data: sendData, error: sendError } = await resend.emails.send({
         from: "منصة قضيتي <info@qadeyti.com>",
         to: [lawyerEmail],
         subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${lawyerName}`,
         html: htmlContent,
       });
+
+      if (sendError) {
+        console.error("Resend delivery object error:", sendError);
+        return { success: false, error: sendError.message || JSON.stringify(sendError) };
+      }
 
       return { success: true };
     } catch (error) {
@@ -185,13 +190,21 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
       `;
 
       try {
-        await resend.emails.send({
+        const { data: sendData, error: sendError } = await resend.emails.send({
           from: "منصة قضيتي <info@qadeyti.com>",
           to: [lawyer.email],
           subject: `📊 تقرير الأداء العملي والأجهزة المسندة إليك - ${lawyer.name}`,
           html: htmlContent,
         });
-        successCount++;
+        if (sendError) {
+          console.error(
+            `Resend send lawyer performance delivery error for ${lawyer.email}:`,
+            sendError,
+          );
+          errors.push(lawyer.email);
+        } else {
+          successCount++;
+        }
       } catch (err) {
         console.error(`Resend send lawyer performance error for ${lawyer.email}:`, err);
         errors.push(lawyer.email);
@@ -267,12 +280,17 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
     `;
 
     try {
-      await resend.emails.send({
+      const { data: sendData, error: sendError } = await resend.emails.send({
         from: "منصة قضيتي <info@qadeyti.com>",
         to: [ownerEmail],
         subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
         html: htmlContent,
       });
+
+      if (sendError) {
+        console.error("Resend delivery object error:", sendError);
+        return { success: false, error: sendError.message || JSON.stringify(sendError) };
+      }
 
       return { success: true };
     } catch (error) {

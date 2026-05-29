@@ -39,7 +39,7 @@ function CasesPage() {
         .is("archived_at", null)
         .order("updated_at", { ascending: false });
       let list = (data as Row[]) ?? [];
-      
+
       if (simulatedLawyerId !== "owner") {
         list = list.filter((r) => {
           const assigned = localStorage.getItem(`case_lawyer_${r.id}`);
@@ -60,7 +60,7 @@ function CasesPage() {
       }
       setRows(list);
     })();
-  }, []);
+  }, [simulatedLawyerId]);
 
   const filtered = useMemo(() => {
     if (!rows) return [];

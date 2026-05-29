@@ -5,15 +5,15 @@ import { useTrial, type QadeytiPlan } from "@/hooks/use-trial";
 import { Sparkles, Command, Check, ShieldAlert, X, Users, MessageSquare } from "lucide-react";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { isPremium, plan, setPlan, limits, simulatedLawyerId, firmLawyers, cancelImpersonation } = useTrial();
+  const { isPremium, plan, setPlan, limits, simulatedLawyerId, firmLawyers, cancelImpersonation } =
+    useTrial();
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponSuccess, setCouponSuccess] = useState(false);
   const [couponError, setCouponError] = useState("");
-  
-  const activeSimulatedLawyer = simulatedLawyerId !== "owner" 
-    ? firmLawyers.find(l => l.id === simulatedLawyerId) 
-    : null;
+
+  const activeSimulatedLawyer =
+    simulatedLawyerId !== "owner" ? firmLawyers.find((l) => l.id === simulatedLawyerId) : null;
 
   const handleApplyCoupon = () => {
     setCouponError("");
@@ -88,7 +88,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
             <span className="truncate text-[11px]">
               أنت تتصفح الحساب الآن بصلاحيات:{" "}
-              <strong className="text-white font-bold">{activeSimulatedLawyer.name}</strong> ({activeSimulatedLawyer.role})
+              <strong className="text-white font-bold">{activeSimulatedLawyer.name}</strong> (
+              {activeSimulatedLawyer.role})
             </span>
           </div>
           <button
@@ -221,12 +222,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <span className="text-xs font-bold text-white">
                       باقة المكاتب والشركات (Enterprise)
                     </span>
-                    <span className="text-[10px] font-bold text-blue-400">١٩٩ ج.م / محامٍ</span>
+                    <span className="text-[10px] font-bold text-blue-400">٢٤٩ ج.م / محامٍ</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed flex items-center gap-1.5">
+                  <p className="text-[10px] text-slate-400 leading-relaxed flex items-center gap-1.5 flex-wrap">
                     <Users className="h-3 w-3 shrink-0 text-blue-400" />
-                    لوحة تحكم رئيسية لصاحب المكتب لإدارة قضايا وجلسات جميع المحامين، مساعد ذكي منفصل
-                    وشبكة متكاملة.
+                    <span>
+                      لوحة تحكم رئيسية لصاحب المكتب لإدارة طواقم العمل والقضايا والجلسات، مع{" "}
+                      <strong>٦٠٠ طلب للمستشار الذكي شهرياً</strong> لكل محامٍ.
+                    </span>
                   </p>
                 </div>
               </div>
