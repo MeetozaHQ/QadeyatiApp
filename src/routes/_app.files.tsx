@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/qadeyti/EmptyState";
 import { FILE_CATEGORIES, formatBytes } from "@/lib/file-constants";
 import { cn } from "@/lib/utils";
+import { useTrial } from "@/hooks/use-trial";
 
 export const Route = createFileRoute("/_app/files")({
   component: FilesPage,
@@ -25,6 +26,7 @@ interface Row {
 
 function FilesPage() {
   const { user } = useAuth();
+  const { simulatedLawyerId } = useTrial();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("الكل");
@@ -37,16 +39,30 @@ function FilesPage() {
         .select("id,file_name,file_url,file_type,file_size,category,uploaded_at,case_id")
         .order("uploaded_at", { ascending: false })
         .limit(200);
-      const list = (data as Row[]) ?? [];
+      let list = (data as Row[]) ?? [];
       const ids = Array.from(new Set(list.map((r) => r.case_id)));
       if (ids.length) {
-        const { data: cs } = await supabase.from("cases").select("id,title").in("id", ids);
-        const map = new Map((cs ?? []).map((c) => [c.id, c.title]));
-        list.forEach((r) => (r.case_title = map.get(r.case_id) ?? null));
+        const { data: cs } = await supabase
+          .from("cases")
+          .select("id,title,assigned_lawyer_id")
+          .in("id", ids);
+        const map = new Map((cs ?? []).map((c) => [c.id, c]));
+
+        // Filter by simulated lawyer if active
+        if (simulatedLawyerId && simulatedLawyerId !== "owner") {
+          list = list.filter((r) => {
+            const c = map.get(r.case_id);
+            return c && c.assigned_lawyer_id === simulatedLawyerId;
+          });
+        }
+
+        list.forEach((r) => (r.case_title = map.get(r.case_id)?.title ?? null));
+      } else {
+        list = [];
       }
       setRows(list);
     })();
-  }, [user]);
+  }, [user, simulatedLawyerId]);
 
   const filtered = useMemo(() => {
     if (!rows) return null;

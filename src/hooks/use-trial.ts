@@ -511,6 +511,15 @@ export function useTrial() {
   };
 
   const getAIChatUsage = (userId: string): number => {
+    if (user) {
+      const match = firmLawyers.find(
+        (l) => l.email?.toLowerCase().trim() === user.email?.toLowerCase().trim(),
+      );
+      if (match) {
+        return match.aiUsage;
+      }
+    }
+
     const key = `ai_usage_${userId}`;
     const raw = safeStorage.getItem(key);
     const now = new Date();
@@ -636,24 +645,33 @@ export function useTrial() {
     }
   };
 
-  const incrementAIChatUsage = () => {
+  const incrementAIChatUsage = async () => {
     if (!user) return;
-    const key = `ai_usage_${user.id}`;
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const currentCount = getAIChatUsage(user.id);
-    const nextCount = currentCount + 1;
 
-    safeStorage.setItem(
-      key,
-      JSON.stringify({
-        month: currentMonth,
-        count: nextCount,
-      }),
+    const subLawyerMatch = firmLawyers.find(
+      (l) => l.email?.toLowerCase().trim() === user.email?.toLowerCase().trim(),
     );
-    setAiCount(nextCount);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("storage"));
+
+    if (subLawyerMatch) {
+      await incrementLawyerAIUsage(subLawyerMatch.id);
+    } else {
+      const key = `ai_usage_${user.id}`;
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const currentCount = getAIChatUsage(user.id);
+      const nextCount = currentCount + 1;
+
+      safeStorage.setItem(
+        key,
+        JSON.stringify({
+          month: currentMonth,
+          count: nextCount,
+        }),
+      );
+      setAiCount(nextCount);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("storage"));
+      }
     }
   };
 

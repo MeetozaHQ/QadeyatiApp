@@ -198,9 +198,9 @@ function AIPage() {
       });
       updateActiveMessages([...next, { role: "assistant", content: reply }]);
       if (selectedLawyerId === "me") {
-        incrementAIChatUsage();
+        await incrementAIChatUsage();
       } else {
-        incrementLawyerAIUsage(selectedLawyerId);
+        await incrementLawyerAIUsage(selectedLawyerId);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "حدث خطأ";
