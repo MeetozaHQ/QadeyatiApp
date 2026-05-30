@@ -40,6 +40,16 @@ function SignupPage() {
     if (session) navigate({ to: "/dashboard" });
   }, [session, navigate]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const emailParam = params.get("email");
+      if (emailParam) {
+        setEmail(emailParam);
+      }
+    }
+  }, []);
+
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);

@@ -61,6 +61,9 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
         return { success: false, error: "MISSING_API_KEY" };
       }
 
+      const baseUrl = (process.env.APP_URL || "https://qadeyati.com").replace(/\/$/, "");
+      const signupLink = `${baseUrl}/signup?email=${encodeURIComponent(lawyerEmail)}`;
+
       const htmlContent = `
         <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #f8fafc; color: #1e293b; text-align: right;">
           <div style="text-align: center; margin-bottom: 24px;">
@@ -82,13 +85,13 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
                 <li><strong>المكتب الداعي:</strong> ${ownerEmail}</li>
               </ul>
             </div>
-
+ 
             <p style="font-size: 14px; line-height: 1.6; color: #475569;">
                من خلال حسابك القانوني الجديد، ستتمكن من تتبع قضاياك المسندة إليك، تحديث مذكرات الدفاع، متابعة الجلسات وأجندة العمل اليومية بشكل آلي ذكي مستشفي بذكاء اصطناعي قانوني مصري.
             </p>
-
+ 
             <div style="text-align: center; margin: 28px 0 10px 0;">
-              <a href="${process.env.APP_URL || "https://qadeyati.com"}" style="background-color: #1e3a8a; color: #ffffff; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.25);">
+              <a href="${signupLink}" style="background-color: #1e3a8a; color: #ffffff; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.25);">
                 تسجيل الدخول وبدء العمل ⚖️
               </a>
             </div>
