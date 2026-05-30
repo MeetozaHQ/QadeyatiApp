@@ -1231,10 +1231,17 @@ function LandingPage() {
                   نفس النظام.
                 </p>
 
-                <div className="flex items-baseline gap-1.5 mb-6">
-                  <span className="text-3xl font-black text-white font-mono">٢٤٩</span>
-                  <span className="text-xs font-semibold text-slate-300">جنيه مصرى</span>
-                  <span className="text-xs text-slate-500">/ للمحامي نشط / شهر</span>
+                <div className="space-y-2 mb-6">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-black text-white font-mono">٢٤٩</span>
+                    <span className="text-xs font-semibold text-slate-300">جنيه مصرى</span>
+                    <span className="text-xs text-slate-500">/ شهرياً لصاحب المكتب</span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 border-t border-slate-900/40 pt-2">
+                    <span className="text-xl font-bold text-blue-400 font-mono">+ ١٩٩</span>
+                    <span className="text-xs font-semibold text-slate-300">جنيه مصرى</span>
+                    <span className="text-xs text-slate-500">/ شهرياً لكل محامٍ إضافي مضاف</span>
+                  </div>
                 </div>
 
                 <div className="border-t border-slate-900/60 pt-5 space-y-3">

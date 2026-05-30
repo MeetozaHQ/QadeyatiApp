@@ -70,11 +70,20 @@ function AIPage() {
     incrementAIChatUsage,
     firmLawyers,
     incrementLawyerAIUsage,
+    simulatedLawyerId,
   } = useTrial();
   const navigate = useNavigate();
   const callChat = useServerFn(chatWithAI);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedLawyerId, setSelectedLawyerId] = useState<string>("me");
+
+  useEffect(() => {
+    if (simulatedLawyerId && simulatedLawyerId !== "owner") {
+      setSelectedLawyerId(simulatedLawyerId);
+    } else {
+      setSelectedLawyerId("me");
+    }
+  }, [simulatedLawyerId]);
   const [lawyerMessages, setLawyerMessages] = useState<Record<string, ChatMessage[]>>({
     "1": [
       { role: "user", content: "كيف يمكنني صياغة بند التحكيم في عقد تجاري؟" },
@@ -328,7 +337,7 @@ function AIPage() {
         </div>
       </div>
 
-      {plan === "enterprise" && (
+      {plan === "enterprise" && simulatedLawyerId === "owner" && (
         <div className="bg-[#0b0f19] border-b border-border px-4 py-2 flex items-center gap-2 overflow-x-auto text-right">
           <span className="text-[10px] text-slate-500 font-bold shrink-0">
             المستشار القانوني لـ:

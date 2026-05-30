@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Lock,
   Eye,
+  CreditCard,
 } from "lucide-react";
 import { StatCard } from "@/components/qadeyti/StatCard";
 import { DashboardAlerts } from "@/components/qadeyti/DashboardAlerts";
@@ -91,6 +92,18 @@ function Dashboard() {
   const [newLawyerEmail, setNewLawyerEmail] = useState("");
   const [newLawyerRole, setNewLawyerRole] = useState("محامٍ مشارك");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Payment popup configurations for adding new lawyer
+  const [showPaymentModalForLawyer, setShowPaymentModalForLawyer] = useState<{
+    name: string;
+    email: string;
+    role: string;
+  } | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
 
   const handleOpenDeleteDialog = async (lawyer: FirmLawyer) => {
     if (simulatedLawyerId !== "owner") {
@@ -328,48 +341,38 @@ function Dashboard() {
     }
   }, [user, simulatedLawyerId, firmLawyers]);
 
-  const handleAddNewLawyerSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newLawyerName.trim()) return;
-
-    if (simulatedLawyerId !== "owner") {
-      toast.error("عذراً، صلاحية إضافة أو حذف المحامين مقتصرة فقط على صاحب الحساب/صاحب المكتب.");
-      return;
-    }
-
+  const proceedToAddLawyer = async (name: string, email: string, role: string) => {
     setIsSendingEmail(true);
-    const emailToSet = newLawyerEmail.trim().toLowerCase() || `${Date.now()}@qadeyati.com`;
-
     try {
       // First ensure the lawyer is added/persisted to Supabase safely before sending the email invite
-      await addFirmLawyer(newLawyerName.trim(), emailToSet, newLawyerRole);
+      await addFirmLawyer(name, email, role);
 
       const result = await callSendLawyerInvite({
         data: {
-          lawyerName: newLawyerName.trim(),
-          lawyerEmail: emailToSet,
-          lawyerRole: newLawyerRole,
+          lawyerName: name,
+          lawyerEmail: email,
+          lawyerRole: role,
           ownerEmail: user?.email || "meetozacoin@gmail.com",
         },
       });
 
       if (result.success) {
-        toast.success(`✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${emailToSet}! 📨`, {
+        toast.success(`✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${email}! 📨`, {
           duration: 7000,
           position: "top-center",
         });
-        setToastMessage(`✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${emailToSet}! 📨`);
+        setToastMessage(`✓ تم إضافة المحامي وإرسال بريد تفعيل حقيقي بنجاح إلى: ${email}! 📨`);
         setMissingApiKeyType(null);
       } else if (result.error === "MISSING_API_KEY") {
         setMissingApiKeyType("invite");
         setLastSentEmailInfo({
           type: "invite",
-          to: emailToSet,
-          subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${newLawyerName.trim()}`,
-          lawyerName: newLawyerName.trim(),
-          lawyerRole: newLawyerRole,
+          to: email,
+          subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${name}`,
+          lawyerName: name,
+          lawyerRole: role,
         });
-        toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح لطاقم المكتب!`, {
+        toast.success(`✓ تم إضافة المحامي "${name}" بنجاح لطاقم المكتب!`, {
           description: "⚠️ لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
           duration: 7000,
           position: "top-center",
@@ -378,7 +381,7 @@ function Dashboard() {
           `⚠️ تم إضافة المحامي محلياً بنجاح! ولكن لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY.`,
         );
       } else {
-        toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح!`, {
+        toast.success(`✓ تم إضافة المحامي "${name}" بنجاح!`, {
           description: `⚠️ تعذر إرسال بريد التفعيل: ${result.error}`,
           duration: 7000,
           position: "top-center",
@@ -401,12 +404,12 @@ function Dashboard() {
         setMissingApiKeyType("invite");
         setLastSentEmailInfo({
           type: "invite",
-          to: emailToSet,
-          subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${newLawyerName.trim()}`,
-          lawyerName: newLawyerName.trim(),
-          lawyerRole: newLawyerRole,
+          to: email,
+          subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${name}`,
+          lawyerName: name,
+          lawyerRole: role,
         });
-        toast.success(`✓ تم إضافة المحامي "${newLawyerName.trim()}" بنجاح!`, {
+        toast.success(`✓ تم إضافة المحامي "${name}" بنجاح!`, {
           description: "⚠️ لم نرسل بريداً حقيقياً لعدم وجود مفتاح RESEND_API_KEY المبرمج.",
           duration: 7000,
           position: "top-center",
@@ -423,6 +426,32 @@ function Dashboard() {
       setShowAddLawyerModal(false);
       setTimeout(() => setToastMessage(null), 8500);
     }
+  };
+
+  const handleAddNewLawyerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLawyerName.trim()) return;
+
+    if (simulatedLawyerId !== "owner") {
+      toast.error("عذراً، صلاحية إضافة أو حذف المحامين مقتصرة فقط على صاحب الحساب/صاحب المكتب.");
+      return;
+    }
+
+    const emailToSet = newLawyerEmail.trim().toLowerCase() || `${Date.now()}@qadeyati.com`;
+
+    if (user?.email !== "meetozacoin@gmail.com") {
+      // Intercept with payment screen
+      setShowAddLawyerModal(false);
+      setShowPaymentModalForLawyer({
+        name: newLawyerName.trim(),
+        email: emailToSet,
+        role: newLawyerRole,
+      });
+      return;
+    }
+
+    // Bypass payment for meetozacoin@gmail.com (Test account)
+    await proceedToAddLawyer(newLawyerName.trim(), emailToSet, newLawyerRole);
   };
 
   const nextSession = upcoming[0];
@@ -790,6 +819,155 @@ function Dashboard() {
                     إلغاء
                   </button>
                 </div>
+              </form>
+            </div>
+          )}
+
+          {/* Inline Payment Modal for Adding Lawyer */}
+          {showPaymentModalForLawyer && (
+            <div className="rounded-2xl border border-[var(--gold)]/30 bg-[#090e18] p-5 space-y-4 mt-2 animate-in slide-in-from-top-3 duration-200 text-right">
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <div className="flex items-center gap-2 text-[var(--gold-soft)]">
+                  <CreditCard className="h-4 w-4" />
+                  <h3 className="font-bold text-[11px] text-white font-display">
+                    بوابة الدفع والتنشيط الآمنة للمحامي الفرعي
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModalForLawyer(null)}
+                  className="rounded-lg p-1 hover:bg-[#1a233a] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-1 rounded-xl border border-[var(--gold)]/10 bg-[var(--gold)]/5 p-3">
+                <p className="font-sans text-[10px] text-slate-400">
+                  باقة المكاتب والشركات (عضو مضاف):
+                </p>
+                <p className="text-xs font-bold text-white">{showPaymentModalForLawyer.name}</p>
+                <p className="font-sans text-[10px] text-slate-400">
+                  الدور: {showPaymentModalForLawyer.role} | البريد:{" "}
+                  {showPaymentModalForLawyer.email}
+                </p>
+                <div className="mt-2 flex items-baseline gap-1 border-t border-slate-900 pt-1">
+                  <span className="font-mono text-xl font-bold text-[var(--gold-soft)]">١٩٩</span>
+                  <span className="font-sans text-[10px] text-slate-300">جنيه مصري / شهرياً</span>
+                </div>
+                <p className="font-sans text-[9px] text-slate-500 pt-1">
+                  * يحصل المحامي فور تفعيل عضويته على 600 طلب مساعد ذكي مستقل شهرياً ولوحة منفصلة.
+                </p>
+              </div>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsProcessingPayment(true);
+                  setTimeout(async () => {
+                    setIsProcessingPayment(false);
+                    const name = showPaymentModalForLawyer.name;
+                    const email = showPaymentModalForLawyer.email;
+                    const role = showPaymentModalForLawyer.role;
+                    setShowPaymentModalForLawyer(null);
+                    setCardNumber("");
+                    setCardHolder("");
+                    setCardExpiry("");
+                    setCardCvv("");
+                    await proceedToAddLawyer(name, email, role);
+                  }, 2000);
+                }}
+                className="space-y-3 text-right font-sans"
+              >
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-bold text-slate-300">
+                    رقم البطاقة الائتمانية:
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      maxLength={19}
+                      value={cardNumber}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        const formatted = val.match(/.{1,4}/g)?.join(" ") || val;
+                        setCardNumber(formatted.substring(0, 19));
+                      }}
+                      placeholder="4000 1234 5678 9010"
+                      className="w-full rounded-xl border border-slate-800 bg-[#06080d] px-3 py-2 text-left font-mono text-xs text-white outline-none focus:border-[var(--gold)]"
+                      dir="ltr"
+                    />
+                    <CreditCard className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-600" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-bold text-slate-300">
+                      تاريخ الانتهاء:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="MM/YY"
+                      value={cardExpiry}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, "");
+                        if (val.length > 2) {
+                          val = val.substring(0, 2) + "/" + val.substring(2, 4);
+                        }
+                        setCardExpiry(val.substring(0, 5));
+                      }}
+                      className="w-full rounded-xl border border-slate-800 bg-[#06080d] px-3 py-2 text-center font-mono text-xs text-white outline-none focus:border-[var(--gold)]"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-bold text-slate-300">
+                      الرمز السري (CVV):
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      maxLength={3}
+                      value={cardCvv}
+                      onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ""))}
+                      placeholder="•••"
+                      className="w-full rounded-xl border border-slate-800 bg-[#06080d] px-3 py-2 text-center font-mono text-xs text-white outline-none focus:border-[var(--gold)]"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-bold text-slate-300">
+                    اسم صاحب البطاقة:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={cardHolder}
+                    onChange={(e) => setCardHolder(e.target.value)}
+                    placeholder="الاسم كما يظهر على البطاقة"
+                    className="w-full rounded-xl border border-slate-800 bg-[#06080d] px-3 py-2 text-right font-sans text-xs text-white outline-none focus:border-[var(--gold)]"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isProcessingPayment}
+                  className="w-full rounded-xl bg-gradient-to-r from-[var(--gold-soft)] to-[var(--gold)] text-[#090e18] hover:opacity-90 disabled:opacity-50 py-2.5 text-xs font-bold active:scale-[0.98] transition-all cursor-pointer font-sans flex items-center justify-center gap-2 mt-2"
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#090e18] border-t-transparent" />
+                      <span>جاري معالجة الدفع والخصم الآمن...</span>
+                    </>
+                  ) : (
+                    <span>تأكيد دفع ١٩٩ جنيه مصري وتفعيل العضوية 💳</span>
+                  )}
+                </button>
               </form>
             </div>
           )}
