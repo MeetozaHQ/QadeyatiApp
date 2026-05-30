@@ -97,7 +97,7 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
       `;
 
       const emailPromise = resend.emails.send({
-        from: "منصة قضيتي <info@qadeyti.com>",
+        from: process.env.RESEND_FROM_EMAIL || "منصة قضيتي <onboarding@resend.dev>",
         to: [lawyerEmail],
         subject: `⚖️ دعوة انضمام وتنشيط حسابك في منظومة قضيتي - ${lawyerName}`,
         html: htmlContent,
@@ -203,7 +203,7 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
 
         try {
           const emailPromise = resend.emails.send({
-            from: "منصة قضيتي <info@qadeyti.com>",
+            from: process.env.RESEND_FROM_EMAIL || "منصة قضيتي <onboarding@resend.dev>",
             to: [lawyer.email],
             subject: `📊 تقرير الأداء العملي والأجهزة المسندة إليك - ${lawyer.name}`,
             html: htmlContent,
@@ -308,7 +308,7 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
       `;
 
       const emailPromise = resend.emails.send({
-        from: "منصة قضيتي <info@qadeyti.com>",
+        from: process.env.RESEND_FROM_EMAIL || "منصة قضيتي <onboarding@resend.dev>",
         to: [ownerEmail],
         subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
         html: htmlContent,

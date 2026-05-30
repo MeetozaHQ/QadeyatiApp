@@ -97,17 +97,42 @@ function Dashboard() {
       toast.error("عذراً، صلاحية إضافة أو حذف المحامين مقتصرة فقط على صاحب الحساب/صاحب المكتب.");
       return;
     }
+
+    // Optimization: If the lawyer has no assigned cases, bypass querying completely
+    if (lawyer.casesCount === 0) {
+      if (
+        confirm(
+          `هل أنت متأكد من حذف وإلغاء تنشيط الحساب للمحامي (${lawyer.name}) من المكتب؟ (لا توجد قضايا نشطة بعهدته حالياً)`,
+        )
+      ) {
+        deleteFirmLawyer(lawyer.id);
+        setToastMessage(`✓ تم حذف المحامي ${lawyer.name} بنجاح.`);
+        setTimeout(() => setToastMessage(null), 4000);
+      }
+      return;
+    }
+
+    const toastId = toast.loading("جاري فحص حالة القضايا النشطة المسندة للمحامي...");
     try {
-      const { data } = await supabase
+      // Query only cases assigned to this specific lawyer to avoid full table scans/downloads
+      const { data, error } = await supabase
         .from("cases")
         .select("id,title,status,assigned_lawyer_id")
+        .eq("assigned_lawyer_id", lawyer.id)
         .is("archived_at", null);
+
+      toast.dismiss(toastId);
+
+      if (error) {
+        console.error("Error loading assigned cases:", error);
+        toast.error("تعذر التحقق من قضايا المحامي. يرجى إعادة المحاولة لاحقاً.");
+        return;
+      }
 
       const allCases = (data as CaseRow[]) ?? [];
       const activeAssigned = allCases.filter((c) => {
-        const assigned = c.assigned_lawyer_id || "none";
         const isActive = c.status !== "مغلقة" && c.status !== "صدر حكم";
-        return assigned === lawyer.id && isActive;
+        return isActive;
       });
 
       if (activeAssigned.length === 0) {
@@ -135,7 +160,9 @@ function Dashboard() {
         setShowReportModal(false);
       }
     } catch (err) {
+      toast.dismiss(toastId);
       console.error("Error setting up lawyer deletion delegation:", err);
+      toast.error("حدث خطأ غير متوقع أثناء إعداد طلب حظر وحذف المحامي.");
     }
   };
 
@@ -311,7 +338,7 @@ function Dashboard() {
     }
 
     setIsSendingEmail(true);
-    const emailToSet = newLawyerEmail.trim() || `${Date.now()}@qadeyti.eg`;
+    const emailToSet = newLawyerEmail.trim().toLowerCase() || `${Date.now()}@qadeyti.eg`;
 
     try {
       // First ensure the lawyer is added/persisted to Supabase safely before sending the email invite

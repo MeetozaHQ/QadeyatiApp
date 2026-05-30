@@ -240,7 +240,7 @@ export function useTrial() {
           const { data: matchedAsLawyer } = await supabase
             .from("firm_lawyers")
             .select("user_id")
-            .eq("email", user.email)
+            .ilike("email", user.email.trim())
             .maybeSingle();
 
           if (matchedAsLawyer?.user_id) {
@@ -309,8 +309,24 @@ export function useTrial() {
 
     fetchAndSync();
 
+    // Setup Supabase Real-time Channel Subscriptions for instant synchronization across devices
+    const channel = supabase
+      .channel("firm_lawyers_and_cases_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "firm_lawyers" }, () => {
+        if (isSubscribed) {
+          fetchAndSync();
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "cases" }, () => {
+        if (isSubscribed) {
+          fetchAndSync();
+        }
+      })
+      .subscribe();
+
     return () => {
       isSubscribed = false;
+      supabase.removeChannel(channel);
     };
   }, [user]);
 
@@ -318,11 +334,12 @@ export function useTrial() {
     const formattedName = name.startsWith("أ.") ? name : `أ. ${name}`;
     const avatar = name.replace("أ.", "").trim()[0] || "م";
     const tempId = String(Date.now());
+    const normalizedEmail = email ? email.trim().toLowerCase() : `${tempId}@qadeyti.eg`;
 
     const newLawyer: FirmLawyer = {
       id: tempId,
       name: formattedName,
-      email: email || `${tempId}@qadeyti.eg`,
+      email: normalizedEmail,
       role: role || "محامٍ مشارك",
       status: "active",
       casesCount: 0,
@@ -342,7 +359,7 @@ export function useTrial() {
           .insert({
             user_id: user.id,
             name: formattedName,
-            email: email || `${tempId}@qadeyti.eg`,
+            email: normalizedEmail,
             role: role || "محامٍ مشارك",
             status: "active",
             avatar_letter: avatar,
