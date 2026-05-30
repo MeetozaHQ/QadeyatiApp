@@ -47,7 +47,7 @@ function EditCasePage() {
   const { caseId } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { firmLawyers } = useTrial();
+  const { firmLawyers, simulatedLawyerId } = useTrial();
   const [f, setF] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,7 +212,7 @@ function EditCasePage() {
           </select>
         </div>
 
-        {firmLawyers && firmLawyers.length > 0 && (
+        {simulatedLawyerId === "owner" && firmLawyers && firmLawyers.length > 0 && (
           <div className="space-y-2">
             <label className="block text-sm text-muted-foreground">المحامي المكلف بالقضية</label>
             <select

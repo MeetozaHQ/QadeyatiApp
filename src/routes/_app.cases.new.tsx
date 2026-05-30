@@ -47,7 +47,7 @@ const STEPS = ["النوع", "المحكمة", "الأطراف", "التفاصي
 function NewCasePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isTrialExpired, limits, ownerId, firmLawyers } = useTrial();
+  const { isTrialExpired, limits, ownerId, firmLawyers, simulatedLawyerId } = useTrial();
   const [step, setStep] = useState(0);
   const [f, setF] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
@@ -241,7 +241,7 @@ function NewCasePage() {
               onChange={(e) => set("first_session_date", e.target.value)}
             />
 
-            {firmLawyers && firmLawyers.length > 0 && (
+            {simulatedLawyerId === "owner" && firmLawyers && firmLawyers.length > 0 && (
               <div className="space-y-2">
                 <label className="block text-sm text-muted-foreground">
                   تكليف القضية لمحامٍ في المكتب

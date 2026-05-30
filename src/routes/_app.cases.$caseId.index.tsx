@@ -236,6 +236,9 @@ function OverviewTab({
   firmLawyers: FirmLawyer[];
   caseId: string;
 }) {
+  const { simulatedLawyerId } = useTrial();
+  const isOwner = simulatedLawyerId === "owner";
+
   const [assignedLawyerId, setAssignedLawyerId] = useState<string>(() => {
     return c.assigned_lawyer_id || "none";
   });
@@ -245,6 +248,7 @@ function OverviewTab({
   }, [c.assigned_lawyer_id]);
 
   const handleAssign = async (lawyerId: string) => {
+    if (!isOwner) return; // Prevent unauthorized assignment calls
     setAssignedLawyerId(lawyerId);
     if (typeof window !== "undefined") {
       localStorage.setItem(`case_lawyer_${caseId}`, lawyerId);
@@ -275,36 +279,47 @@ function OverviewTab({
 
   const safeFirmLawyers = firmLawyers || [];
   const assignedLawyer = safeFirmLawyers.find((l) => l.id === assignedLawyerId);
+  const showDelegationBox = isOwner || (assignedLawyerId !== "none" && assignedLawyer);
 
   return (
     <div className="space-y-4">
-      {(plan === "enterprise" || safeFirmLawyers.length > 0) && (
+      {showDelegationBox && (plan === "enterprise" || safeFirmLawyers.length > 0) && (
         <div className="rounded-2xl border border-[var(--gold)]/20 bg-[#0c101a] p-4 text-right space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-slate-450 font-display">
               توزيع المهام والرقابة المركزية
             </h3>
             <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-400 font-sans">
-              لوحة الشركاء
+              {isOwner ? "لوحة الشركاء" : "تكليف رسمي"}
             </span>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-400 font-medium font-sans">
-              توجيه القضية وتكليف محامٍ فرعي:
-            </label>
-            <select
-              value={assignedLawyerId}
-              onChange={(e) => handleAssign(e.target.value)}
-              className="mt-1 block w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-foreground outline-none focus:border-[var(--gold)]"
-            >
-              <option value="none">⚠️ غير مكلف لأي محامٍ فرعي (تولى أنت الإدارة)</option>
-              {safeFirmLawyers.map((lawyer) => (
-                <option key={lawyer.id} value={lawyer.id}>
-                  👤 {lawyer.name} ({lawyer.role})
-                </option>
-              ))}
-            </select>
+            {isOwner ? (
+              <>
+                <label className="text-xs text-slate-400 font-medium font-sans">
+                  توجيه القضية وتكليف محامٍ فرعي:
+                </label>
+                <select
+                  value={assignedLawyerId}
+                  onChange={(e) => handleAssign(e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-foreground outline-none focus:border-[var(--gold)]"
+                >
+                  <option value="none">⚠️ غير مكلف لأي محامٍ فرعي (تولى أنت الإدارة)</option>
+                  {safeFirmLawyers.map((lawyer) => (
+                    <option key={lawyer.id} value={lawyer.id}>
+                      👤 {lawyer.name} ({lawyer.role})
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              assignedLawyer && (
+                <div className="text-xs text-slate-400 font-medium font-sans mb-1">
+                  المحامي المكلف بالملف:
+                </div>
+              )
+            )}
           </div>
 
           {assignedLawyerId !== "none" && assignedLawyer && (
@@ -315,7 +330,9 @@ function OverviewTab({
               <div className="flex-1">
                 <p className="font-semibold text-slate-200">{assignedLawyer.name}</p>
                 <p className="mt-0.5 text-slate-400 font-sans">
-                  يعمل على الملف الآن. المخرجات ومسودات الجلسات تخضع للمراجعة المركزية التلقائية.
+                  {isOwner
+                    ? "يعمل على الملف الآن. المخرجات ومسودات الجلسات تخضع للمراجعة المركزية التلقائية."
+                    : "تعمل على هذا الملف المكلف إليك رسمياً من الشريك المدير للمكتب."}
                 </p>
               </div>
             </div>
