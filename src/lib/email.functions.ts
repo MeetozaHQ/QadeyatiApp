@@ -88,7 +88,7 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
             </p>
 
             <div style="text-align: center; margin: 28px 0 10px 0;">
-              <a href="${process.env.APP_URL || "https://qadeyti.eg"}" style="background-color: #1e3a8a; color: #ffffff; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.25);">
+              <a href="${process.env.APP_URL || "https://qadeyati.com"}" style="background-color: #1e3a8a; color: #ffffff; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.25);">
                 تسجيل الدخول وبدء العمل ⚖️
               </a>
             </div>
@@ -176,7 +176,7 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
       const { lawyers } = data;
       console.log(`[Email Service] Preparing performance reports for ${lawyers.length} lawyers`);
 
-      const validLawyers = lawyers.filter((l) => l.email && !l.email.endsWith("@qadeyti.eg"));
+      const validLawyers = lawyers.filter((l) => l.email && !l.email.endsWith("@qadeyati.com"));
       if (validLawyers.length === 0) {
         return { success: true, successCount: 0, failedLayout: [] };
       }

@@ -1275,7 +1275,7 @@ function LandingPage() {
 
               <div className="mt-8">
                 <a
-                  href="mailto:contact@qadeyti.com?subject=طلب باقة الشركات والمكاتب القانونية في قضيتي"
+                  href="mailto:contact@qadeyati.com?subject=طلب باقة الشركات والمكاتب القانونية في قضيتي"
                   className="w-full text-center flex items-center justify-center rounded-xl bg-blue-900/20 py-3 text-xs font-bold text-blue-400 border border-blue-900/30 hover:bg-blue-900/35 hover:text-blue-300 transition-all cursor-pointer"
                 >
                   اطلب باقة الشركات

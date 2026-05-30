@@ -338,7 +338,7 @@ function Dashboard() {
     }
 
     setIsSendingEmail(true);
-    const emailToSet = newLawyerEmail.trim().toLowerCase() || `${Date.now()}@qadeyti.eg`;
+    const emailToSet = newLawyerEmail.trim().toLowerCase() || `${Date.now()}@qadeyati.com`;
 
     try {
       // First ensure the lawyer is added/persisted to Supabase safely before sending the email invite
@@ -912,7 +912,7 @@ function Dashboard() {
                         setMissingApiKeyType("owner-report");
                         setLastSentEmailInfo({
                           type: "owner-report",
-                          to: user?.email || "owner@qadeyti.eg",
+                          to: user?.email || "owner@qadeyati.com",
                           subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
                           details: {
                             totalIncome,
@@ -934,7 +934,7 @@ function Dashboard() {
                       setMissingApiKeyType("owner-report");
                       setLastSentEmailInfo({
                         type: "owner-report",
-                        to: user?.email || "owner@qadeyti.eg",
+                        to: user?.email || "owner@qadeyati.com",
                         subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
                         details: {
                           totalIncome,

@@ -197,10 +197,10 @@ export function useTrial() {
       // Maintain emails for defaults if they got deleted or lost
       let email = lawyer.email;
       if (!email) {
-        if (lawyer.id === "1") email = "nour.ali@qadeyti.eg";
-        else if (lawyer.id === "2") email = "fatima.zahra@qadeyti.eg";
-        else if (lawyer.id === "3") email = "ahmed.shazly@qadeyti.eg";
-        else email = `${lawyer.id}@qadeyti.eg`;
+        if (lawyer.id === "1") email = "nour.ali@qadeyati.com";
+        else if (lawyer.id === "2") email = "fatima.zahra@qadeyati.com";
+        else if (lawyer.id === "3") email = "ahmed.shazly@qadeyati.com";
+        else email = `${lawyer.id}@qadeyati.com`;
         changed = true;
       }
 
@@ -335,7 +335,7 @@ export function useTrial() {
     const formattedName = name.startsWith("أ.") ? name : `أ. ${name}`;
     const avatar = name.replace("أ.", "").trim()[0] || "م";
     const tempId = String(Date.now());
-    const normalizedEmail = email ? email.trim().toLowerCase() : `${tempId}@qadeyti.eg`;
+    const normalizedEmail = email ? email.trim().toLowerCase() : `${tempId}@qadeyati.com`;
 
     const newLawyer: FirmLawyer = {
       id: tempId,

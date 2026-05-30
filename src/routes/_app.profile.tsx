@@ -305,7 +305,7 @@ function Profile() {
                   <PhoneCall className="h-3.5 w-3.5 text-blue-400" /> +201012345678
                 </span>
                 <span className="flex items-center gap-1">
-                  <Mail className="h-3.5 w-3.5 text-blue-400" /> support@qadeyti.eg
+                  <Mail className="h-3.5 w-3.5 text-blue-400" /> support@qadeyati.com
                 </span>
               </div>
             </div>
