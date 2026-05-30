@@ -78,16 +78,22 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
             </p>
             
             <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: right;">
-              <p style="margin: 0; font-size: 13px; color: #1e40af;"><strong>تفاصيل الدخول الخاصة بك:</strong></p>
-              <ul style="margin: 8px 0 0 0; padding-right: 20px; font-size: 13px; color: #1e3a8a; line-height: 1.6;">
-                <li><strong>البريد الإلكتروني:</strong> ${lawyerEmail}</li>
-                <li><strong>الحالة:</strong> نشط (يمكنك تسجيل الدخول فوراً باستخدام نفس البريد)</li>
-                <li><strong>المكتب الداعي:</strong> ${ownerEmail}</li>
-              </ul>
+              <p style="margin: 0; font-size: 13px; color: #1e40af;"><strong>لتفعيل حسابك والبدء بالعمل في المكتب، يرجى اتباع الخطوات البسيطة التالية:</strong></p>
+              <ol style="margin: 8px 0 0 0; padding-right: 20px; font-size: 13px; color: #1e3a8a; line-height: 1.7;">
+                <li>اضغط على زر <strong>"تسجيل الدخول وبدء العمل"</strong> بالأسفل لفتح صفحة إنشاء الحساب الجديد الخاصة بك.</li>
+                <li>ستجد بريدك الإلكتروني <strong>(${lawyerEmail})</strong> معبأً وجاهزاً بشكل آلي.</li>
+                <li>قم بكتابة كلمة المرور الخاصة بك واضغط <strong>"إنشاء حساب جديد"</strong> لربط وتفعيل حسابك بالمكتب فورياً.</li>
+              </ol>
             </div>
- 
+
+            <p style="font-size: 13px; line-height: 1.6; color: #475569; margin-bottom: 12px;">
+              <strong>تفاصيل الدعوة:</strong><br/>
+              • المكتب القانوني الداعي: <span style="font-family: monospace; color: #1e3a8a;">${ownerEmail}</span><br/>
+              • بريدك المدعو: <span style="font-family: monospace; color: #1e3a8a;">${lawyerEmail}</span>
+            </p>
+
             <p style="font-size: 14px; line-height: 1.6; color: #475569;">
-               من خلال حسابك القانوني الجديد، ستتمكن من تتبع قضاياك المسندة إليك، تحديث مذكرات الدفاع، متابعة الجلسات وأجندة العمل اليومية بشكل آلي ذكي مستشفي بذكاء اصطناعي قانوني مصري.
+               فور تفعيل حسابك، سيتم انضمامك تلقائياً إلى باقة المكتب المميزة <strong>(Enterprise)</strong>، لتتمكن من تتبع القضايا المسندة إليك خصيصاً، تحديث مذكرات الدفاع، متابعة الجلسات وأجندة العمل اليومية بشكل متكامل وبدعم من الذكاء الاصطناعي الفني.
             </p>
  
             <div style="text-align: center; margin: 28px 0 10px 0;">

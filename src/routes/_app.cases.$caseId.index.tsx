@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial, FirmLawyer } from "@/hooks/use-trial";
 import { StatusBadge } from "@/components/qadeyti/StatusBadge";
 import { CASE_STATUSES } from "@/lib/case-constants";
 import { SessionsTab } from "@/components/qadeyti/SessionsTab";
@@ -37,12 +38,14 @@ interface CaseRow {
   description: string | null;
   status: string;
   first_session_date: string | null;
+  assigned_lawyer_id?: string | null;
 }
 
 function CaseDetailsPage() {
   const { caseId } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { plan, firmLawyers } = useTrial();
   const [c, setC] = useState<CaseRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("overview");
@@ -175,7 +178,9 @@ function CaseDetailsPage() {
         </TabBtn>
       </div>
 
-      {tab === "overview" && <OverviewTab c={c} />}
+      {tab === "overview" && (
+        <OverviewTab c={c} plan={plan} firmLawyers={firmLawyers} caseId={c.id} />
+      )}
       {tab === "overview" && (
         <Link
           to="/ai"
@@ -220,7 +225,45 @@ function TabBtn({
   );
 }
 
-function OverviewTab({ c }: { c: CaseRow }) {
+function OverviewTab({
+  c,
+  plan,
+  firmLawyers,
+  caseId,
+}: {
+  c: CaseRow;
+  plan: string;
+  firmLawyers: FirmLawyer[];
+  caseId: string;
+}) {
+  const [assignedLawyerId, setAssignedLawyerId] = useState<string>(() => {
+    return c.assigned_lawyer_id || "none";
+  });
+
+  useEffect(() => {
+    setAssignedLawyerId(c.assigned_lawyer_id || "none");
+  }, [c.assigned_lawyer_id]);
+
+  const handleAssign = async (lawyerId: string) => {
+    setAssignedLawyerId(lawyerId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`case_lawyer_${caseId}`, lawyerId);
+    }
+    try {
+      const dbValue = lawyerId === "none" ? null : lawyerId;
+      const { error } = await supabase
+        .from("cases")
+        .update({ assigned_lawyer_id: dbValue })
+        .eq("id", caseId);
+
+      if (error) {
+        console.error("Error setting case assignment on Supabase:", error);
+      }
+    } catch (err) {
+      console.error("Error updating assignment in Supabase:", err);
+    }
+  };
+
   const rows: Array<[string, string | null]> = [
     ["النوع", c.case_type],
     ["المحكمة", c.court_name],
@@ -229,8 +272,56 @@ function OverviewTab({ c }: { c: CaseRow }) {
     ["الخصم", c.opponent_name],
     ["أول جلسة", c.first_session_date],
   ];
+
+  const assignedLawyer = firmLawyers.find((l) => l.id === assignedLawyerId);
+
   return (
     <div className="space-y-4">
+      {(plan === "enterprise" || firmLawyers.length > 0) && (
+        <div className="rounded-2xl border border-[var(--gold)]/20 bg-[#0c101a] p-4 text-right space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-450 font-display">
+              توزيع المهام والرقابة المركزية
+            </h3>
+            <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-400 font-sans">
+              لوحة الشركاء
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-400 font-medium font-sans">
+              توجيه القضية وتكليف محامٍ فرعي:
+            </label>
+            <select
+              value={assignedLawyerId}
+              onChange={(e) => handleAssign(e.target.value)}
+              className="mt-1 block w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-foreground outline-none focus:border-[var(--gold)]"
+            >
+              <option value="none">⚠️ غير مكلف لأي محامٍ فرعي (تولى أنت الإدارة)</option>
+              {firmLawyers.map((lawyer) => (
+                <option key={lawyer.id} value={lawyer.id}>
+                  👤 {lawyer.name} ({lawyer.role})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {assignedLawyerId !== "none" && assignedLawyer && (
+            <div className="mt-3 rounded-xl bg-slate-900/60 border border-slate-800 p-2.5 text-xs text-slate-300 flex items-start gap-2.5 leading-normal">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs text-blue-400 font-bold">
+                {assignedLawyer.avatarLetter}
+              </span>
+              <div className="flex-1">
+                <p className="font-semibold text-slate-200">{assignedLawyer.name}</p>
+                <p className="mt-0.5 text-slate-400 font-sans">
+                  يعمل على الملف الآن. المخرجات ومسودات الجلسات تخضع للمراجعة المركزية التلقائية.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="rounded-2xl border border-border bg-card p-4">
         <dl className="divide-y divide-border">
           {rows.map(([k, v]) => (

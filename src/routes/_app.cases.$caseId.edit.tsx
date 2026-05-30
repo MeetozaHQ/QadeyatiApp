@@ -8,6 +8,7 @@ import { CASE_TYPES, CASE_STATUSES } from "@/lib/case-constants";
 import { ensureFirstSession } from "@/lib/first-session";
 import { recomputeCaseStatus } from "@/lib/case-status";
 import { useAuth } from "@/lib/auth-context";
+import { useTrial } from "@/hooks/use-trial";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/cases/$caseId/edit")({
@@ -25,6 +26,7 @@ interface FormState {
   first_session_date: string;
   description: string;
   status: string;
+  assigned_lawyer_id: string;
 }
 
 const empty: FormState = {
@@ -38,12 +40,14 @@ const empty: FormState = {
   first_session_date: "",
   description: "",
   status: "جديدة",
+  assigned_lawyer_id: "",
 };
 
 function EditCasePage() {
   const { caseId } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { firmLawyers } = useTrial();
   const [f, setF] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +74,7 @@ function EditCasePage() {
           first_session_date: data.first_session_date ?? "",
           description: data.description ?? "",
           status: data.status ?? "جديدة",
+          assigned_lawyer_id: data.assigned_lawyer_id ?? "",
         });
       });
   }, [caseId]);
@@ -99,6 +104,7 @@ function EditCasePage() {
         first_session_date: f.first_session_date || null,
         description: f.description.trim() || null,
         status: f.status || "جديدة",
+        assigned_lawyer_id: f.assigned_lawyer_id || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", caseId);
@@ -205,6 +211,25 @@ function EditCasePage() {
             ))}
           </select>
         </div>
+
+        {firmLawyers && firmLawyers.length > 0 && (
+          <div className="space-y-2">
+            <label className="block text-sm text-muted-foreground">المحامي المكلف بالقضية</label>
+            <select
+              value={f.assigned_lawyer_id}
+              onChange={(e) => set("assigned_lawyer_id", e.target.value)}
+              className="h-14 w-full rounded-xl border border-border bg-card px-4 text-base text-foreground outline-none transition-colors focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 cursor-pointer"
+            >
+              <option value="">⚠️ لا أحد (تولى أنت الإدارة كشريك رئيسي)</option>
+              {firmLawyers.map((lawyer) => (
+                <option key={lawyer.id} value={lawyer.id}>
+                  👤 {lawyer.name} ({lawyer.role})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="space-y-2">
           <label className="block text-sm text-muted-foreground">وصف مختصر</label>
           <textarea

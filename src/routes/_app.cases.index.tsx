@@ -19,6 +19,7 @@ type Row = {
   updated_at: string;
   first_session_date: string | null;
   hasFutureSession?: boolean;
+  assigned_lawyer_id?: string | null;
 };
 
 export const Route = createFileRoute("/_app/cases/")({
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/_app/cases/")({
 });
 
 function CasesPage() {
-  const { simulatedLawyerId } = useTrial();
+  const { simulatedLawyerId, firmLawyers } = useTrial();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -35,14 +36,16 @@ function CasesPage() {
     (async () => {
       const { data } = await supabase
         .from("cases")
-        .select("id,case_number,title,court_name,client_name,status,updated_at,first_session_date")
+        .select(
+          "id,case_number,title,court_name,client_name,status,updated_at,first_session_date,assigned_lawyer_id",
+        )
         .is("archived_at", null)
         .order("updated_at", { ascending: false });
       let list = (data as Row[]) ?? [];
 
       if (simulatedLawyerId !== "owner") {
         list = list.filter((r) => {
-          const assigned = localStorage.getItem(`case_lawyer_${r.id}`);
+          const assigned = r.assigned_lawyer_id || "none";
           return assigned === simulatedLawyerId;
         });
       }
@@ -172,35 +175,45 @@ function CasesPage() {
         />
       ) : (
         <ul className="space-y-3">
-          {filtered.map((c) => (
-            <li key={c.id}>
-              <Link
-                to="/cases/$caseId"
-                params={{ caseId: c.id }}
-                className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-[var(--gold)]/40"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-base font-semibold text-foreground line-clamp-1">
-                      {c.title}
-                    </h3>
-                    {c.court_name && (
-                      <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
-                        {c.court_name}
-                      </p>
-                    )}
+          {filtered.map((c) => {
+            const assignedLawyer = firmLawyers.find((l) => l.id === c.assigned_lawyer_id);
+            return (
+              <li key={c.id}>
+                <Link
+                  to="/cases/$caseId"
+                  params={{ caseId: c.id }}
+                  className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-[var(--gold)]/40"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-base font-semibold text-foreground line-clamp-1">
+                        {c.title}
+                      </h3>
+                      {c.court_name && (
+                        <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
+                          {c.court_name}
+                        </p>
+                      )}
+                    </div>
+                    <StatusBadge status={c.status} />
                   </div>
-                  <StatusBadge status={c.status} />
-                </div>
-                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{c.case_number ? `رقم ${c.case_number}` : "بدون رقم"}</span>
-                  <span className="flex items-center gap-1 text-[var(--gold)]">
-                    تفاصيل <ChevronLeft className="h-3.5 w-3.5" />
-                  </span>
-                </div>
-              </Link>
-            </li>
-          ))}
+                  <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <span>{c.case_number ? `رقم ${c.case_number}` : "بدون رقم"}</span>
+                      {assignedLawyer && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] text-blue-400 font-sans border border-blue-500/15">
+                          👤 {assignedLawyer.name}
+                        </span>
+                      )}
+                    </div>
+                    <span className="flex items-center gap-1 text-[var(--gold)]">
+                      تفاصيل <ChevronLeft className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

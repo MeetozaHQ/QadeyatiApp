@@ -26,6 +26,7 @@ interface FormState {
   opponent_name: string;
   first_session_date: string;
   description: string;
+  assigned_lawyer_id: string;
 }
 
 const initial: FormState = {
@@ -38,6 +39,7 @@ const initial: FormState = {
   opponent_name: "",
   first_session_date: "",
   description: "",
+  assigned_lawyer_id: "",
 };
 
 const STEPS = ["النوع", "المحكمة", "الأطراف", "التفاصيل"];
@@ -45,7 +47,7 @@ const STEPS = ["النوع", "المحكمة", "الأطراف", "التفاصي
 function NewCasePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isTrialExpired, limits, ownerId } = useTrial();
+  const { isTrialExpired, limits, ownerId, firmLawyers } = useTrial();
   const [step, setStep] = useState(0);
   const [f, setF] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
@@ -100,6 +102,7 @@ function NewCasePage() {
         opponent_name: f.opponent_name.trim() || null,
         first_session_date: f.first_session_date || null,
         description: f.description.trim() || null,
+        assigned_lawyer_id: f.assigned_lawyer_id || null,
         status: "جديدة",
       })
       .select("id")
@@ -237,6 +240,27 @@ function NewCasePage() {
               value={f.first_session_date}
               onChange={(e) => set("first_session_date", e.target.value)}
             />
+
+            {firmLawyers && firmLawyers.length > 0 && (
+              <div className="space-y-2">
+                <label className="block text-sm text-muted-foreground">
+                  تكليف القضية لمحامٍ في المكتب
+                </label>
+                <select
+                  value={f.assigned_lawyer_id}
+                  onChange={(e) => set("assigned_lawyer_id", e.target.value)}
+                  className="h-14 w-full rounded-xl border border-border bg-card px-4 text-base text-foreground outline-none transition-colors focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 cursor-pointer"
+                >
+                  <option value="">⚠️ لا أحد (تولى أنت الإدارة كشريك رئيسي)</option>
+                  {firmLawyers.map((lawyer) => (
+                    <option key={lawyer.id} value={lawyer.id}>
+                      👤 {lawyer.name} ({lawyer.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="block text-sm text-muted-foreground">وصف مختصر</label>
               <textarea
