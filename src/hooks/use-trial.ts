@@ -309,9 +309,10 @@ export function useTrial() {
 
     fetchAndSync();
 
-    // Setup Supabase Real-time Channel Subscriptions for instant synchronization across devices
+    // Setup Supabase Real-time Channel Subscriptions with a unique channel name for instant synchronization across devices
+    const uniqueChannelName = `firm_lawyers_and_cases_realtime_${Math.random().toString(36).substring(2, 9)}`;
     const channel = supabase
-      .channel("firm_lawyers_and_cases_realtime")
+      .channel(uniqueChannelName)
       .on("postgres_changes", { event: "*", schema: "public", table: "firm_lawyers" }, () => {
         if (isSubscribed) {
           fetchAndSync();
