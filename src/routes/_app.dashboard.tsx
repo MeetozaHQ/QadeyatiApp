@@ -1069,11 +1069,31 @@ function Dashboard() {
                   onClick={async () => {
                     setShowReportModal(false);
                     setIsSendingEmail(true);
+
+                    const totalActiveCases = caseCount;
+                    const overduePaymentsCount = overdueCount;
+                    let totalIncome = 0;
+                    let expectedIncome = 0;
+
                     try {
-                      const totalActiveCases = cases.length;
-                      const overduePaymentsCount = overdueCount;
-                      const totalIncome = 154000;
-                      const expectedIncome = 45000;
+                      // Fetch live payments from Supabase
+                      const { data: paymentsData } = await supabase
+                        .from("payments")
+                        .select("total_amount, paid_amount");
+
+                      if (paymentsData) {
+                        const sumPaid = (sum: number, p: { paid_amount: number }) =>
+                          sum + Number(p.paid_amount ?? 0);
+                        const sumRemaining = (
+                          sum: number,
+                          p: { total_amount: number; paid_amount: number },
+                        ) =>
+                          sum +
+                          Math.max(Number(p.total_amount ?? 0) - Number(p.paid_amount ?? 0), 0);
+
+                        totalIncome = paymentsData.reduce(sumPaid, 0);
+                        expectedIncome = paymentsData.reduce(sumRemaining, 0);
+                      }
 
                       const result = await callSendOwnerFinancialReport({
                         data: {
