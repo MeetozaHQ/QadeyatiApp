@@ -277,6 +277,30 @@
           var reason = event.reason;
           var msg = reason ? reason.message || String(reason) : "Unhandled promise rejection";
           logError("unhandledrejection", msg, null, null, null, reason);
+
+          if (msg.indexOf("Failed to fetch dynamically imported module") !== -1 || msg.indexOf("dynamically imported module") !== -1) {
+            try {
+              var lastReload = sessionStorage.getItem("qadeyti_last_preload_reload");
+              var now = Date.now();
+              if (!lastReload || now - parseInt(lastReload) > 12000) {
+                sessionStorage.setItem("qadeyti_last_preload_reload", String(now));
+                console.warn("Preload error detected in unhandledrejection, reloading page to fetch fresh assets...");
+                window.location.reload();
+              }
+            } catch (e) {}
+          }
+        });
+
+        window.addEventListener("vite:preloadError", function (event) {
+          try {
+            var lastReload = sessionStorage.getItem("qadeyti_last_preload_reload");
+            var now = Date.now();
+            if (!lastReload || now - parseInt(lastReload) > 12000) {
+              sessionStorage.setItem("qadeyti_last_preload_reload", String(now));
+              console.warn("Preload error detected in vite:preloadError, reloading page to fetch fresh assets...");
+              window.location.reload();
+            }
+          } catch (e) {}
         });
 
         // Diagnostics Popup Controller

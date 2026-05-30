@@ -273,11 +273,12 @@ function OverviewTab({
     ["أول جلسة", c.first_session_date],
   ];
 
-  const assignedLawyer = firmLawyers.find((l) => l.id === assignedLawyerId);
+  const safeFirmLawyers = firmLawyers || [];
+  const assignedLawyer = safeFirmLawyers.find((l) => l.id === assignedLawyerId);
 
   return (
     <div className="space-y-4">
-      {(plan === "enterprise" || firmLawyers.length > 0) && (
+      {(plan === "enterprise" || safeFirmLawyers.length > 0) && (
         <div className="rounded-2xl border border-[var(--gold)]/20 bg-[#0c101a] p-4 text-right space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-slate-450 font-display">
@@ -298,7 +299,7 @@ function OverviewTab({
               className="mt-1 block w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-foreground outline-none focus:border-[var(--gold)]"
             >
               <option value="none">⚠️ غير مكلف لأي محامٍ فرعي (تولى أنت الإدارة)</option>
-              {firmLawyers.map((lawyer) => (
+              {safeFirmLawyers.map((lawyer) => (
                 <option key={lawyer.id} value={lawyer.id}>
                   👤 {lawyer.name} ({lawyer.role})
                 </option>

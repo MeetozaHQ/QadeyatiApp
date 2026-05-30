@@ -176,7 +176,8 @@ function CasesPage() {
       ) : (
         <ul className="space-y-3">
           {filtered.map((c) => {
-            const assignedLawyer = firmLawyers.find((l) => l.id === c.assigned_lawyer_id);
+            const safeFirmLawyers = firmLawyers || [];
+            const assignedLawyer = safeFirmLawyers.find((l) => l.id === c.assigned_lawyer_id);
             return (
               <li key={c.id}>
                 <Link
