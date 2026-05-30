@@ -70,6 +70,7 @@ export interface FirmLawyer {
   role: string;
   status: "active" | "offline";
   casesCount: number;
+  docsCount: number;
   aiUsage: number;
   avatarLetter: string;
 }
@@ -271,11 +272,28 @@ export function useTrial() {
             .select("id, assigned_lawyer_id")
             .is("archived_at", null);
 
+          // Fetch all case attachments to count documents per lawyer in real time!
+          const { data: attachmentsData } = await supabase
+            .from("case_attachments")
+            .select("id, case_id");
+
           const caseCounts: Record<string, number> = {};
+          const caseToLawyerMap = new Map<string, string>();
           if (casesData) {
             casesData.forEach((c) => {
               if (c.assigned_lawyer_id) {
                 caseCounts[c.assigned_lawyer_id] = (caseCounts[c.assigned_lawyer_id] || 0) + 1;
+                caseToLawyerMap.set(c.id, c.assigned_lawyer_id);
+              }
+            });
+          }
+
+          const docCounts: Record<string, number> = {};
+          if (attachmentsData) {
+            attachmentsData.forEach((att) => {
+              const lawyerId = caseToLawyerMap.get(att.case_id);
+              if (lawyerId) {
+                docCounts[lawyerId] = (docCounts[lawyerId] || 0) + 1;
               }
             });
           }
@@ -287,6 +305,7 @@ export function useTrial() {
             role: l.role,
             status: l.status as "active" | "offline",
             casesCount: caseCounts[l.id] || 0,
+            docsCount: docCounts[l.id] || 0,
             aiUsage: l.ai_usage,
             avatarLetter: l.avatar_letter || l.name.replace("أ.", "").trim()[0] || "م",
           }));
@@ -323,6 +342,11 @@ export function useTrial() {
           fetchAndSync();
         }
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "case_attachments" }, () => {
+        if (isSubscribed) {
+          fetchAndSync();
+        }
+      })
       .subscribe();
 
     return () => {
@@ -344,6 +368,7 @@ export function useTrial() {
       role: role || "محامٍ مشارك",
       status: "active",
       casesCount: 0,
+      docsCount: 0,
       aiUsage: 0,
       avatarLetter: avatar,
     };
@@ -384,6 +409,7 @@ export function useTrial() {
             role: data.role,
             status: data.status as "active" | "offline",
             casesCount: 0,
+            docsCount: 0,
             aiUsage: data.ai_usage,
             avatarLetter: data.avatar_letter || avatar,
           };

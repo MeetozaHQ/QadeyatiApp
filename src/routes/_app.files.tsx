@@ -26,10 +26,11 @@ interface Row {
 
 function FilesPage() {
   const { user } = useAuth();
-  const { simulatedLawyerId } = useTrial();
+  const { simulatedLawyerId, firmLawyers } = useTrial();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("الكل");
+  const [selectedLawyerId, setSelectedLawyerId] = useState<string>("all");
 
   useEffect(() => {
     if (!user) return;
@@ -48,11 +49,14 @@ function FilesPage() {
           .in("id", ids);
         const map = new Map((cs ?? []).map((c) => [c.id, c]));
 
+        // Determine currently effective lawyer ID filter
+        const activeFilter = simulatedLawyerId !== "owner" ? simulatedLawyerId : selectedLawyerId;
+
         // Filter by simulated lawyer if active
-        if (simulatedLawyerId && simulatedLawyerId !== "owner") {
+        if (activeFilter && activeFilter !== "owner" && activeFilter !== "all") {
           list = list.filter((r) => {
             const c = map.get(r.case_id);
-            return c && c.assigned_lawyer_id === simulatedLawyerId;
+            return c && c.assigned_lawyer_id === activeFilter;
           });
         }
 
@@ -62,7 +66,7 @@ function FilesPage() {
       }
       setRows(list);
     })();
-  }, [user, simulatedLawyerId]);
+  }, [user, simulatedLawyerId, selectedLawyerId]);
 
   const filtered = useMemo(() => {
     if (!rows) return null;
@@ -94,6 +98,26 @@ function FilesPage() {
           className="h-12 w-full rounded-xl border border-border bg-card pr-10 pl-4 text-foreground outline-none focus:border-[var(--gold)]"
         />
       </div>
+
+      {simulatedLawyerId === "owner" && firmLawyers && firmLawyers.length > 0 && (
+        <div className="flex flex-col gap-1.5 rounded-2xl border border-border bg-card p-3">
+          <label className="text-[11px] font-bold text-muted-foreground">
+            عرض الملفات والمستندات الخاصة بالمحامي:
+          </label>
+          <select
+            value={selectedLawyerId}
+            onChange={(e) => setSelectedLawyerId(e.target.value)}
+            className="h-10 rounded-xl border border-border bg-[#0a0f1d] px-3 text-xs text-foreground outline-none focus:border-[var(--gold)] cursor-pointer font-sans"
+          >
+            <option value="all">📁 عرض كل مستندات المكتب (الكل)</option>
+            {firmLawyers.map((l) => (
+              <option key={l.id} value={l.id}>
+                👤 {l.name} ({l.role})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {(["الكل", ...FILE_CATEGORIES] as const).map((c) => (

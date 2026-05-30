@@ -568,6 +568,10 @@ function Dashboard() {
                       <span className="block text-[10px] text-slate-300">
                         قضايا: <span className="font-bold text-blue-400">{lawyer.casesCount}</span>
                       </span>
+                      <span className="block text-[10px] text-slate-300">
+                        الوثائق:{" "}
+                        <span className="font-bold text-amber-500">{lawyer.docsCount || 0}</span>
+                      </span>
                       <span className="block text-[9px] text-slate-500 font-sans">
                         الذكاء:{" "}
                         <span className="text-slate-300 font-bold">{lawyer.aiUsage}ع/٦٠٠</span>
