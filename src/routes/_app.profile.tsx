@@ -998,11 +998,11 @@ function Profile() {
 
       {/* Avatar + public link */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Avatar */}
-          <div className="space-y-2">
+          <div className="space-y-2 flex flex-col items-start">
             <p className="text-xs text-muted-foreground">الصورة الشخصية</p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 w-full">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-[var(--gold-soft)] to-[var(--gold)]">
                 {p.avatar_url ? (
                   <img src={p.avatar_url} className="h-full w-full object-cover" alt="" />
@@ -1012,7 +1012,7 @@ function Profile() {
                   </div>
                 )}
               </div>
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground hover:bg-secondary">
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors select-none">
                 {uploadingAvatar ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -1029,9 +1029,9 @@ function Profile() {
             </div>
           </div>
           {/* Logo */}
-          <div className="space-y-2">
+          <div className="space-y-2 flex flex-col items-start">
             <p className="text-xs text-muted-foreground">شعار المكتب</p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 w-full">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-card">
                 {p.logo_url ? (
                   <img src={p.logo_url} className="h-full w-full object-contain p-1" alt="" />
@@ -1041,7 +1041,7 @@ function Profile() {
                   </div>
                 )}
               </div>
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground hover:bg-secondary">
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors select-none">
                 {uploadingLogo ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
