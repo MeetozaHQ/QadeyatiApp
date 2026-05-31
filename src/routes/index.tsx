@@ -30,6 +30,7 @@ import {
   Youtube,
   Menu,
   X,
+  Play,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -41,6 +42,7 @@ function LandingPage() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -48,8 +50,8 @@ function LandingPage() {
 
   const faqs = [
     {
-      q: "هل أحتاج بطاقة بنكية لتجربة المنصة؟",
-      a: "لا، يمكنك البدء فورًا بمجرد إنشاء حساب بالبريد الإلكتروني وتفعيله. ستحصل على فترة تجريبية كاملة لمدة 7 أيام دون الحاجة لإدخال أي بيانات دفع.",
+      q: "هل أحتاج بطاقة بنكية للاستفادة من الباقة المجانية؟",
+      a: "لا، يمكنك البدء فورًا بمجرد إنشاء حساب بالبريد الإلكتروني وتفعيله. ستحصل على إمكانية الوصول لباقة قضيتي المجانية بشكل دائم دون الحاجة لإدخال أي بيانات دفع.",
     },
     {
       q: "هل بيانات القضايا والمعلومات آمنة؟",
@@ -72,8 +74,8 @@ function LandingPage() {
       a: "يقوم المستشار الذكي بصياغة مسودات قانونية دقيقة، استخراج أهم الثغرات والنقاط من أوراق قضيتك، وتلخيص المذكرات الطويلة في ثوانٍ. تظل هذه مخرجات استشارية للمساعدة، مراجعة وتعديل المحامي لها قبل الاستخدام أمر ضروري.",
     },
     {
-      q: "ماذا يحدث لحسابي وقضاياي بعد انتهاء التجربة المجانية؟",
-      a: "بعد انتهاء الـ 7 أيام، لن تفقد بياناتك أبدًا. سيبقى حسابك نشطًا ويمكنك 'عرض وقراءة' القضايا، الجلسات، الملفات، والملاحظات السابقة بحرية في أي وقت، ولكن سيتم تقييد إنشاء بيانات جديدة، استخدام المساعد الذكي، أو رفع مستندات جديدة حتى تختار الاشتراك في الخطة المدفوعة.",
+      q: "كيف تعمل الباقة المجانية وما هي حدودها؟",
+      a: "تمنحك الباقة المجانية المقعد المناسب لتجربة البرنامج والبدء في تنظيم مكتبك مجانًا لعدد محدود من القضايا والجلسات والمساعد الذكي. في حال رغبتك في زيادة الحدود والاستمتاع بتجربة بلا قيود مع كامل مميزات المساعد الذكي وحفظ الملفات، يمكنك الترقية إلى إحدى باقاتنا المدفوعة بمنتهى السهولة وفى أي وقت.",
     },
   ];
 
@@ -286,7 +288,7 @@ function LandingPage() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="w-full text-center rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] py-3 text-sm font-bold text-black"
                   >
-                    ابدأ تجربة الـ ٧ أيام مجانًا
+                    سجل حسابك المجاني
                   </Link>
                 </>
               )}
@@ -306,7 +308,7 @@ function LandingPage() {
             {/* Tagline Badge */}
             <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-[var(--gold)] border border-amber-500/20 mb-8 animate-pulse">
               <span>⚖️</span>
-              <span>جرّب قضيتي لمدة ٧ أيام مجانًا — بدون بطاقة بنكية</span>
+              <span>اشترك في الباقة المجانية الدائمة — بدون بطاقة بنكية</span>
             </div>
 
             {/* Headline */}
@@ -329,7 +331,7 @@ function LandingPage() {
                 to="/signup"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] px-8 py-4 text-base font-bold text-black border border-transparent shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-[0.98] transition-all"
               >
-                ابدأ التجربة المجانية
+                احصل على الباقة المجانية
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <a
@@ -341,7 +343,7 @@ function LandingPage() {
             </div>
 
             <p className="text-xs text-slate-500 mb-16">
-              ٧ أيام مجانية بالكامل • لا تتطلب بطاقة بنكية • إلغاء في أي وقت
+              باقة مجانية بالكامل • لا تتطلب بطاقة بنكية • ترقية ميسرة في أي وقت
             </p>
 
             {/* Floating UI Elements / Premium Mockup Graphics */}
@@ -446,6 +448,147 @@ function LandingPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Product Demo Video Section */}
+      <section
+        className="relative border-b border-t border-border bg-[#07070D] py-16 overflow-hidden md:py-24"
+        id="demo-video"
+      >
+        {/* Glow behind the mockup */}
+        <div className="absolute top-1/2 left-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--gold)]/10 blur-[100px] pointer-events-none sm:h-[500px] sm:w-[500px]"></div>
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8" dir="rtl">
+          {/* Header info */}
+          <div className="mx-auto mb-12 max-w-3xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-[var(--gold)] mb-4">
+              ✨ شاهد المنصة أثناء العمل
+            </span>
+            <h2 className="font-display text-3xl font-extrabold text-white mb-4 leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+              اكتشف كيف يدير المحامون مكاتبهم القانونية مع{" "}
+              <span className="bg-gradient-to-l from-[var(--gold)] to-[#F3D078] bg-clip-text text-transparent">
+                قضيتي
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base md:text-lg">
+              {"شاهد خلال أقل من دقيقة كيف يمكنك إدارة القضايا والجلسات "}
+              {"والمستندات والأتعاب والمساعد القانوني من مكان واحد."}
+            </p>
+          </div>
+
+          {/* Interactive iPhone-Style Mockup Frame */}
+          <div className="mt-6 flex flex-col items-center justify-center">
+            <div
+              className="group relative cursor-pointer duration-300 transition-all hover:scale-[1.02]"
+              onClick={() => setIsVideoModalOpen(true)}
+            >
+              {/* Highlight Label overlaying the video mockup */}
+              <div className="font-sans absolute -top-4 left-1/2 z-20_translate-x-1/2 rounded-full border border-yellow-300/30 bg-gradient-to-r from-[var(--gold)] to-[#F3D078] px-4 py-1.5 text-xs font-black text-black shadow-lg tracking-wide">
+                <span>✦ جولة سريعة داخل قضيتي ✦</span>
+              </div>
+
+              {/* Gold outer halo background glow */}
+              <div className="absolute inset-0 rounded-[38px] bg-amber-500/15 blur-2xl transition-all duration-300 group-hover:bg-amber-500/25"></div>
+
+              {/* Phone Container Mockup */}
+              <div className="relative aspect-[9/16] w-[280px] rounded-[42px] border-4 border-slate-700/80 bg-[#0E121C] p-2.5 shadow-[0_0_35px_rgba(235,190,95,0.15)] overflow-hidden transition-all duration-300 group-hover:border-[var(--gold)]/80 sm:w-[320px] md:w-[350px]">
+                {/* Dynamic Island Notch */}
+                <div className="absolute top-4 left-1/2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-black flex items-center justify-center">
+                  <div className="absolute right-4 h-2.5 w-2.5 rounded-full bg-slate-900"></div>
+                </div>
+
+                {/* Cover Image Wrapper */}
+                <div className="relative flex h-full w-full items-center justify-center rounded-[32px] overflow-hidden bg-black">
+                  <img
+                    src="https://img.youtube.com/vi/aKxdZaCpECQ/hqdefault.jpg"
+                    alt="Qadeyati Demo Preview"
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full object-cover opacity-75 duration-500 group-hover:scale-105 transition-transform"
+                  />
+
+                  {/* Glassmorphism Dark Cover Sheet */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-slate-950/40 to-transparent"></div>
+
+                  {/* Pulsing glow under the play button */}
+                  <div className="duration-[3s] absolute h-20 w-20 rounded-full bg-[var(--gold)]/20 blur-xl animate-ping group-hover:bg-[var(--gold)]/40 transition-all"></div>
+
+                  {/* Play Button Overlay */}
+                  <div className="absolute flex flex-col items-center justify-center gap-3">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[var(--gold)] to-[#F3D078] text-black shadow-[0_4px_25px_rgba(245,158,11,0.5)] flex items-center justify-center duration-300 transition-transform group-hover:scale-110 sm:h-20 sm:w-20">
+                      <Play className="h-6 w-6 translate-x-[-2px] fill-black text-black sm:h-8 sm:w-8 sm:translate-x-[-3px]" />
+                    </div>
+                    <span className="rounded-full border border-slate-800 bg-black/70 px-3 py-1 text-xs font-bold text-white backdrop-blur tracking-wide">
+                      انقر لمشاهدة الفيديو
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Social Proof Statements */}
+          <div className="mx-auto mt-12 mb-10 max-w-2xl text-center">
+            <h4 className="text-lg font-bold text-white mb-2 md:text-xl">
+              ✨ كل ما يحتاجه مكتب المحاماة في منصة واحدة.
+            </h4>
+            <p className="mx-auto max-w-lg text-xs leading-relaxed text-slate-400 sm:text-sm">
+              {"بدلاً من الملفات الورقية والأنظمة المتفرقة، "}
+              {"اجعل كل أعمال مكتبك القانونية منظمة داخل منصة واحدة."}
+            </p>
+          </div>
+
+          {/* Trust Badges Wrapper */}
+          <div className="mt-8 border-t border-slate-900 pt-8">
+            <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-3 md:gap-4">
+              {[
+                { emoji: "⚖️", label: "إدارة القضايا والجلسات" },
+                { emoji: "🤖", label: "المساعد القانوني بالذكاء الاصطناعي" },
+                { emoji: "📂", label: "إدارة المستندات القانونية" },
+                { emoji: "☁️", label: "مزامنة وحفظ الملفات عبر Google Drive" },
+                { emoji: "💰", label: "متابعة الأتعاب والتحصيلات" },
+              ].map((badge, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 rounded-2xl border border-slate-850 bg-[#0E121C]/90 px-4 py-2.5 text-xs font-semibold text-slate-200 shadow-md hover:border-amber-500/20 hover:bg-[#111726] transition-all"
+                >
+                  <span className="text-sm">{badge.emoji}</span>
+                  <span>{badge.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Video Fullscreen Modal */}
+        {isVideoModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setIsVideoModalOpen(false)}
+          >
+            {/* Elegant Close Button */}
+            <button
+              onClick={() => setIsVideoModalOpen(false)}
+              className="absolute top-6 right-6 z-50 rounded-full border border-slate-800 bg-slate-900 p-3 text-slate-400 hover:text-white hover:border-slate-600 transition-all"
+              aria-label="إغلاق الفيديو"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Modal Body with Aspect-Ratio */}
+            <div
+              className="relative aspect-[9/16] w-full max-w-[450px] rounded-3xl border border-amber-500/20 bg-black shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <iframe
+                src="https://www.youtube.com/embed/aKxdZaCpECQ?autoplay=1&rel=0&showinfo=0&modestbranding=1"
+                title="Qadeyati Product Demo"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="h-full w-full rounded-2xl"
+              ></iframe>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* 3. Trust Legal Workflow Section */}
@@ -984,8 +1127,8 @@ function LandingPage() {
               باقات مرنة ومصممة خصيصاً للعمل القانوني
             </h2>
             <p className="text-slate-400 text-sm sm:text-base leading-relaxed text-right md:text-center">
-              ابدأ بفترة تجريبية مجانية بالكامل لمدة ٧ أيام، واكتشف كيف يسهّل نظام قضيتي أعمالك، ثم
-              اختر الباقة الملائمة لطبيعة عملك القانوني وسعة مكتبك.
+              سجّل الآن في الباقة المجانية الدائمة بضغطة زر واحدة دون الحاجة لأية بيانات بنكية، أو
+              اختر الباقة الملائمة لطبيعة عملك القانوني وسعة مكتبك للحصول على مميزات غير محدودة.
             </p>
 
             {/* Toggle Billing Period */}
@@ -1020,7 +1163,7 @@ function LandingPage() {
                   الباقة المجانية (Free)
                 </h3>
                 <p className="text-xs text-slate-400 mb-6 font-sans leading-relaxed">
-                  أنسب خيار للمحامين المبتدئين لتجربة البرنامج في قضايا محدودة.
+                  أنسب خيار للمحامين المبتدئين للبدء في تنظيم أعمالهم مجاناً وبدون قيود زمنية.
                 </p>
 
                 <div className="flex items-baseline gap-1.5 mb-6">
@@ -1143,7 +1286,7 @@ function LandingPage() {
                   to="/signup"
                   className="w-full text-center flex items-center justify-center rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] py-3.5 text-xs font-bold text-black hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-lg"
                 >
-                  ابدأ التجربة والاشتراك
+                  اشترك الآن في الباقة الفردية
                 </Link>
               </div>
             </div>
@@ -1282,7 +1425,7 @@ function LandingPage() {
 
               <div className="mt-8">
                 <a
-                  href="mailto:contact@qadeyati.com?subject=طلب باقة الشركات والمكاتب القانونية في قضيتي"
+                  href="mailto:info@qadeyati.com?subject=طلب باقة الشركات والمكاتب القانونية في قضيتي"
                   className="w-full text-center flex items-center justify-center rounded-xl bg-blue-900/20 py-3 text-xs font-bold text-blue-400 border border-blue-900/30 hover:bg-blue-900/35 hover:text-blue-300 transition-all cursor-pointer"
                 >
                   اطلب باقة الشركات
@@ -1382,12 +1525,12 @@ function LandingPage() {
             to="/signup"
             className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-[var(--gold)] to-[var(--accent)] px-8 py-4 text-base font-bold text-black hover:brightness-110 active:scale-[0.98] transition-all shadow-xl shadow-amber-500/10"
           >
-            ابدأ تجربة الـ ٧ أيام المجانية
+            سجّل في الباقة المجانية الآن
             <ArrowLeft className="h-5 w-5" />
           </Link>
 
           <p className="text-[11px] text-slate-500 mt-4">
-            جرّب قضيتي لمدة ٧ أيام مجانًا — بدون بطاقة بنكية
+            الباقة المجانية متاحة للأبد — بدون بطاقة بنكية
           </p>
         </div>
       </section>

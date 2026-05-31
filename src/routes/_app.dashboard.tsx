@@ -1114,7 +1114,7 @@ function Dashboard() {
                         setMissingApiKeyType("owner-report");
                         setLastSentEmailInfo({
                           type: "owner-report",
-                          to: user?.email || "owner@qadeyati.com",
+                          to: user?.email || "info@qadeyati.com",
                           subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
                           details: {
                             totalIncome,
@@ -1136,7 +1136,7 @@ function Dashboard() {
                       setMissingApiKeyType("owner-report");
                       setLastSentEmailInfo({
                         type: "owner-report",
-                        to: user?.email || "owner@qadeyati.com",
+                        to: user?.email || "info@qadeyati.com",
                         subject: `📈 التقرير والبيان المالي الشامل لمكتب المحاماة والشركاء`,
                         details: {
                           totalIncome,
