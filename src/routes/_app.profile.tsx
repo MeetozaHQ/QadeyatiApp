@@ -802,59 +802,81 @@ function Profile() {
           {entTab === "manager" && (
             <div className="space-y-6 animate-fadeIn">
               {/* Manager Card Info */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-5 bg-gradient-to-l from-slate-900/90 via-slate-900/60 to-transparent border border-slate-800/80 rounded-2xl p-5 relative">
-                {/* Left indicators */}
-                <div className="absolute top-4 left-4 flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping absolute block" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 relative block" />
-                  <span className="text-[10px] text-emerald-400 font-bold font-sans">
-                    متصل باللوحة يتابعكم
-                  </span>
-                </div>
+              <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 p-5 md:p-6 text-right">
+                {/* Visual Accent glow line */}
+                <div className="absolute top-0 right-0 left-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--gold)]/35 to-transparent" />
 
-                <div className="flex items-center gap-4.5">
-                  {/* Manager Avatar Image placeholder */}
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-amber-500/10 to-amber-500/20 border border-[var(--gold)]/30 shrink-0 flex items-center justify-center text-xl font-bold text-[var(--gold-soft)] font-sans">
-                    ح
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-extrabold text-slate-100">
-                        المهندس: حاتم سرحان 🛡️
-                      </h4>
-                      <span className="text-[9px] font-bold bg-[var(--gold)]/10 text-[var(--gold-soft)] px-2 py-0.5 rounded-full font-sans border border-[var(--gold)]/20">
-                        كبير مديري الحسابات الشريكة
-                      </span>
+                {/* Header row with Avatar + Info & Online indicator */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/60 mb-4">
+                  {/* Avatar & Manager Metadata */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    {/* Manager Avatar Image placeholder */}
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-amber-500/10 to-amber-500/20 border border-[var(--gold)]/30 shrink-0 flex items-center justify-center text-xl font-bold text-[var(--gold-soft)] font-sans">
+                      ح
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      المدير المخصص ومستشار الدعم في منصة قضيتي المسئول مباشرة عن مكتب:{" "}
-                      <span className="text-[var(--gold-soft)] font-semibold">
-                        {p.office_name?.trim() || "مكتبكم القانوني"}
-                      </span>
-                    </p>
+
+                    <div className="space-y-1.5 text-right w-full">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-extrabold text-slate-100">
+                          المهندس: حاتم سرحان 🛡️
+                        </h4>
+                        <span className="inline-block text-[10px] font-bold bg-[var(--gold)]/10 text-[var(--gold-soft)] px-2.5 py-0.5 rounded-full font-sans border border-[var(--gold)]/20 self-start sm:self-center">
+                          كبير مديري الحسابات الشريكة
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 leading-normal font-sans">
+                        المدير المسؤول والمستشار التقني المباشر في منصة قضيتي لمكتب:{" "}
+                        <span className="text-[var(--gold-soft)] font-semibold">
+                          {p.office_name?.trim() || "مكتبكم القانوني"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status Indicator (Not absolute anymore, flows perfectly on mobile!) */}
+                  <div className="flex items-center gap-1.5 self-start lg:self-center bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full shrink-0">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-extrabold font-sans">
+                      متصل باللوحة يتابعكم
+                    </span>
                   </div>
                 </div>
 
-                {/* WhatsApp & Email Quick Trigger */}
-                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0 pt-2 md:pt-0">
-                  <a
-                    href={`https://wa.me/201035854329?text=${encodeURIComponent(
-                      `أهلاً المهندس حاتم سرحان، أنا المستشار ${p.full_name || "محامي شريك"}، مالك ${p.office_name || "المكتب القانوني"} المشترك في الباقة القانونية الفائقة بقضيتي. أحتاج لمساعدة أو استفسار عاجل بخصوص حسابي.`,
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer referrer"
-                    className="h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-700/10 select-none text-right"
-                  >
-                    <PhoneCall className="h-4 w-4" />
-                    <span>تواصل لحظي على واتساب الحصري 🌟</span>
-                  </a>
-                  <a
-                    href="mailto:info@qadeyati.com"
-                    className="h-11 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer select-none"
-                  >
-                    <Mail className="h-4 w-4 text-blue-400" />
-                    <span>بريد الدعم الحصري VIP</span>
-                  </a>
+                {/* Account Details Description */}
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-350 leading-relaxed font-sans">
+                    مرحباً بكم مستشارينا الأفاضل. بصفتي مدير حسابكم الخاص بـ{" "}
+                    <span className="text-[var(--gold-soft)] font-semibold">
+                      {p.office_name?.trim() || "مكتبكم القانوني"}
+                    </span>{" "}
+                    ، أحرص على متابعة استقرار خادمكم السحابي وتحسين جودة أتمتة مستنداتكم وتقديم
+                    الدعم الهندسي والبرمجي الفوري على مدار الساعة لضمان ريادة أعمالكم القانونية.
+                  </p>
+
+                  {/* WhatsApp & Email Quick Trigger */}
+                  <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+                    <a
+                      href={`https://wa.me/201035854329?text=${encodeURIComponent(
+                        `أهلاً المهندس حاتم سرحان، أنا المستشار ${p.full_name || "محامي شريك"}، مالك ${p.office_name || "المكتب القانوني"} المشترك في الباقة القانونية الفائقة بقضيتي. أحتاج لمساعدة أو استفسار عاجل بخصوص حسابي.`,
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer referrer"
+                      className="h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-700/10 select-none text-right"
+                    >
+                      <PhoneCall className="h-4 w-4" />
+                      <span>تواصل لحظي على واتساب الحصري 🌟</span>
+                    </a>
+                    <a
+                      href="mailto:info@qadeyati.com"
+                      className="h-11 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer select-none"
+                    >
+                      <Mail className="h-4 w-4 text-blue-400" />
+                      <span>بريد الدعم الحصري VIP</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
