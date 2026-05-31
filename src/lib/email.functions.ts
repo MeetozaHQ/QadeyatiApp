@@ -175,7 +175,7 @@ export const sendLawyerInviteEmail = createServerFn({ method: "POST" })
 export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: PerformanceReportInput) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     try {
       const { apiKey, fromEmail } = getEmailConfig();
       if (!apiKey) {
@@ -185,7 +185,69 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
       const { lawyers } = data;
       console.log(`[Email Service] Preparing performance reports for ${lawyers.length} lawyers`);
 
-      const validLawyers = lawyers.filter((l) => l.email && !l.email.endsWith("@qadeyati.com"));
+      let resolvedLawyers = lawyers;
+      try {
+        let targetedOwnerId = context.userId;
+        const userEmail = (context.claims?.email || "") as string;
+
+        if (userEmail) {
+          const { data: matchedAsLawyer } = await context.supabase
+            .from("firm_lawyers")
+            .select("user_id")
+            .ilike("email", userEmail.trim())
+            .maybeSingle();
+
+          if (matchedAsLawyer?.user_id) {
+            targetedOwnerId = matchedAsLawyer.user_id;
+          }
+        }
+
+        const { data: dbLawyers } = await context.supabase
+          .from("firm_lawyers")
+          .select("*")
+          .eq("user_id", targetedOwnerId);
+
+        const { data: casesData } = await context.supabase
+          .from("cases")
+          .select("id, assigned_lawyer_id")
+          .is("archived_at", null);
+
+        const caseCounts: Record<string, number> = {};
+        if (casesData) {
+          casesData.forEach((c) => {
+            if (c.assigned_lawyer_id) {
+              caseCounts[c.assigned_lawyer_id] = (caseCounts[c.assigned_lawyer_id] || 0) + 1;
+            }
+          });
+        }
+
+        if (dbLawyers && dbLawyers.length > 0) {
+          resolvedLawyers = lawyers.map((clientLawyer) => {
+            const matchedDbLawyer = dbLawyers.find(
+              (dbl) => dbl.email?.toLowerCase().trim() === clientLawyer.email.toLowerCase().trim(),
+            );
+            if (matchedDbLawyer) {
+              return {
+                name: matchedDbLawyer.name,
+                email: matchedDbLawyer.email || clientLawyer.email,
+                role: matchedDbLawyer.role,
+                casesCount: caseCounts[matchedDbLawyer.id] || 0,
+                aiUsage: matchedDbLawyer.ai_usage ?? clientLawyer.aiUsage ?? 0,
+              };
+            }
+            return clientLawyer;
+          });
+        }
+      } catch (dbErr) {
+        console.error(
+          "[Email Service] Database fetch error inside sendLawyersPerformanceReports:",
+          dbErr,
+        );
+      }
+
+      const validLawyers = resolvedLawyers.filter(
+        (l) => l.email && !l.email.endsWith("@qadeyati.com"),
+      );
       if (validLawyers.length === 0) {
         return { success: true, successCount: 0, failedLayout: [] };
       }
