@@ -476,19 +476,21 @@ function Profile() {
 
             <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-3.5 space-y-1.5">
               <span className="text-xs text-slate-500 font-bold block">
-                مدير الحساب المخصص لمكتبكم
+                المدير المسؤول والمفوض للمكتب
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-200 font-semibold text-right">
-                  المستشار م. عاصم التهامي
+                  {p.full_name?.trim() || "المستشار حلتم سرحان"}
                 </span>
               </div>
               <div className="flex gap-2.5 pt-1 text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
-                  <PhoneCall className="h-3.5 w-3.5 text-blue-400" /> +201012345678
+                  <PhoneCall className="h-3.5 w-3.5 text-blue-400" />{" "}
+                  {p.whatsapp?.trim() || "+201012345678"}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Mail className="h-3.5 w-3.5 text-blue-400" /> info@qadeyati.com
+                  <Mail className="h-3.5 w-3.5 text-blue-400" />{" "}
+                  {user?.email || "info@qadeyati.com"}
                 </span>
               </div>
             </div>
