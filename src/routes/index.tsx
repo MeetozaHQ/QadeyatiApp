@@ -483,7 +483,7 @@ function LandingPage() {
               onClick={() => setIsVideoModalOpen(true)}
             >
               {/* Highlight Label overlaying the video mockup */}
-              <div className="font-sans absolute -top-4 left-1/2 z-20_translate-x-1/2 rounded-full border border-yellow-300/30 bg-gradient-to-r from-[var(--gold)] to-[#F3D078] px-4 py-1.5 text-xs font-black text-black shadow-lg tracking-wide">
+              <div className="font-sans absolute -top-4 left-1/2 z-20 -translate-x-1/2 rounded-full border border-yellow-300/30 bg-gradient-to-r from-[var(--gold)] to-[#F3D078] px-4 py-1.5 text-xs font-black text-black shadow-lg tracking-wide whitespace-nowrap">
                 <span>✦ جولة سريعة داخل قضيتي ✦</span>
               </div>
 
