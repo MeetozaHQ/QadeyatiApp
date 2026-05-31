@@ -157,11 +157,11 @@ function Profile() {
 المكتب: ${p?.office_name || "مكتبكم القانوني المرموق"}
 المدير المسؤول والمفوض: ${p?.full_name || "المستشار القانوني"}
 عدد الملفات المؤرشفة: ${storageStats.count} ملفات نشطة
-إجمالي حجم الملفات المصاحبة للشبكة: ${formatStorageBytes(storageStats.totalSize)} (بالإضافة لـ 235.4 ميجابايت مستندات أساسية)
+إجمالي حجم الملفات المصاحبة للشبكة: ${formatStorageBytes(storageStats.totalSize)}
 
 ملاحظة للمستشارين:
 تم حزم وتأمين وتصديق كافة ملفاتكم السحابية بنجاح على خوادم قضيتي السحابية المشفرة.
-نسخكم آمنة تماماً ومضمونة السداد تحت الإشراف المباشر واليومي لمدير حسابكم الخاص أ. مروان الكسار.
+نسخكم آمنة تماماً ومضمونة السداد تحت الإشراف المباشر واليومي لمدير حسابكم الخاص المهندس: حاتم سرحان.
 
 قضيتي - الشريك القانوني المتكامل لمكتبكم الرقمي.`;
 
@@ -214,7 +214,7 @@ function Profile() {
         new Date().toLocaleDateString("ar-EG") +
         " " +
         new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
-      status: "قيد المراجعة الفورية من أ. مروان الكسار",
+      status: "قيد المراجعة الفورية من المهندس حاتم سرحان",
     };
 
     const nextList = [newReq, ...customRequests];
@@ -223,7 +223,9 @@ function Profile() {
     if (typeof window !== "undefined") {
       localStorage.setItem("qadeyti_firm_sla_requests", JSON.stringify(nextList));
     }
-    toast.success("تم تسليم طلبك الخاص لمدير حسابات المكتب أ. مروان. سيقوم بالتواصل معك حالاً!");
+    toast.success(
+      "تم تسليم طلبك الخاص لمدير حسابات المكتب المهندس حاتم. سيقوم بالتواصل معك حالاً!",
+    );
   };
 
   const handleDeleteSlaRequest = (id: string) => {
@@ -682,7 +684,7 @@ function Profile() {
                   <div className="flex items-baseline gap-2">
                     <Database className="h-5 w-5 text-[var(--gold-soft)]" />
                     <span className="text-2xl font-bold font-sans text-slate-100">
-                      {formatStorageBytes(storageStats.totalSize + 246812356)}
+                      {formatStorageBytes(storageStats.totalSize)}
                     </span>
                     <span className="text-xs text-slate-500">مستهلكة حالياً / شاملة وحرّة</span>
                   </div>
@@ -696,21 +698,33 @@ function Profile() {
                       <div className="h-full bg-slate-600" style={{ width: "10%" }} />
                     </div>
                     <div className="flex items-center justify-start gap-4 flex-wrap text-[10px] text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 block" /> مستندات
-                        وتوكيلات (٤٥٪)
+                      <span className="flex items-center gap-1 font-sans">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 block" /> مستندات
+                        وتوكيلات (٤٥٪) -{" "}
+                        <span className="text-slate-200">
+                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.45))}
+                        </span>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 block" /> مذكرات قضائية
-                        وصحف (٣٠٪)
+                      <span className="flex items-center gap-1 font-sans">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 block" /> مذكرات
+                        قضائية وصحف (٣٠٪) -{" "}
+                        <span className="text-slate-200">
+                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.3))}
+                        </span>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-teal-500 block" /> ملفات صور
-                        ومستندات فنية (١٥٪)
+                      <span className="flex items-center gap-1 font-sans">
+                        <span className="w-2.5 h-2.5 rounded-full bg-teal-500 block" /> ملفات صور
+                        ومستندات فنية (١٥٪) -{" "}
+                        <span className="text-slate-200">
+                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.15))}
+                        </span>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-slate-600 block" /> مسودة كاش
-                        وذاكرة (١٠٪)
+                      <span className="flex items-center gap-1 font-sans">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-600 block" /> مسودة كاش
+                        وذاكرة (١٠٪) -{" "}
+                        <span className="text-slate-200">
+                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.1))}
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -801,11 +815,13 @@ function Profile() {
                 <div className="flex items-center gap-4.5">
                   {/* Manager Avatar Image placeholder */}
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-amber-500/10 to-amber-500/20 border border-[var(--gold)]/30 shrink-0 flex items-center justify-center text-xl font-bold text-[var(--gold-soft)] font-sans">
-                    م
+                    ح
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-extrabold text-slate-100">أ. مروان الكسار 🛡️</h4>
+                      <h4 className="text-sm font-extrabold text-slate-100">
+                        المهندس: حاتم سرحان 🛡️
+                      </h4>
                       <span className="text-[9px] font-bold bg-[var(--gold)]/10 text-[var(--gold-soft)] px-2 py-0.5 rounded-full font-sans border border-[var(--gold)]/20">
                         كبير مديري الحسابات الشريكة
                       </span>
@@ -822,8 +838,8 @@ function Profile() {
                 {/* WhatsApp & Email Quick Trigger */}
                 <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0 pt-2 md:pt-0">
                   <a
-                    href={`https://wa.me/201012345678?text=${encodeURIComponent(
-                      `أهلاً أستاذ مروان الشافعي، أنا المستشار ${p.full_name || "محامي شريك"}، مالك ${p.office_name || "المكتب القانوني"} المشترك في الباقة القانونية الفائقة بقضيتي. أحتاج لمساعدة أو استفسار عاجل بخصوص حسابي.`,
+                    href={`https://wa.me/201035854329?text=${encodeURIComponent(
+                      `أهلاً المهندس حاتم سرحان، أنا المستشار ${p.full_name || "محامي شريك"}، مالك ${p.office_name || "المكتب القانوني"} المشترك في الباقة القانونية الفائقة بقضيتي. أحتاج لمساعدة أو استفسار عاجل بخصوص حسابي.`,
                     )}`}
                     target="_blank"
                     rel="noreferrer referrer"
@@ -833,7 +849,7 @@ function Profile() {
                     <span>تواصل لحظي على واتساب الحصري 🌟</span>
                   </a>
                   <a
-                    href="mailto:marwan.support@qadeyati.com"
+                    href="mailto:info@qadeyati.com"
                     className="h-11 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer select-none"
                   >
                     <Mail className="h-4 w-4 text-blue-400" />
@@ -882,7 +898,7 @@ function Profile() {
                       rows={3}
                       value={reqNotes}
                       onChange={(e) => setReqNotes(e.target.value)}
-                      placeholder="صف بالتفصيل ما الذي يحتاجه مكتبكم وسيقوم أستاذ مروان والمبرمجون المختصون بمعالجته على الفور..."
+                      placeholder="صف بالتفصيل ما الذي يحتاجه مكتبكم وسيقوم المهندس حاتم والمبرمجون المختصون بمعالجته على الفور..."
                       className="w-full rounded-xl border border-slate-800 bg-[#090e18] px-4 py-3 text-xs text-slate-200 outline-none focus:border-[var(--gold)] font-sans"
                     />
                   </div>
