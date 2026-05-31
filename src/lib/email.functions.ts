@@ -604,7 +604,11 @@ export const sendPaymentReminderEmail = createServerFn({ method: "POST" })
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          console.error("[Email Service] Resend PaymentReminder API failed:", response.status, errData);
+          console.error(
+            "[Email Service] Resend PaymentReminder API failed:",
+            response.status,
+            errData,
+          );
           const errorMsg =
             errData?.message || errData?.error?.message || `API Error (${response.status})`;
           return { success: false, error: errorMsg };
@@ -631,9 +635,7 @@ export const sendPaymentReminderEmail = createServerFn({ method: "POST" })
       return {
         success: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "حدث خطأ غير متوقع أثناء إعداد وإرسال التنبيه",
+          error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء إعداد وإرسال التنبيه",
       };
     }
   });

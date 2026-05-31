@@ -1701,3 +1701,7 @@ function LandingPage() {
             </p>
           </div>
         </div>
+      </footer>
+    </div>
+  );
+}

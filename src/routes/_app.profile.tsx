@@ -274,7 +274,8 @@ function Profile() {
               لوحة اختبار سياسات سداد الاشتراك والملفات (لأغراض المحاكاة)
             </h2>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed font-sans">
-              من هنا يمكنك تفعيل أو إيقاف سداد الاشتراك يدوياً لاختبار سلوك التطبيق في وضع عدم الدفع (القراءة فقط) وتنبيهات حذف البيانات بعد 90 يوماً.
+              من هنا يمكنك تفعيل أو إيقاف سداد الاشتراك يدوياً لاختبار سلوك التطبيق في وضع عدم الدفع
+              (القراءة فقط) وتنبيهات حذف البيانات بعد 90 يوماً.
             </p>
           </div>
           <button
@@ -284,14 +285,14 @@ function Profile() {
               toast.success(
                 nextState
                   ? "تم محاكاة توقف الدفع! تم قفل ميزات الرفع والذكاء الاصطناعي وجوجل درايف وتفعيل وضع القراءة فقط."
-                  : "تم تنشيط الدفع بنجاح! عادت كافة الميزات المتقدمة للعمل بشكل فوري."
+                  : "تم تنشيط الدفع بنجاح! عادت كافة الميزات المتقدمة للعمل بشكل فوري.",
               );
             }}
             className={cn(
               "px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-md select-none",
               isSubscriptionUnpaid
                 ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/15"
-                : "bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/15"
+                : "bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/15",
             )}
           >
             {isSubscriptionUnpaid ? "تنشيط وسداد الاشتراك الآن ✅" : "إيقاف الدفع وتجميد الحساب 🛑"}
@@ -314,7 +315,7 @@ function Profile() {
                       lawyerEmail: user.email || "lawyer@example.com",
                       lawyerName: p?.full_name || "المحامي الشريك",
                       daysCount: 30,
-                    }
+                    },
                   });
                   toast.dismiss("email-sim");
                   if (res.success) {
@@ -329,7 +330,9 @@ function Profile() {
               }}
               className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-amber-500/20 transition-all cursor-pointer group"
             >
-              <div className="text-[11px] text-amber-500 font-bold mb-0.5 group-hover:underline">تنبيه اليوم 30 ⏳</div>
+              <div className="text-[11px] text-amber-500 font-bold mb-0.5 group-hover:underline">
+                تنبيه اليوم 30 ⏳
+              </div>
               <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
                 إشعار بمضي 30 يوماً على التوقف عن الدفع مع طمأنة المحامي على سلامة مستنداته.
               </p>
@@ -345,7 +348,7 @@ function Profile() {
                       lawyerEmail: user.email || "lawyer@example.com",
                       lawyerName: p?.full_name || "المحامي الشريك",
                       daysCount: 60,
-                    }
+                    },
                   });
                   toast.dismiss("email-sim");
                   if (res.success) {
@@ -360,7 +363,9 @@ function Profile() {
               }}
               className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-orange-500/20 transition-all cursor-pointer group"
             >
-              <div className="text-[11px] text-orange-500 font-bold mb-0.5 group-hover:underline">إنذار اليوم 60 ⚠️</div>
+              <div className="text-[11px] text-orange-500 font-bold mb-0.5 group-hover:underline">
+                إنذار اليوم 60 ⚠️
+              </div>
               <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
                 إنذار ثانٍ بمضي 60 يوماً يحث على النسخ الاحتياطي الخارجي أو سداد الفاتورة.
               </p>
@@ -376,7 +381,7 @@ function Profile() {
                       lawyerEmail: user.email || "lawyer@example.com",
                       lawyerName: p?.full_name || "المحامي الشريك",
                       daysCount: 80,
-                    }
+                    },
                   });
                   toast.dismiss("email-sim");
                   if (res.success) {
@@ -391,9 +396,12 @@ function Profile() {
               }}
               className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-red-500/20 transition-all cursor-pointer group"
             >
-              <div className="text-[11px] text-rose-500 font-bold mb-0.5 group-hover:underline">الإنذار النهائي اليوم 80 🚨</div>
+              <div className="text-[11px] text-rose-500 font-bold mb-0.5 group-hover:underline">
+                الإنذار النهائي اليوم 80 🚨
+              </div>
               <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
-                مهلة 10 أيام أخيرة قبل الحذف التلقائي النهائي والكامل للملفات لتوفير مساحة الاستضافة.
+                مهلة 10 أيام أخيرة قبل الحذف التلقائي النهائي والكامل للملفات لتوفير مساحة
+                الاستضافة.
               </p>
             </button>
           </div>

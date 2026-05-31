@@ -417,7 +417,9 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
               <Lock className="h-5 w-5 animate-pulse" />
             </div>
             <h4 className="font-sans text-sm font-bold text-white mb-1.5">
-              {!limits.hasGoogleDrive ? "نسخ ومزامنة الوثائق سحابياً (Google Drive)" : "الخدمة السحابية معطلة مؤقتاً"}
+              {!limits.hasGoogleDrive
+                ? "نسخ ومزامنة الوثائق سحابياً (Google Drive)"
+                : "الخدمة السحابية معطلة مؤقتاً"}
             </h4>
             <p className="text-[11px] sm:text-xs text-slate-300 max-w-sm leading-relaxed font-sans">
               {isSubscriptionUnpaid
@@ -659,12 +661,20 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
             <span>خزانة الوثائق معطلة مؤقتاً (وضع القراءة فقط)</span>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed font-sans">
-            نظراً لتوقف دفع رسوم الاشتراك الخاصة بحسابكم، تم تقييد حسابكم بوضع القراءة فقط لتوفير واستهلاك خوادم التخزين السحابي الفائقة (Supabase Storage). لا تزال بإمكانكم تصفح وتحميل ملفاتكم المرفوعة سابقاً بالأسفل، ولكن يرجى تجديد اشتراككم لتنشيط ميزات الرفع الجديدة.
+            نظراً لتوقف دفع رسوم الاشتراك الخاصة بحسابكم، تم تقييد حسابكم بوضع القراءة فقط لتوفير
+            واستهلاك خوادم التخزين السحابي الفائقة (Supabase Storage). لا تزال بإمكانكم تصفح وتحميل
+            ملفاتكم المرفوعة سابقاً بالأسفل، ولكن يرجى تجديد اشتراككم لتنشيط ميزات الرفع الجديدة.
           </p>
         </div>
       )}
 
-      <div className={cn("space-y-4", isSubscriptionUnpaid && "opacity-40 pointer-events-none select-none hover:cursor-not-allowed")}>
+      <div
+        className={cn(
+          "space-y-4",
+          isSubscriptionUnpaid &&
+            "opacity-40 pointer-events-none select-none hover:cursor-not-allowed",
+        )}
+      >
         {/* Category picker for upload */}
         <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
           <p className="mb-2 text-xs font-semibold text-muted-foreground">تصنيف الرفع:</p>
