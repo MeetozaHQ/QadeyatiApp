@@ -269,13 +269,36 @@ function Profile() {
       <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-5 space-y-4 text-right">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-base font-bold text-rose-400 flex items-center gap-2">
-              <Lock className="h-5 w-5 animate-pulse text-rose-400" />
-              لوحة اختبار سياسات سداد الاشتراك والملفات (لأغراض المحاكاة)
-            </h2>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed font-sans">
-              من هنا يمكنك تفعيل أو إيقاف سداد الاشتراك يدوياً لاختبار سلوك التطبيق في وضع عدم الدفع
-              (القراءة فقط) وتنبيهات حذف البيانات بعد 90 يوماً.
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-display text-base font-bold text-rose-400 flex items-center gap-2">
+                <Lock className="h-5 w-5 animate-pulse text-rose-400" />
+                لوحة اختبار سياسات سداد الاشتراك والملفات (لأغراض المحاكاة)
+              </h2>
+              {user?.email === "meetozacoin@gmail.com" ? (
+                <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-400 font-sans">
+                  خاص بخصوصية مالك ومطور المنصة 👑
+                </span>
+              ) : (
+                <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold text-blue-400 font-sans">
+                  بيئة محاكاة تفاعلية للمشتركين 🧪
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-300 mt-2 leading-relaxed font-sans max-w-xl">
+              {user?.email === "meetozacoin@gmail.com" ? (
+                <span>
+                  أهلاً بك يا مطور النظام ومالك التطبيق. تم إعداد هذه الواجهة التجريبية لتمكينك من
+                  فحص ومراجعة سلوك الحساب بالكامل عند تعثر السداد (تفعيل حالة القراءة فقط، قفل رفع
+                  المستندات، حظر مزامنة Google Drive، وإرسال عينات بريد التنبيه الفعلي والبيانات).
+                </span>
+              ) : (
+                <span>
+                  أهلاً بك في بيئة المحاكاة التفاعلية لمنصة قضيتي. تم إعداد هذا الزر خصيصاً لتجربة
+                  واختبار الخصائص المتقدمة وعرض آلية الإشعار والتنبيهات المخصصة لحماية ملفاتك وقفل
+                  الميزات عند تعثر الاشتراك (وضع القراءة فقط) لضمان تجربة حقيقية متكاملة قبل
+                  الاشتراك الفعلي.
+                </span>
+              )}
             </p>
           </div>
           <button
