@@ -214,6 +214,10 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
   const [authError, setAuthError] = useState<string | null>(null);
 
   const saveToGoogleDrive = async (a: Attachment) => {
+    if (isSubscriptionUnpaid) {
+      toast.error("ميزة مزامنة وحفظ الملفات سحابياً معطلة نظراً لتوقف دفع الرسوم الجارية لحسابكم.");
+      return;
+    }
     if (!limits.hasGoogleDrive) {
       toast.error(
         "مزامنة حفظ ومشاركة الملفات سحابياً عبر Google Drive متوفرة فقط في الباقة الفردية أو أعلى. الرجاء ترقية الباقة لتمكينها.",
@@ -973,20 +977,27 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                   {/* Google Drive Kopierer */}
                   <button
                     onClick={() => saveToGoogleDrive(a)}
+                    disabled={isSubscriptionUnpaid}
                     className={cn(
-                      "flex h-8 items-center gap-1 px-2.5 text-xs font-sans font-semibold transition-all cursor-pointer border rounded-lg select-none",
-                      localStorage.getItem(`gdrive_saved_${a.id}`)
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
-                        : "bg-blue-600/10 text-blue-400 border-blue-500/20 hover:bg-blue-600/20",
+                      "flex h-8 items-center gap-1 px-2.5 text-xs font-sans font-semibold transition-all border rounded-lg select-none",
+                      isSubscriptionUnpaid
+                        ? "bg-slate-850 text-slate-500 border-slate-900/60 cursor-not-allowed opacity-60"
+                        : localStorage.getItem(`gdrive_saved_${a.id}`)
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer"
+                          : "bg-blue-600/10 text-blue-400 border-blue-500/20 hover:bg-blue-600/20 cursor-pointer",
                     )}
                     title={
-                      localStorage.getItem(`gdrive_saved_${a.id}`)
-                        ? "منسوخ في Google Drive"
-                        : "نسخ إلى Google Drive"
+                      isSubscriptionUnpaid
+                        ? "المزامنة معطلة مؤقتاً لتوقف دفع الاشتراك"
+                        : localStorage.getItem(`gdrive_saved_${a.id}`)
+                          ? "منسوخ في Google Drive"
+                          : "نسخ إلى Google Drive"
                     }
                   >
                     {uploadingToDrive === a.id ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : isSubscriptionUnpaid ? (
+                      <Lock className="h-3.5 w-3.5 text-rose-450/70" />
                     ) : (
                       <CloudUpload className="h-3.5 w-3.5" />
                     )}
