@@ -47,7 +47,7 @@ const STEPS = ["النوع", "المحكمة", "الأطراف", "التفاصي
 function NewCasePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isTrialExpired, limits, ownerId, firmLawyers, simulatedLawyerId } = useTrial();
+  const { isTrialExpired, limits, ownerId, firmLawyers, simulatedLawyerId, isSubscriptionUnpaid } = useTrial();
   const [step, setStep] = useState(0);
   const [f, setF] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
@@ -71,6 +71,12 @@ function NewCasePage() {
     if (isTrialExpired) {
       setError(
         "انتهت الفترة التجريبية. يرجى تفعيل الاشتراك المميز بالرمز الترويجي EGYPT أو تنشيط الباقة من الشريط العلوي لتتمكن من إنشاء قضايا جديدة.",
+      );
+      return;
+    }
+    if (isSubscriptionUnpaid) {
+      setError(
+        "حسابكم متوقف عن الدفع حالياً ومقيد بوضع القراءة فقط المعطل. يرجى سداد أو تنشيط اشتراككم المدفوع من الشريط العلوي لتتمكن من إضافة قضايا جديدة.",
       );
       return;
     }

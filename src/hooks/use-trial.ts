@@ -19,8 +19,8 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<QadeytiPlan, PlanLimits> = {
   free: {
     label: "الباقة المجانية",
-    maxCases: 3,
-    maxAIChats: 15,
+    maxCases: 2,
+    maxAIChats: 5,
     hasGoogleDrive: false,
     googleDriveMode: "none",
     hasFinancials: false,
@@ -136,6 +136,10 @@ export function useTrial() {
     return "free";
   });
   const [aiCount, setAiCount] = useState<number>(0);
+
+  const [isSubscriptionUnpaid, setIsSubscriptionUnpaidState] = useState<boolean>(() => {
+    return safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
+  });
 
   // Impersonation Simulator State
   const [simulatedLawyerId, setSimulatedLawyerId] = useState<string>(() => {
@@ -622,6 +626,8 @@ export function useTrial() {
       if (user) {
         setAiCount(getAIChatUsage(user.id));
       }
+      const unpaid = safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
+      setIsSubscriptionUnpaidState(unpaid);
       const storedLawyers = safeStorage.getItem("qadeyti_firm_lawyers");
       if (storedLawyers) {
         try {
@@ -665,6 +671,18 @@ export function useTrial() {
           data: { qadeyti_plan: nextPlan },
         })
         .catch((err) => console.error("Error saving plan to user metadata:", err));
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
+  };
+
+  const setSubscriptionUnpaid = (unpaid: boolean) => {
+    setIsSubscriptionUnpaidState(unpaid);
+    safeStorage.setItem("qadeyti_subscription_unpaid", unpaid ? "true" : "false");
+    const isPremiumOld = safeStorage.getItem("qadeyti_premium") === "true";
+    if (unpaid) {
+      // Keep state clean
     }
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("storage"));
@@ -737,6 +755,8 @@ export function useTrial() {
       isPremium: plan !== "free",
       plan,
       limits: PLAN_LIMITS[plan] || PLAN_LIMITS["free"],
+      isSubscriptionUnpaid,
+      setSubscriptionUnpaid,
       aiCount: 0,
       firmLawyers,
       addFirmLawyer,
@@ -762,6 +782,8 @@ export function useTrial() {
     isPremium,
     plan,
     limits: PLAN_LIMITS[plan] || PLAN_LIMITS["free"],
+    isSubscriptionUnpaid,
+    setSubscriptionUnpaid,
     aiCount,
     firmLawyers,
     addFirmLawyer,

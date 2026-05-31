@@ -75,7 +75,7 @@ type UploadState = {
 };
 
 export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: string }) {
-  const { isTrialExpired, limits, plan } = useTrial();
+  const { isTrialExpired, limits, plan, isSubscriptionUnpaid } = useTrial();
   const [items, setItems] = useState<Attachment[] | null>(null);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [showActivity, setShowActivity] = useState(false);
@@ -222,6 +222,12 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
     if (isTrialExpired) {
       toast.error(
         "انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى الاشتراك أو التنشيط مجانًا بالرمز الترويجي EGYPT بالشريط العلوي لتتمكن من رفع ملفات جديدة.",
+      );
+      return;
+    }
+    if (isSubscriptionUnpaid) {
+      toast.error(
+        "حسابكم متوقف عن الدفع ومقيد بوضع القراءة فقط المعطل. يرجى سداد الاشتراك لتتمكن من رفع ملفات جديدة حمايةً لمساحة الاستضافة والاستهلاك.",
       );
       return;
     }
@@ -405,17 +411,18 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
     <div className="space-y-4">
       {/* Google Drive Status Panel */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 relative overflow-hidden">
-        {!limits.hasGoogleDrive && (
+        {(isSubscriptionUnpaid || !limits.hasGoogleDrive) && (
           <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-4 text-center">
             <div className="bg-[var(--gold)]/15 border border-[var(--gold)]/35 rounded-full p-2.5 text-[var(--gold-soft)] mb-2.5 shadow-md shadow-[var(--gold)]/5">
               <Lock className="h-5 w-5 animate-pulse" />
             </div>
             <h4 className="font-sans text-sm font-bold text-white mb-1.5">
-              نسخ ومزامنة الوثائق سحابياً (Google Drive)
+              {!limits.hasGoogleDrive ? "نسخ ومزامنة الوثائق سحابياً (Google Drive)" : "الخدمة السحابية معطلة مؤقتاً"}
             </h4>
-            <p className="text-[11px] sm:text-xs text-slate-300 max-w-sm leading-relaxed">
-              هذه الميزة لغير المشتركين مقفلة. قم بالترقية للـباقة الفردية أو باقة الشركات لتتمكن من
-              تصفح وتحميل ومزامنة وثائق قضاياك تلقائياً وبأمان على Google Drive.
+            <p className="text-[11px] sm:text-xs text-slate-300 max-w-sm leading-relaxed font-sans">
+              {isSubscriptionUnpaid
+                ? "ميزة الربط بمزامنة Google Drive مهيأة ومثبتة بحسابكم، لكن تم تجميدها وتعتيمها مؤقتاً نظراً لتوقف دفع الاشتراك الجاري. يرجى سداد مستحقات الباقة لتنشيط المزامنة فوراً."
+                : "هذه الميزة لغير المشتركين مقفلة. قم بالترقية للـباقة الفردية أو باقة الشركات لتتمكن من تصفح وتحميل ومزامنة وثائق قضاياك تلقائياً وبأمان على Google Drive."}
             </p>
           </div>
         )}
@@ -645,57 +652,71 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
         )}
       </div>
 
-      {/* Category picker for upload */}
-      <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">تصنيف الرفع:</p>
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-          {FILE_CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setPendingCategory(cat)}
-              className={cn(
-                "rounded-lg border px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs transition-colors duration-150 font-medium select-none cursor-pointer",
-                pendingCategory === cat
-                  ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold-soft)] font-semibold"
-                  : "border-border text-muted-foreground hover:border-[var(--gold)]/30 hover:text-foreground",
-              )}
-            >
-              {cat}
-            </button>
-          ))}
+      {isSubscriptionUnpaid && (
+        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-slate-300">
+          <div className="flex gap-2 items-center text-rose-400 font-bold mb-1">
+            <Lock className="h-4 w-4" />
+            <span>خزانة الوثائق معطلة مؤقتاً (وضع القراءة فقط)</span>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed font-sans">
+            نظراً لتوقف دفع رسوم الاشتراك الخاصة بحسابكم، تم تقييد حسابكم بوضع القراءة فقط لتوفير واستهلاك خوادم التخزين السحابي الفائقة (Supabase Storage). لا تزال بإمكانكم تصفح وتحميل ملفاتكم المرفوعة سابقاً بالأسفل، ولكن يرجى تجديد اشتراككم لتنشيط ميزات الرفع الجديدة.
+          </p>
         </div>
-      </div>
+      )}
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
-        multiple
-        onChange={onPick}
-        className="hidden"
-      />
-      <div
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
-        }}
-        className={cn(
-          "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-8 text-sm transition-colors",
-          dragOver
-            ? "border-[var(--gold)] bg-[var(--gold)]/10"
-            : "border-[var(--gold)]/40 bg-card/40 hover:bg-[var(--gold)]/5",
-        )}
-      >
-        <Upload className="h-6 w-6 text-[var(--gold-soft)]" />
-        <span className="font-medium text-foreground">اسحب الملفات هنا أو اضغط للاختيار</span>
-        <span className="text-xs text-muted-foreground">PDF أو صور — يمكن رفع عدة ملفات</span>
+      <div className={cn("space-y-4", isSubscriptionUnpaid && "opacity-40 pointer-events-none select-none hover:cursor-not-allowed")}>
+        {/* Category picker for upload */}
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
+          <p className="mb-2 text-xs font-semibold text-muted-foreground">تصنيف الرفع:</p>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {FILE_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setPendingCategory(cat)}
+                className={cn(
+                  "rounded-lg border px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs transition-colors duration-150 font-medium select-none cursor-pointer",
+                  pendingCategory === cat
+                    ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold-soft)] font-semibold"
+                    : "border-border text-muted-foreground hover:border-[var(--gold)]/30 hover:text-foreground",
+                )}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+          multiple
+          onChange={onPick}
+          className="hidden"
+        />
+        <div
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
+          }}
+          className={cn(
+            "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-8 text-sm transition-colors",
+            dragOver
+              ? "border-[var(--gold)] bg-[var(--gold)]/10"
+              : "border-[var(--gold)]/40 bg-card/40 hover:bg-[var(--gold)]/5",
+          )}
+        >
+          <Upload className="h-6 w-6 text-[var(--gold-soft)]" />
+          <span className="font-medium text-foreground">اسحب الملفات هنا أو اضغط للاختيار</span>
+          <span className="text-xs text-muted-foreground">PDF أو صور — يمكن رفع عدة ملفات</span>
+        </div>
       </div>
 
       {uploads.length > 0 && (

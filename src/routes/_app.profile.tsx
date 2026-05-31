@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { PremiumButton } from "@/components/qadeyti/PremiumButton";
 import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { sendPaymentReminderEmail } from "@/lib/email.functions";
+import { cn } from "@/lib/utils";
 import {
   ExternalLink,
   Copy,
@@ -18,6 +21,7 @@ import {
   Database,
   Mail,
   PhoneCall,
+  Lock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/profile")({
@@ -68,7 +72,8 @@ function slugify(s: string) {
 function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { plan } = useTrial();
+  const { plan, isSubscriptionUnpaid, setSubscriptionUnpaid } = useTrial();
+  const callSendReminder = useServerFn(sendPaymentReminderEmail);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [p, setP] = useState<Profile | null>(null);
@@ -259,6 +264,141 @@ function Profile() {
   return (
     <div className="space-y-6 pb-10">
       <h1 className="font-display text-2xl font-bold text-foreground">الملف الشخصي</h1>
+
+      {/* Simulation Controls for Payment/Subscription Status & Emails Alerts */}
+      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-5 space-y-4 text-right">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-base font-bold text-rose-400 flex items-center gap-2">
+              <Lock className="h-5 w-5 animate-pulse text-rose-400" />
+              لوحة اختبار سياسات سداد الاشتراك والملفات (لأغراض المحاكاة)
+            </h2>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed font-sans">
+              من هنا يمكنك تفعيل أو إيقاف سداد الاشتراك يدوياً لاختبار سلوك التطبيق في وضع عدم الدفع (القراءة فقط) وتنبيهات حذف البيانات بعد 90 يوماً.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              const nextState = !isSubscriptionUnpaid;
+              setSubscriptionUnpaid(nextState);
+              toast.success(
+                nextState
+                  ? "تم محاكاة توقف الدفع! تم قفل ميزات الرفع والذكاء الاصطناعي وجوجل درايف وتفعيل وضع القراءة فقط."
+                  : "تم تنشيط الدفع بنجاح! عادت كافة الميزات المتقدمة للعمل بشكل فوري."
+              );
+            }}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-md select-none",
+              isSubscriptionUnpaid
+                ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/15"
+                : "bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/15"
+            )}
+          >
+            {isSubscriptionUnpaid ? "تنشيط وسداد الاشتراك الآن ✅" : "إيقاف الدفع وتجميد الحساب 🛑"}
+          </button>
+        </div>
+
+        {/* Send simulated reminder emails */}
+        <div className="border-t border-rose-500/15 pt-4 space-y-3">
+          <p className="text-xs font-semibold text-slate-400">
+            أرسل عينات بريد التذكير الآلي للمحامي (عند توقف الدفع):
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button
+              onClick={async () => {
+                if (!user) return;
+                toast.loading("جاري إرسال بريد التذكير لليوم 30...", { id: "email-sim" });
+                try {
+                  const res = await callSendReminder({
+                    data: {
+                      lawyerEmail: user.email || "lawyer@example.com",
+                      lawyerName: p?.full_name || "المحامي الشريك",
+                      daysCount: 30,
+                    }
+                  });
+                  toast.dismiss("email-sim");
+                  if (res.success) {
+                    toast.success("تم إرسال تنبيه الـ 30 يوماً بنجاح لبريدك المسجل!");
+                  } else {
+                    toast.error(`خطأ: يرجى تزويد RESEND_API_KEY في الإعدادات للبريد الفعلي.`);
+                  }
+                } catch (e) {
+                  toast.dismiss("email-sim");
+                  toast.error("فشل الإرسال التلقائي للبريد الفعلي.");
+                }
+              }}
+              className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-amber-500/20 transition-all cursor-pointer group"
+            >
+              <div className="text-[11px] text-amber-500 font-bold mb-0.5 group-hover:underline">تنبيه اليوم 30 ⏳</div>
+              <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
+                إشعار بمضي 30 يوماً على التوقف عن الدفع مع طمأنة المحامي على سلامة مستنداته.
+              </p>
+            </button>
+
+            <button
+              onClick={async () => {
+                if (!user) return;
+                toast.loading("جاري إرسال إنذار اليوم 60...", { id: "email-sim" });
+                try {
+                  const res = await callSendReminder({
+                    data: {
+                      lawyerEmail: user.email || "lawyer@example.com",
+                      lawyerName: p?.full_name || "المحامي الشريك",
+                      daysCount: 60,
+                    }
+                  });
+                  toast.dismiss("email-sim");
+                  if (res.success) {
+                    toast.success("تم إرسال إنذار الـ 60 يوماً بنجاح لبريدك!");
+                  } else {
+                    toast.error(`خطأ: يرجى تزويد RESEND_API_KEY في الإعدادات للبريد الفعلي.`);
+                  }
+                } catch (e) {
+                  toast.dismiss("email-sim");
+                  toast.error("فشل الإرسال التلقائي للبريد الفعلي.");
+                }
+              }}
+              className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-orange-500/20 transition-all cursor-pointer group"
+            >
+              <div className="text-[11px] text-orange-500 font-bold mb-0.5 group-hover:underline">إنذار اليوم 60 ⚠️</div>
+              <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
+                إنذار ثانٍ بمضي 60 يوماً يحث على النسخ الاحتياطي الخارجي أو سداد الفاتورة.
+              </p>
+            </button>
+
+            <button
+              onClick={async () => {
+                if (!user) return;
+                toast.loading("جاري إرسال الإنذار النهائي لليوم 80...", { id: "email-sim" });
+                try {
+                  const res = await callSendReminder({
+                    data: {
+                      lawyerEmail: user.email || "lawyer@example.com",
+                      lawyerName: p?.full_name || "المحامي الشريك",
+                      daysCount: 80,
+                    }
+                  });
+                  toast.dismiss("email-sim");
+                  if (res.success) {
+                    toast.success("تم إرسال الإنذار النهائي الـ 10 أيام الأخيرة لبريدك!");
+                  } else {
+                    toast.error(`خطأ: يرجى تزويد RESEND_API_KEY في الإعدادات للبريد الفعلي.`);
+                  }
+                } catch (e) {
+                  toast.dismiss("email-sim");
+                  toast.error("فشل الإرسال التلقائي للبريد الفعلي.");
+                }
+              }}
+              className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-red-500/20 transition-all cursor-pointer group"
+            >
+              <div className="text-[11px] text-rose-500 font-bold mb-0.5 group-hover:underline">الإنذار النهائي اليوم 80 🚨</div>
+              <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
+                مهلة 10 أيام أخيرة قبل الحذف التلقائي النهائي والكامل للملفات لتوفير مساحة الاستضافة.
+              </p>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {plan === "enterprise" && (
         <div className="rounded-2xl border border-[var(--gold)]/30 bg-gradient-to-l from-[var(--gold)]/10 via-[var(--gold)]/5 to-transparent p-5 text-right space-y-4">

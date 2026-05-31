@@ -30,7 +30,7 @@ export function SessionsTab({
   userId: string;
   onChange?: () => void;
 }) {
-  const { isTrialExpired } = useTrial();
+  const { isTrialExpired, isSubscriptionUnpaid } = useTrial();
   const [items, setItems] = useState<Session[] | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -113,6 +113,13 @@ export function SessionsTab({
     if (isTrialExpired && !editingId) {
       toast.error(
         "انتهت فترتكم التجريبية المجانية لـ قضيتي (٧ أيام). يرجى الاشتراك أو التنشيط مجانًا بالرمز الترويجي EGYPT بالشريط العلوي لتتمكن من إضافة جلسات جديدة.",
+      );
+      return;
+    }
+
+    if (isSubscriptionUnpaid && !editingId) {
+      toast.error(
+        "حسابكم متوقف عن الدفع ومقيد بوضع القراءة فقط المعطل. يرجى سداد الاشتراك لتتمكن من إضافة جلسات جديدة.",
       );
       return;
     }

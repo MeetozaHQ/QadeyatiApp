@@ -71,6 +71,7 @@ function AIPage() {
     firmLawyers,
     incrementLawyerAIUsage,
     simulatedLawyerId,
+    isSubscriptionUnpaid,
   } = useTrial();
   const navigate = useNavigate();
   const callChat = useServerFn(chatWithAI);
@@ -169,6 +170,13 @@ function AIPage() {
       return;
     }
 
+    if (isSubscriptionUnpaid) {
+      setError(
+        "حسابكم متوقف عن الدفع حالياً ومقيد بوضع القراءة فقط المعطل. يرجى سداد الاشتراك لتتمكن من استخدام المستشار القانوني الذكي ومواصلة الاستفادة منه.",
+      );
+      return;
+    }
+
     if (selectedLawyerId !== "me") {
       const lawyer = firmLawyers.find((l) => l.id === selectedLawyerId);
       const lawyerUsage = lawyer?.aiUsage ?? 0;
@@ -215,6 +223,10 @@ function AIPage() {
       toast.error("انتهت الفترة التجريبية. يرجى تفعيل الاشتراك.");
       return;
     }
+    if (isSubscriptionUnpaid) {
+      toast.error("حسابكم متوقف عن الدفع ومقيد بوضع القراءة فقط المعطل. يرجى سداد الاشتراك أولاً.");
+      return;
+    }
     if (!caseId || !user) {
       toast.error("لحفظ كملاحظة افتح المساعد من داخل قضية.");
       return;
@@ -235,6 +247,10 @@ function AIPage() {
   const saveAsDocument = async (content: string, hint: string) => {
     if (isTrialExpired) {
       toast.error("انتهت الفترة التجريبية. يرجى تفعيل الاشتراك المميز لحفظ المستندات.");
+      return;
+    }
+    if (isSubscriptionUnpaid) {
+      toast.error("حسابكم متوقف عن الدفع ومقيد بوضع القراءة فقط المعطل. يرجى سداد الاشتراك أولاً.");
       return;
     }
     if (!caseId || !user) {

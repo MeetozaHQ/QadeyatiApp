@@ -489,3 +489,151 @@ export const sendOwnerFinancialReport = createServerFn({ method: "POST" })
       };
     }
   });
+
+interface PaymentReminderInput {
+  lawyerEmail: string;
+  lawyerName: string;
+  daysCount: number;
+}
+
+/**
+ * Server function to send automated alerts for premium payment cessation at days 30, 60, and 80.
+ */
+export const sendPaymentReminderEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: PaymentReminderInput) => input)
+  .handler(async ({ data }) => {
+    try {
+      const { apiKey, fromEmail } = getEmailConfig();
+      if (!apiKey) {
+        return { success: false, error: "MISSING_API_KEY" };
+      }
+
+      const { lawyerEmail, lawyerName, daysCount } = data;
+
+      let subject = "";
+      let alertLevelClass = "background-color: #fffbeb; border: 1px solid #fef3c7; color: #b45309;";
+      let messageBody = "";
+      let actionText = "تجديد الاشتراك لإنقاذ الملفات";
+
+      if (daysCount === 30) {
+        subject = `⚠️ تنبيه هام: مضى 30 يوماً على التوقف عن تجديد اشتراك قضيتي - يرجى مراجعة ملفاتك`;
+        messageBody = `
+          نود لفت انتباهكم المهني إلى أنه قد مضى <strong>30 يوماً متواصلة</strong> على تاريخ انتهاء اشتراككم في منصة قضيتي دون تجديد. <br/><br/>
+          تطبيقاً لسياسات المنصة واستضافة الوسائط الكبيرة، تبقى جميع ملفاتك ومستنداتك ومقاطع التوكيلات محفوظة آمنة حتى الآن، ولكن يرجى الانتباه والعمل على تجديد الاشتراك لخدمتكم بشكل متصل.
+        `;
+      } else if (daysCount === 60) {
+        subject = `⚠️ إنذار ثانٍ: مضى 60 يوماً على توقف حساب قضيتي - ستفقد ملفاتك القانونية المرفوعة`;
+        alertLevelClass = "background-color: #fff7ed; border: 1px solid #ffedd5; color: #c2410c;";
+        messageBody = `
+          نرسل للتأكيد على أنه قد مضى <strong>60 يوماً متواصلة</strong> على إيقاف الباقة المدفوعة في منصة قضيتي. <br/><br/>
+          وفق شروط الاستخدام، تتبقى بمساحة التخزين الخاصة بك ملفات لم يتم تحميلها للنسخ الاحتياطي الخارجي. نرجو منكم سرعة تجديد الاشتراك أو طلب ملفاتكم بصيغة مضغوطة لتفادي فقدها عند الاقتراب من انقضاء المهلة القصوى.
+        `;
+      } else {
+        // 80 days
+        subject = `🚨 إنذار نهائي: مضى 80 يوماً على توقف الحساب - سيتم حذف جميع الملفات المرفوعة نهائياً خلال 10 أيام!`;
+        alertLevelClass = "background-color: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c;";
+        actionText = "تجديد الاشتراك فوراً والإنقاذ العاجل للملفات 🚨";
+        messageBody = `
+          <strong>تنبيه عاجل وفوري للغاية:</strong><br/>
+          لقد تجاوز حسابكم فترة توقف عن الدفع تبلغ <strong>80 يوماً متكاملة</strong>. <br/><br/>
+          بقي <strong>10 أيام فقط</strong> قبل إتمام الحذف التلقائي والنهائي لجميع الملفات والتوكيلات ومذكرات الدفاع المرفوعة سحابياً لتوطين وحفظ مساحات الخوادم المستضيفة. يرجى تجديد الاشتراك فوراً لتسوية وضع الحساب وتجنب الفقد الكلي الفوري لبيانات الموكلين.
+        `;
+      }
+
+      const htmlContent = `
+        <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #f8fafc; color: #1e293b; text-align: right;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #c99a3c; margin: 0; font-size: 28px; font-weight: bold;">قضيتي</h1>
+            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">المنظومة القانونية المتكاملة لإدارة مكاتب المحاماة</p>
+          </div>
+          
+          <div style="background-color: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px;">
+            <h2 style="color: #1e3a8a; margin-top: 0; margin-bottom: 16px; font-size: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">الأستاذ المحترم ${lawyerName}،</h2>
+            
+            <div style="${alertLevelClass} border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 14px; line-height: 1.7;">
+              ${messageBody}
+            </div>
+
+            <p style="font-size: 13px; line-height: 1.6; color: #475569; margin-bottom: 12px;">
+              <strong>تفاصيل حسابكم:</strong><br/>
+              • البريد الإلكتروني المسجل: <span style="font-family: monospace; color: #1e3a8a;">${lawyerEmail}</span><br/>
+              • أيام التوقف المتواصلة: <span style="font-weight: bold; color: #1e3a8a;">${daysCount} يوماً</span>
+            </p>
+
+            <p style="font-size: 13px; line-height: 1.6; color: #475569;">
+              يرجى العلم أن حسابكم ما زال بإمكانكم تسجيل الدخول وتصفح قضاياكم السابقة، ولكن ميزات رفع المستندات واستخدام المساعد القانوني والربط بالـ Google Drive ستبقى مغلقة ومقيدة حتى تصفية مبالغ الاشتراك الشهري أو السنوي المستحقة.
+            </p>
+ 
+            <div style="text-align: center; margin: 28px 0 10px 0;">
+              <a href="https://qadeyati.com/dashboard" style="background-color: #1e3a8a; color: #ffffff; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.25);">
+                ${actionText}
+              </a>
+            </div>
+          </div>
+
+          <div style="text-align: center; color: #94a3b8; font-size: 11px; margin-top: 20px; line-height: 1.5;">
+            <p style="margin-bottom: 4px;">تطبيقاً لشروط الاستخدام المعتمدة في اتفاقية تسجيلكم الإلكتروني.</p>
+            <p style="margin: 0;">&copy; ${new Date().getFullYear()} قضيتي - جميع الحقوق محفوظة لشركائنا الفنيين.</p>
+          </div>
+        </div>
+      `;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 6500);
+
+      try {
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [lawyerEmail],
+            subject: subject,
+            html: htmlContent,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          console.error("[Email Service] Resend PaymentReminder API failed:", response.status, errData);
+          const errorMsg =
+            errData?.message || errData?.error?.message || `API Error (${response.status})`;
+          return { success: false, error: errorMsg };
+        }
+
+        const dataResponse = await response.json();
+        console.log("[Email Service] Payment Reminder successfully sent, ID:", dataResponse.id);
+        return { success: true };
+      } catch (innerErr) {
+        clearTimeout(timeoutId);
+        const isAbort = innerErr instanceof Error && innerErr.name === "AbortError";
+        console.error("[Email Service] Request error inside sendPaymentReminderEmail:", innerErr);
+        return {
+          success: false,
+          error: isAbort
+            ? "انتهت مهلة المزامنة بخوادم البريد الإلكتروني (6.5 ثوانٍ)"
+            : innerErr instanceof Error
+              ? innerErr.message
+              : "تعذر الاتصال بخادم البريد الإلكتروني",
+        };
+      }
+    } catch (error) {
+      console.error("Resend send payment reminder error:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "حدث خطأ غير متوقع أثناء إعداد وإرسال التنبيه",
+      };
+    }
+  });
