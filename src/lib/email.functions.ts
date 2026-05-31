@@ -216,7 +216,10 @@ export const sendLawyersPerformanceReports = createServerFn({ method: "POST" })
         if (casesData) {
           casesData.forEach((c) => {
             if (c.assigned_lawyer_id) {
-              caseCounts[c.assigned_lawyer_id] = (caseCounts[c.assigned_lawyer_id] || 0) + 1;
+              const ids = c.assigned_lawyer_id.split(",").filter(Boolean);
+              ids.forEach((id) => {
+                caseCounts[id] = (caseCounts[id] || 0) + 1;
+              });
             }
           });
         }

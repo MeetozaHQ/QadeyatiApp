@@ -45,8 +45,10 @@ function CasesPage() {
 
       if (simulatedLawyerId !== "owner") {
         list = list.filter((r) => {
-          const assigned = r.assigned_lawyer_id || "none";
-          return assigned === simulatedLawyerId;
+          const assignedIds = r.assigned_lawyer_id
+            ? r.assigned_lawyer_id.split(",").filter(Boolean)
+            : [];
+          return assignedIds.includes(simulatedLawyerId);
         });
       }
       const ids = list.map((r) => r.id);
@@ -177,7 +179,10 @@ function CasesPage() {
         <ul className="space-y-3">
           {filtered.map((c) => {
             const safeFirmLawyers = firmLawyers || [];
-            const assignedLawyer = safeFirmLawyers.find((l) => l.id === c.assigned_lawyer_id);
+            const lawyerIds = c.assigned_lawyer_id
+              ? c.assigned_lawyer_id.split(",").filter(Boolean)
+              : [];
+            const assignedLawyers = safeFirmLawyers.filter((l) => lawyerIds.includes(l.id));
             return (
               <li key={c.id}>
                 <Link
@@ -201,9 +206,13 @@ function CasesPage() {
                   <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <span>{c.case_number ? `رقم ${c.case_number}` : "بدون رقم"}</span>
-                      {assignedLawyer && (
+                      {assignedLawyers.length > 0 && (
                         <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] text-blue-400 font-sans border border-blue-500/15">
-                          👤 {assignedLawyer.name}
+                          {assignedLawyers.length === 1 ? (
+                            <span>👤 {assignedLawyers[0].name}</span>
+                          ) : (
+                            <span>👥 فريق ({assignedLawyers.length})</span>
+                          )}
                         </span>
                       )}
                     </div>

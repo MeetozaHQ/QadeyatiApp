@@ -56,7 +56,9 @@ function FilesPage() {
         if (activeFilter && activeFilter !== "owner" && activeFilter !== "all") {
           list = list.filter((r) => {
             const c = map.get(r.case_id);
-            return c && c.assigned_lawyer_id === activeFilter;
+            if (!c || !c.assigned_lawyer_id) return false;
+            const assignedIds = c.assigned_lawyer_id.split(",").filter(Boolean);
+            return assignedIds.includes(activeFilter);
           });
         }
 

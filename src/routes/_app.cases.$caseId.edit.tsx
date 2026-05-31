@@ -213,20 +213,56 @@ function EditCasePage() {
         </div>
 
         {simulatedLawyerId === "owner" && firmLawyers && firmLawyers.length > 0 && (
-          <div className="space-y-2">
-            <label className="block text-sm text-muted-foreground">المحامي المكلف بالقضية</label>
-            <select
-              value={f.assigned_lawyer_id}
-              onChange={(e) => set("assigned_lawyer_id", e.target.value)}
-              className="h-14 w-full rounded-xl border border-border bg-card px-4 text-base text-foreground outline-none transition-colors focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 cursor-pointer"
-            >
-              <option value="">⚠️ لا أحد (تولى أنت الإدارة كشريك رئيسي)</option>
-              {firmLawyers.map((lawyer) => (
-                <option key={lawyer.id} value={lawyer.id}>
-                  👤 {lawyer.name} ({lawyer.role})
-                </option>
-              ))}
-            </select>
+          <div className="space-y-3">
+            <label className="block text-sm text-muted-foreground font-display font-semibold">
+              تكليف القضية لمحامين في المكتب (يمكنك تحديد أكثر من محامٍ لهذه القضية)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {firmLawyers.map((lawyer) => {
+                const selectedIds = f.assigned_lawyer_id
+                  ? f.assigned_lawyer_id.split(",").filter(Boolean)
+                  : [];
+                const isChecked = selectedIds.includes(lawyer.id);
+                return (
+                  <label
+                    key={lawyer.id}
+                    className={cn(
+                      "flex items-center gap-3 p-3.5 rounded-xl border text-right transition-all cursor-pointer select-none",
+                      isChecked
+                        ? "bg-blue-500/10 border-blue-500/30 text-slate-200"
+                        : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-350",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        let updated;
+                        if (isChecked) {
+                          updated = selectedIds.filter((id) => id !== lawyer.id);
+                        } else {
+                          updated = [...selectedIds, lawyer.id];
+                        }
+                        set("assigned_lawyer_id", updated.join(","));
+                      }}
+                      className="accent-[var(--gold)] h-4 w-4 rounded"
+                    />
+                    <div className="flex-1 text-xs">
+                      <span className="font-bold block text-slate-200">{lawyer.name}</span>
+                      <span className="text-[10px] text-slate-500 font-sans block mt-0.5">
+                        {lawyer.role}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+            {(!f.assigned_lawyer_id ||
+              f.assigned_lawyer_id.split(",").filter(Boolean).length === 0) && (
+              <p className="text-[11px] text-amber-500 bg-amber-500/5 px-3 py-2 rounded-lg border border-amber-500/10 inline-block font-sans">
+                ⚠️ لا أحد مكلف حالياً بالملف (تتولى الإشراف المباشر كشريك رئيسي)
+              </p>
+            )}
           </div>
         )}
 

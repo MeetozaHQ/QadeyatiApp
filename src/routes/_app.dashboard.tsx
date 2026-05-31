@@ -127,11 +127,10 @@ function Dashboard() {
 
     const toastId = toast.loading("جاري فحص حالة القضايا النشطة المسندة للمحامي...");
     try {
-      // Query only cases assigned to this specific lawyer to avoid full table scans/downloads
+      // Query cases and filter by assigned lawyer in memory to support multi-assigned cases
       const { data, error } = await supabase
         .from("cases")
         .select("id,title,status,assigned_lawyer_id")
-        .eq("assigned_lawyer_id", lawyer.id)
         .is("archived_at", null);
 
       toast.dismiss(toastId);
@@ -145,7 +144,10 @@ function Dashboard() {
       const allCases = (data as CaseRow[]) ?? [];
       const activeAssigned = allCases.filter((c) => {
         const isActive = c.status !== "مغلقة" && c.status !== "صدر حكم";
-        return isActive;
+        const assignedIds = c.assigned_lawyer_id
+          ? c.assigned_lawyer_id.split(",").filter(Boolean)
+          : [];
+        return isActive && assignedIds.includes(lawyer.id);
       });
 
       if (activeAssigned.length === 0) {
@@ -185,14 +187,23 @@ function Dashboard() {
     try {
       const updates = activeCasesOfLawyer.map((c) => {
         const targetValue = delegationTargetId === "none" ? null : delegationTargetId;
+        const currentIds = c.assigned_lawyer_id
+          ? c.assigned_lawyer_id.split(",").filter(Boolean)
+          : [];
+        const updatedIds = currentIds.filter((id) => id !== deletingLawyer.id);
+        if (targetValue && !updatedIds.includes(targetValue)) {
+          updatedIds.push(targetValue);
+        }
+        const dbValue = updatedIds.length === 0 ? null : updatedIds.join(",");
+
         if (typeof window !== "undefined") {
-          if (targetValue === null) {
+          if (dbValue === null) {
             localStorage.removeItem(`case_lawyer_${c.id}`);
           } else {
-            localStorage.setItem(`case_lawyer_${c.id}`, targetValue);
+            localStorage.setItem(`case_lawyer_${c.id}`, dbValue);
           }
         }
-        return supabase.from("cases").update({ assigned_lawyer_id: targetValue }).eq("id", c.id);
+        return supabase.from("cases").update({ assigned_lawyer_id: dbValue }).eq("id", c.id);
       });
       await Promise.all(updates);
     } catch (e) {
@@ -268,7 +279,12 @@ function Dashboard() {
       .then(({ data }) => {
         let list = (data as CaseRow[]) ?? [];
         if (simulatedLawyerId !== "owner") {
-          list = list.filter((c) => (c.assigned_lawyer_id || "none") === simulatedLawyerId);
+          list = list.filter((c) => {
+            const assignedIds = c.assigned_lawyer_id
+              ? c.assigned_lawyer_id.split(",").filter(Boolean)
+              : [];
+            return assignedIds.includes(simulatedLawyerId);
+          });
         }
         setCases(list.slice(0, 5));
         setCaseCount(list.length);
@@ -300,7 +316,12 @@ function Dashboard() {
 
       // Filter sessions based on case assignment
       if (simulatedLawyerId !== "owner") {
-        list = list.filter((s) => (s.assigned_lawyer_id || "none") === simulatedLawyerId);
+        list = list.filter((s) => {
+          const assignedIds = s.assigned_lawyer_id
+            ? s.assigned_lawyer_id.split(",").filter(Boolean)
+            : [];
+          return assignedIds.includes(simulatedLawyerId);
+        });
       }
       setUpcoming(list.slice(0, 5));
     })();
@@ -323,7 +344,10 @@ function Dashboard() {
         const map = new Map((cs ?? []).map((c) => [c.id, c]));
         list = list.filter((s) => {
           const c = map.get(s.case_id);
-          return (c?.assigned_lawyer_id || "none") === simulatedLawyerId;
+          const assignedIds = c?.assigned_lawyer_id
+            ? c.assigned_lawyer_id.split(",").filter(Boolean)
+            : [];
+          return assignedIds.includes(simulatedLawyerId);
         });
       }
       setTodayCount(list.length);

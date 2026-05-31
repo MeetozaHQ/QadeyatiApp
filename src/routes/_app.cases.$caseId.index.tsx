@@ -239,22 +239,34 @@ function OverviewTab({
   const { simulatedLawyerId } = useTrial();
   const isOwner = simulatedLawyerId === "owner";
 
-  const [assignedLawyerId, setAssignedLawyerId] = useState<string>(() => {
-    return c.assigned_lawyer_id || "none";
+  const [assignedLawyerIds, setAssignedLawyerIds] = useState<string[]>(() => {
+    return c.assigned_lawyer_id ? c.assigned_lawyer_id.split(",").filter(Boolean) : [];
   });
 
   useEffect(() => {
-    setAssignedLawyerId(c.assigned_lawyer_id || "none");
+    const ids = c.assigned_lawyer_id ? c.assigned_lawyer_id.split(",").filter(Boolean) : [];
+    setAssignedLawyerIds(ids);
   }, [c.assigned_lawyer_id]);
 
-  const handleAssign = async (lawyerId: string) => {
-    if (!isOwner) return; // Prevent unauthorized assignment calls
-    setAssignedLawyerId(lawyerId);
+  const handleToggleLawyer = async (lawyerId: string) => {
+    if (!isOwner) return;
+    let nextIds: string[];
+    if (assignedLawyerIds.includes(lawyerId)) {
+      nextIds = assignedLawyerIds.filter((id) => id !== lawyerId);
+    } else {
+      nextIds = [...assignedLawyerIds, lawyerId];
+    }
+    setAssignedLawyerIds(nextIds);
+
+    const dbValue = nextIds.length === 0 ? null : nextIds.join(",");
     if (typeof window !== "undefined") {
-      localStorage.setItem(`case_lawyer_${caseId}`, lawyerId);
+      if (dbValue === null) {
+        localStorage.removeItem(`case_lawyer_${caseId}`);
+      } else {
+        localStorage.setItem(`case_lawyer_${caseId}`, dbValue);
+      }
     }
     try {
-      const dbValue = lawyerId === "none" ? null : lawyerId;
       const { error } = await supabase
         .from("cases")
         .update({ assigned_lawyer_id: dbValue })
@@ -278,64 +290,106 @@ function OverviewTab({
   ];
 
   const safeFirmLawyers = firmLawyers || [];
-  const assignedLawyer = safeFirmLawyers.find((l) => l.id === assignedLawyerId);
-  const showDelegationBox = isOwner || (assignedLawyerId !== "none" && assignedLawyer);
+  const assignedLawyers = safeFirmLawyers.filter((l) => assignedLawyerIds.includes(l.id));
+  const showDelegationBox = isOwner || assignedLawyers.length > 0;
 
   return (
     <div className="space-y-4">
       {showDelegationBox && (plan === "enterprise" || safeFirmLawyers.length > 0) && (
-        <div className="rounded-2xl border border-[var(--gold)]/20 bg-[#0c101a] p-4 text-right space-y-3">
+        <div className="rounded-2xl border border-[var(--gold)]/20 bg-[#0c101a] p-4 text-right space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-450 font-display">
-              توزيع المهام والرقابة المركزية
+            <h3 className="text-xs font-bold text-slate-400 font-display">
+              توزيع المهام والعمل الجماعي بالملف
             </h3>
             <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-400 font-sans">
               {isOwner ? "لوحة الشركاء" : "تكليف رسمي"}
             </span>
           </div>
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {isOwner ? (
               <>
-                <label className="text-xs text-slate-400 font-medium font-sans">
-                  توجيه القضية وتكليف محامٍ فرعي:
+                <label className="text-xs text-slate-400 font-semibold font-sans mb-1 block">
+                  تكليف وتوجيه القضية لمحامي أو فريق عمل من المكتب:
                 </label>
-                <select
-                  value={assignedLawyerId}
-                  onChange={(e) => handleAssign(e.target.value)}
-                  className="mt-1 block w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-foreground outline-none focus:border-[var(--gold)]"
-                >
-                  <option value="none">⚠️ غير مكلف لأي محامٍ فرعي (تولى أنت الإدارة)</option>
-                  {safeFirmLawyers.map((lawyer) => (
-                    <option key={lawyer.id} value={lawyer.id}>
-                      👤 {lawyer.name} ({lawyer.role})
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {safeFirmLawyers.map((lawyer) => {
+                    const isChecked = assignedLawyerIds.includes(lawyer.id);
+                    return (
+                      <label
+                        key={lawyer.id}
+                        className={cn(
+                          "flex items-center gap-3 p-2.5 rounded-xl border text-right transition-all cursor-pointer select-none",
+                          isChecked
+                            ? "bg-blue-500/10 border-blue-500/35 text-slate-250"
+                            : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-755 hover:text-slate-300",
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleLawyer(lawyer.id)}
+                          className="accent-[var(--gold)] h-4 w-4 rounded"
+                        />
+                        <div className="flex-1 text-xs">
+                          <span className="font-bold block text-slate-200">{lawyer.name}</span>
+                          <span className="text-[10px] text-slate-500 font-sans block mt-0.5">
+                            {lawyer.role}
+                          </span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
               </>
             ) : (
-              assignedLawyer && (
-                <div className="text-xs text-slate-400 font-medium font-sans mb-1">
-                  المحامي المكلف بالملف:
+              assignedLawyers.length > 0 && (
+                <div className="text-xs text-slate-400 font-semibold font-sans mb-1">
+                  المحامون المكلفون بالعمل على هذا الملف:
                 </div>
               )
             )}
           </div>
 
-          {assignedLawyerId !== "none" && assignedLawyer && (
-            <div className="mt-3 rounded-xl bg-slate-900/60 border border-slate-800 p-2.5 text-xs text-slate-300 flex items-start gap-2.5 leading-normal">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs text-blue-400 font-bold">
-                {assignedLawyer.avatarLetter}
-              </span>
-              <div className="flex-1">
-                <p className="font-semibold text-slate-200">{assignedLawyer.name}</p>
-                <p className="mt-0.5 text-slate-400 font-sans">
-                  {isOwner
-                    ? "يعمل على الملف الآن. المخرجات ومسودات الجلسات تخضع للمراجعة المركزية التلقائية."
-                    : "تعمل على هذا الملف المكلف إليك رسمياً من الشريك المدير للمكتب."}
-                </p>
+          {assignedLawyers.length > 0 ? (
+            <div className="space-y-2 pt-2 border-t border-slate-800/50">
+              <div className="text-[10px] text-slate-500 font-semibold font-sans">
+                فريق العمل القانوني المشارك ({assignedLawyers.length}):
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {assignedLawyers.map((lawyer) => (
+                  <div
+                    key={lawyer.id}
+                    className="rounded-xl bg-slate-900/60 border border-slate-800/40 p-2.5 text-xs text-slate-300 flex items-start gap-2.5 leading-normal"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs text-blue-400 font-bold font-sans">
+                      {lawyer.avatarLetter}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2.5">
+                        <p className="font-semibold text-slate-200">{lawyer.name}</p>
+                        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400 font-sans">
+                          {lawyer.role}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-450 font-sans leading-relaxed">
+                        {isOwner
+                          ? "يعمل حالياً كعضو فريق مكلف بهذا الملف القانوني تحت إشرافك المباشر."
+                          : lawyer.id === simulatedLawyerId
+                            ? "تعمل على هذا الملف المكلف إليك رسمياً من الشريك المدير للمكتب."
+                            : "زميل مشارك مكلف بالتعاون والعمل الفني المشترك على هذا الملف."}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
+          ) : (
+            isOwner && (
+              <p className="text-[11px] text-amber-500 bg-amber-500/5 px-3 py-2 rounded-lg border border-amber-500/15 inline-block font-sans">
+                ⚠️ لا يوجد محامون مكلفون حالياً بالملف (تتولى أنت الإشراف المباشر كشريك رئيسي)
+              </p>
+            )
           )}
         </div>
       )}

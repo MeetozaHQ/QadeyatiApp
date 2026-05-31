@@ -282,12 +282,15 @@ export function useTrial() {
             .select("id, case_id");
 
           const caseCounts: Record<string, number> = {};
-          const caseToLawyerMap = new Map<string, string>();
+          const caseToLawyersMap = new Map<string, string[]>();
           if (casesData) {
             casesData.forEach((c) => {
               if (c.assigned_lawyer_id) {
-                caseCounts[c.assigned_lawyer_id] = (caseCounts[c.assigned_lawyer_id] || 0) + 1;
-                caseToLawyerMap.set(c.id, c.assigned_lawyer_id);
+                const ids = c.assigned_lawyer_id.split(",").filter(Boolean);
+                caseToLawyersMap.set(c.id, ids);
+                ids.forEach((id) => {
+                  caseCounts[id] = (caseCounts[id] || 0) + 1;
+                });
               }
             });
           }
@@ -295,9 +298,11 @@ export function useTrial() {
           const docCounts: Record<string, number> = {};
           if (attachmentsData) {
             attachmentsData.forEach((att) => {
-              const lawyerId = caseToLawyerMap.get(att.case_id);
-              if (lawyerId) {
-                docCounts[lawyerId] = (docCounts[lawyerId] || 0) + 1;
+              const lawyerIds = caseToLawyersMap.get(att.case_id);
+              if (lawyerIds) {
+                lawyerIds.forEach((id) => {
+                  docCounts[id] = (docCounts[id] || 0) + 1;
+                });
               }
             });
           }
