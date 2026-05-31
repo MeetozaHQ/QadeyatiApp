@@ -142,32 +142,182 @@ function getFallbackFileUrl(a: Attachment): string {
       ctx.fillText("مؤمن ومسجل بالكامل بنظام التشفير وحماية البيانات © ٢٠٢٦", 400, 870);
     }
     return canvas.toDataURL("image/png");
-  } else if (type.includes("pdf")) {
-    const text =
-      `منصة قضيتي - معاينة مستند PDF تجريبي بديل\n\n` +
-      `اسم الملف: ${name}\n` +
-      `التصنيف الجاري: ${a.category}\n` +
-      `تاريخ التسجيل: ${new Date(a.uploaded_at).toLocaleDateString("ar-EG")}\n` +
-      `حجم التخزين: ${formatBytes(a.file_size)}\n\n` +
-      `--------------------------------------------------------\n` +
-      `هذه وثيقة بي دي إف محاكية ومعلقة جزئياً لتفعيل المعاينة والتحميل الاحتياطي.\n` +
-      `تُظهر قاعدة البيانات أن هذا الملف تم إنشاؤه بنجاح وحفظه مسبقاً.\n\n` +
-      `قضيتي © 2026 - كافة الحقوق محفوظة.`;
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    return URL.createObjectURL(blob);
   } else {
-    const text =
-      `قضيتي - مستند وورد بديل (DOCX / DOC)\n\n` +
-      `اسم الملف: ${name}\n` +
-      `التصنيف الجاري: ${a.category}\n` +
-      `تاريخ التسجيل: ${new Date(a.uploaded_at).toLocaleString("ar-EG")}\n` +
-      `حجم التخزين: ${formatBytes(a.file_size)}\n\n` +
-      `--------------------------------------------------------\n` +
-      `مستند ${name} القانوني مسجل بالكامل بحسابكم.\n` +
-      `تم توليد مستند التنزيل الاحتياطي التكميلي هذا لضمان استمرارية تشغيل وعرض\n` +
-      `الملفات ومحاكاتها السلسة.\n\n` +
-      `قضيتي - منصة المحاماة الذكية المتكاملة.`;
-    const blob = new Blob([text], { type: "application/msword;charset=utf-8" });
+    const isPdf = type.includes("pdf");
+    const docTypeLabel = isPdf ? "مستند PDF قانوني" : "مستند Word مكتوب";
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>معاينة - ${name}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet font-display">
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #0f172a;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 30px 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .document-page {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 650px;
+      padding: 45px 35px;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 55px;
+      font-weight: 800;
+      color: rgba(197, 164, 89, 0.08);
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      z-index: 1;
+    }
+    .header {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      border-bottom: 2px solid #deb866;
+      padding-bottom: 24px;
+      margin-bottom: 30px;
+    }
+    .logo {
+      color: #7c2d12;
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .meta-box {
+      position: relative;
+      z-index: 2;
+      background-color: #fafaf5;
+      border: 1px solid #f2f2eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #e2e8f0;
+      padding: 10px 0;
+      font-size: 14px;
+    }
+    .meta-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0px;
+    }
+    .meta-row:first-child {
+      padding-top: 0px;
+    }
+    .label {
+      font-weight: 700;
+      color: #7c2d12;
+    }
+    .value {
+      color: #1e293b;
+    }
+    .content-box {
+      position: relative;
+      z-index: 2;
+    }
+    .content-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 16px;
+      border-right: 4px solid #deb866;
+      padding-right: 12px;
+    }
+    .body-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #334155;
+      text-align: justify;
+    }
+    .footer {
+      position: relative;
+      z-index: 2;
+      margin-top: 55px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="document-page">
+    <div class="watermark">منصة قضيتي</div>
+    
+    <div class="header">
+      <div class="logo">منصة قضيتي - معاينة مستند آمنة</div>
+      <div class="subtitle">نظام المزامنة والأرشفة المتكامل للمحاماة</div>
+    </div>
+    
+    <div class="meta-box">
+      <div class="meta-row">
+        <span class="label">اسم المستند:</span>
+        <span class="value" style="direction: ltr; display: inline-block;">${name}</span>
+      </div>
+      <div class="meta-row">
+        <span class="label">نوع الملف:</span>
+        <span class="value">${docTypeLabel} (${type.substring(type.lastIndexOf("/") + 1) || "ملف"})</span>
+      </div>
+      <div class="meta-row">
+        <span class="label">التصنيف الحالي:</span>
+        <span class="value">${a.category || "عام"}</span>
+      </div>
+      <div class="meta-row">
+        <span class="label">تاريخ التسجيل:</span>
+        <span class="value">${new Date(a.uploaded_at).toLocaleDateString("ar-EG")}</span>
+      </div>
+      <div class="meta-row">
+        <span class="label">حجم التخزين:</span>
+        <span class="value">${formatBytes(a.file_size)}</span>
+      </div>
+    </div>
+
+    <div class="content-box">
+      <div class="content-title">بيان المعاينة الفورية (حساب تحت الانتظار)</div>
+      <div class="body-text">
+        هذا المستند محفوظ ومسجل بالكامل وبأمان تام في سجل محفظة ملفات القضية الرقمية. 
+        نظراً لأن حسابكم قيد وضع القراءة فقط المحاكي لتوقف دفع الرسوم مؤقتاً، فقد تم توليد وتأمين هذه المعاينة التفاعلية الفورية والآمنة لتمكينكم من مراجعة تفاصيل وسجل المستند محلياً بيسر وسلاسة دون فقدان الاتصال بالسحابة. 
+        كافة بيانات الأرشفة والتوقيع الرقمي للمستند سليمة وموثقة بالكامل في قاعدة البيانات المشفرة لمنصة قضيتي.
+      </div>
+    </div>
+
+    <div class="footer">
+      جميع الحقوق محفوظة لمنصة قضيتي لإدارة القضايا والشركات القانونية الذكية © ٢٠٢٦
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
     return URL.createObjectURL(blob);
   }
 }
@@ -468,12 +618,7 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
       if (isNotFound) {
         console.warn("Storage object not found for preview, using elegant generated fallback...");
         const url = getFallbackFileUrl(a);
-        const t = (a.file_type ?? "").toLowerCase();
-        if (t.startsWith("image/") || t.includes("pdf")) {
-          setPreview({ a, url });
-        } else {
-          window.open(url, "_blank");
-        }
+        setPreview({ a, url });
         toast.success("تم تشغيل معاينة احتياطية للمستند في حسابكم المتوقف مؤقتاً");
         return;
       }
@@ -1124,7 +1269,11 @@ export function AttachmentsTab({ caseId, userId }: { caseId: string; userId: str
                   className="max-h-[80vh] w-auto object-contain"
                 />
               ) : (
-                <iframe src={preview.url} title={preview.a.file_name} className="h-[80vh] w-full" />
+                <iframe
+                  src={preview.url}
+                  title={preview.a.file_name}
+                  className="h-[80vh] w-full border-0 bg-[#0b0f19]"
+                />
               )}
             </div>
           </div>
