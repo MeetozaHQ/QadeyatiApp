@@ -266,25 +266,30 @@ function Profile() {
       <h1 className="font-display text-2xl font-bold text-foreground">الملف الشخصي</h1>
 
       {/* Simulation Controls for Payment/Subscription Status & Emails Alerts */}
-      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-5 space-y-4 text-right">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-display text-base font-bold text-rose-400 flex items-center gap-2">
-                <Lock className="h-5 w-5 animate-pulse text-rose-400" />
-                لوحة اختبار سياسات سداد الاشتراك والملفات (لأغراض المحاكاة)
-              </h2>
-              {user?.email === "meetozacoin@gmail.com" ? (
-                <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-400 font-sans">
-                  خاص بخصوصية مالك ومطور المنصة 👑
-                </span>
-              ) : (
-                <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold text-blue-400 font-sans">
-                  بيئة محاكاة تفاعلية للمشتركين 🧪
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-300 mt-2 leading-relaxed font-sans max-w-xl">
+      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6 space-y-6 text-right">
+        {/* Header with Title and Badging */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-rose-500/10">
+          <div className="flex items-center gap-2">
+            <Lock className="h-5 w-5 animate-pulse text-rose-400" />
+            <h2 className="font-display text-base font-bold text-rose-400">
+              لوحة اختبار سياسات سداد الاشتراك والملفات (لأغراض المحاكاة)
+            </h2>
+          </div>
+          {user?.email === "meetozacoin@gmail.com" ? (
+            <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 text-[11px] font-bold text-amber-400 font-sans whitespace-nowrap self-start sm:self-auto">
+              خاص بخصوصية مالك ومطور المنصة 👑
+            </span>
+          ) : (
+            <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-[11px] font-bold text-blue-400 font-sans whitespace-nowrap self-start sm:self-auto">
+              بيئة محاكاة تفاعلية للمشتركين 🧪
+            </span>
+          )}
+        </div>
+
+        {/* Content of simulator with top-aligned description and button */}
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
+          <div className="flex-1 space-y-1">
+            <p className="text-xs text-slate-300 leading-relaxed font-sans">
               {user?.email === "meetozacoin@gmail.com" ? (
                 <span>
                   أهلاً بك يا مطور النظام ومالك التطبيق. تم إعداد هذه الواجهة التجريبية لتمكينك من
@@ -301,25 +306,32 @@ function Profile() {
               )}
             </p>
           </div>
-          <button
-            onClick={() => {
-              const nextState = !isSubscriptionUnpaid;
-              setSubscriptionUnpaid(nextState);
-              toast.success(
-                nextState
-                  ? "تم محاكاة توقف الدفع! تم قفل ميزات الرفع والذكاء الاصطناعي وجوجل درايف وتفعيل وضع القراءة فقط."
-                  : "تم تنشيط الدفع بنجاح! عادت كافة الميزات المتقدمة للعمل بشكل فوري.",
-              );
-            }}
-            className={cn(
-              "px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-md select-none",
-              isSubscriptionUnpaid
-                ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/15"
-                : "bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/15",
-            )}
-          >
-            {isSubscriptionUnpaid ? "تنشيط وسداد الاشتراك الآن ✅" : "إيقاف الدفع وتجميد الحساب 🛑"}
-          </button>
+
+          <div className="w-full lg:w-auto shrink-0">
+            <button
+              onClick={() => {
+                const nextState = !isSubscriptionUnpaid;
+                setSubscriptionUnpaid(nextState);
+                toast.success(
+                  nextState
+                    ? "تم محاكاة توقف الدفع! تم قفل ميزات الرفع والذكاء الاصطناعي وجوجل درايف وتفعيل وضع القراءة فقط."
+                    : "تم تنشيط الدفع بنجاح! عادت كافة الميزات المتقدمة للعمل بشكل فوري.",
+                );
+              }}
+              className={cn(
+                "w-full lg:w-auto px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md select-none flex items-center justify-center gap-2",
+                isSubscriptionUnpaid
+                  ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/15"
+                  : "bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/15",
+              )}
+            >
+              {isSubscriptionUnpaid ? (
+                <span>تنشيط وسداد الاشتراك الآن ✅</span>
+              ) : (
+                <span>إيقاف الدفع وتجميد الحساب 🛑</span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Send simulated reminder emails */}
