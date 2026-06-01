@@ -230,12 +230,14 @@ function Profile() {
 
     try {
       const res = await callSendSlaRequest({
-        officeName: p?.office_name || "مكتبكم القانوني",
-        lawyerName: p?.full_name || "مستشار شريك",
-        lawyerEmail: user?.email || "",
-        requestType: typeLabel,
-        notes: currentNotes,
-        requestId: newReqId,
+        data: {
+          officeName: p?.office_name || "مكتبكم القانوني",
+          lawyerName: p?.full_name || "مستشار شريك",
+          lawyerEmail: user?.email || "",
+          requestType: typeLabel,
+          notes: currentNotes,
+          requestId: newReqId,
+        },
       });
 
       if (res.success) {
