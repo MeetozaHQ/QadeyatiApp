@@ -465,9 +465,9 @@ function Profile() {
       <h1 className="font-display text-2xl font-bold text-foreground">الملف الشخصي</h1>
 
       {/* Simulation Controls for Payment/Subscription Status & Emails Alerts */}
-      <div className="rounded-2xl border border-rose-500/20 bg-gradient-to-br from-rose-950/15 via-rose-950/5 to-rose-950/10 p-5 md:p-6 space-y-5 text-right shadow-lg">
+      <div className="rounded-2xl border border-rose-500/20 bg-gradient-to-br from-rose-950/20 via-[#0e0a13] to-rose-950/10 p-5 md:p-6 space-y-6 text-right shadow-lg">
         {/* Header with Title and Badging */}
-        <div className="flex flex-col gap-3 pb-4 border-b border-rose-500/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-rose-500/10">
           <div className="flex items-start gap-2.5">
             <Lock className="h-5 w-5 animate-pulse text-rose-400 mt-0.5 shrink-0" />
             <h2 className="font-display text-sm font-bold text-rose-400 leading-normal">
@@ -486,8 +486,11 @@ function Profile() {
         </div>
 
         {/* Content of simulator with stacked description and button */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 bg-slate-950/35 p-4 rounded-xl border border-rose-500/10">
-          <div className="space-y-1 md:max-w-xl text-right">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-950/40 p-5 rounded-2xl border border-rose-500/10">
+          <div className="space-y-1.5 flex-1 min-w-0 text-right">
+            <span className="text-[11px] font-bold text-rose-400/80 block uppercase tracking-wide">
+              البيان التوضيحي للبيئة التجريبية:
+            </span>
             <p className="text-xs text-slate-300 leading-relaxed font-sans">
               {user?.email === "meetozacoin@gmail.com" ? (
                 <span>
@@ -506,7 +509,7 @@ function Profile() {
             </p>
           </div>
 
-          <div className="w-full md:w-56 shrink-0">
+          <div className="w-full md:w-auto md:min-w-[240px] shrink-0">
             <button
               onClick={() => {
                 const nextState = !isSubscriptionUnpaid;
@@ -518,10 +521,10 @@ function Profile() {
                 );
               }}
               className={cn(
-                "w-full px-5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md select-none flex items-center justify-center gap-2",
+                "w-full px-5 py-3.5 rounded-xl text-xs font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md select-none flex items-center justify-center gap-2",
                 isSubscriptionUnpaid
-                  ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/15"
-                  : "bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/15",
+                  ? "bg-gradient-to-l from-emerald-600 to-emerald-500 text-white hover:from-emerald-500 hover:to-emerald-400 shadow-emerald-600/15"
+                  : "bg-gradient-to-l from-rose-600 to-pink-600 text-white hover:from-rose-500 hover:to-pink-500 shadow-rose-600/15",
               )}
             >
               {isSubscriptionUnpaid ? (
@@ -647,9 +650,9 @@ function Profile() {
 
           {/* Heading block */}
           <div className="flex flex-col gap-3 border-b border-slate-800 pb-5">
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 text-right">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-[var(--gold)] animate-pulse" />
+                <Sparkles className="h-5 w-5 text-[var(--gold)] animate-pulse shrink-0" />
                 <h2 className="font-display text-base font-bold text-transparent bg-clip-text bg-gradient-to-l from-white to-[var(--gold-soft)]">
                   باقة المكاتب والشركات القانونية
                 </h2>
@@ -762,7 +765,7 @@ function Profile() {
                       </span>
                     </div>
 
-                    <div className="flex flex-col gap-1.5 bg-slate-950/40 p-3 rounded-xl border border-slate-850/50 text-right">
+                    <div className="flex flex-col gap-1.5 bg-slate-955/40 p-3 rounded-xl border border-slate-850/50 text-right">
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-slate-600 block" />
                         <span className="text-slate-400 font-sans text-[11px]">
@@ -847,34 +850,34 @@ function Profile() {
           {entTab === "manager" && (
             <div className="space-y-5 animate-fadeIn">
               {/* Manager Card Info */}
-              <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 p-5 md:p-6 text-right">
+              <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-br from-[#0b0c15] via-[#101222] to-[#0b0c15] p-5 md:p-6 text-right shadow-xl">
                 {/* Visual Accent glow line */}
-                <div className="absolute top-0 right-0 left-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--gold)]/35 to-transparent" />
+                <div className="absolute top-0 right-0 left-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--gold)]/45 to-transparent" />
 
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
-                  <div className="lg:col-span-3 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                  <div className="md:col-span-8 space-y-4">
                     {/* Header row with Avatar + Info & Online indicator */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60 font-sans">
                       {/* Avatar & Manager Metadata */}
                       <div className="flex items-center gap-4">
                         {/* Manager Avatar Image placeholder */}
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-amber-500/10 to-amber-500/20 border border-[var(--gold)]/30 shrink-0 flex items-center justify-center text-xl font-bold text-[var(--gold-soft)]">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-b from-amber-500/12 to-amber-500/28 border-2 border-[var(--gold)]/40 shrink-0 flex items-center justify-center text-xl font-bold text-[var(--gold-soft)] shadow-inner">
                           ح
                         </div>
 
-                        <div className="space-y-0.5 text-right flex-1">
+                        <div className="space-y-1 text-right flex-1">
                           <h4 className="text-base font-extrabold text-slate-100 flex items-center gap-1.5 flex-wrap">
                             <span>المهندس: حاتم سرحان</span>
                             <span className="text-xs">🛡️</span>
                           </h4>
-                          <div className="text-[10px] font-bold text-[var(--gold-soft)]">
-                            كبير مديري الحسابات الشريكة
+                          <div className="text-[10px] font-bold text-[var(--gold-soft)] tracking-wider">
+                            كبير مديري الحسابات الشريكة والـ SLA المخصص
                           </div>
                         </div>
                       </div>
 
                       {/* Status Indicator Bar */}
-                      <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full shrink-0 self-start sm:self-auto">
+                      <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full shrink-0 self-start sm:self-auto">
                         <span className="relative flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -897,23 +900,23 @@ function Profile() {
                   </div>
 
                   {/* WhatsApp & Email Quick Trigger */}
-                  <div className="lg:col-span-2 flex flex-col gap-2.5">
+                  <div className="md:col-span-4 flex flex-col gap-3">
                     <a
                       href={`https://wa.me/201035854329?text=${encodeURIComponent(
                         `أهلاً المهندس حاتم سرحان، أنا المستشار ${p.full_name || "محامي شريك"}، مالك ${p.office_name || "المكتب القانوني"} المشترك في الباقة القانونية الفائقة بقضيتي. أحتاج لمساعدة أو استفسار عاجل بخصوص حسابي.`,
                       )}`}
                       target="_blank"
                       rel="noreferrer referrer"
-                      className="h-11 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-700/10 select-none text-right"
+                      className="h-11 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md shadow-emerald-700/10 select-none text-right"
                     >
-                      <PhoneCall className="h-4 w-4" />
-                      <span>تواصل لحظي على واتساب الحصري 🌟</span>
+                      <PhoneCall className="h-4 w-4 shrink-0" />
+                      <span>تواصل مستمر عبر واتساب 🌟</span>
                     </a>
                     <a
                       href="mailto:info@qadeyati.com"
-                      className="h-11 w-full rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer select-none"
+                      className="h-11 w-full rounded-xl bg-[#090b14] hover:bg-[#111322] border border-slate-800 hover:border-slate-700 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer select-none"
                     >
-                      <Mail className="h-4 w-4 text-blue-400" />
+                      <Mail className="h-4 w-4 text-blue-405 shrink-0" />
                       <span>بريد الدعم الحصري VIP</span>
                     </a>
                   </div>
@@ -1038,64 +1041,91 @@ function Profile() {
 
       {/* Avatar + public link */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* Avatar */}
-          <div className="space-y-2 flex flex-col items-start">
-            <p className="text-xs text-muted-foreground">الصورة الشخصية</p>
-            <div className="flex items-center gap-4 w-full">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-[var(--gold-soft)] to-[var(--gold)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
+          {/* Avatar Option */}
+          <div className="relative overflow-hidden rounded-xl border border-slate-800/80 bg-[#0e1017] p-4 text-right flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans">
+            <div className="flex items-center gap-4">
+              {/* Avatar Image viewer */}
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-[var(--gold)]/35 bg-gradient-to-b from-amber-500/10 to-amber-500/20 flex items-center justify-center">
                 {p.avatar_url ? (
-                  <img src={p.avatar_url} className="h-full w-full object-cover" alt="" />
+                  <img
+                    src={p.avatar_url}
+                    className="h-full w-full object-cover"
+                    alt=""
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center font-display text-2xl font-bold text-[color:var(--primary-foreground)]">
+                  <div className="flex h-full w-full items-center justify-center font-display text-xl font-bold text-[var(--gold)]">
                     {(p.full_name || "م")[0]}
                   </div>
                 )}
               </div>
-              <label className="flex h-10 w-32 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--gold)]/25 bg-[var(--gold)]/5 px-3 text-xs font-bold text-[var(--gold-soft)] hover:bg-[var(--gold)]/15 hover:border-[var(--gold)]/45 transition-all select-none shadow-sm">
-                {uploadingAvatar ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Upload className="h-3.5 w-3.5" />
-                )}
-                <span>رفع الصورة</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleUploadImage(e, "avatar")}
-                />
-              </label>
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-200 block">
+                  الصورة الشخصية للأستاذ
+                </span>
+                <span className="text-[10px] text-slate-400 block leading-relaxed">
+                  تظهر في ملفك العام وعروض الأسعار
+                </span>
+              </div>
             </div>
+
+            <label className="flex h-10 px-4 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/10 text-xs font-bold text-[var(--gold-soft)] hover:bg-[var(--gold)]/20 hover:border-[var(--gold)]/50 transition-all duration-300 select-none shadow-sm">
+              {uploadingAvatar ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              <span>رفع الصورة</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleUploadImage(e, "avatar")}
+              />
+            </label>
           </div>
-          {/* Logo */}
-          <div className="space-y-2 flex flex-col items-start">
-            <p className="text-xs text-muted-foreground">شعار المكتب</p>
-            <div className="flex items-center gap-4 w-full">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-card">
+
+          {/* Logo Option */}
+          <div className="relative overflow-hidden rounded-xl border border-slate-800/80 bg-[#0e1017] p-4 text-right flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans">
+            <div className="flex items-center gap-4">
+              {/* Logo Image viewer */}
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-slate-800 bg-[#06080e] flex items-center justify-center">
                 {p.logo_url ? (
-                  <img src={p.logo_url} className="h-full w-full object-contain p-1" alt="" />
+                  <img
+                    src={p.logo_url}
+                    className="h-full w-full object-contain p-2"
+                    alt=""
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                    لا يوجد
-                  </div>
+                  <div className="text-[10px] text-slate-500 font-sans">لا يوجد</div>
                 )}
               </div>
-              <label className="flex h-10 w-32 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--gold)]/25 bg-[var(--gold)]/5 px-3 text-xs font-bold text-[var(--gold-soft)] hover:bg-[var(--gold)]/15 hover:border-[var(--gold)]/45 transition-all select-none shadow-sm">
-                {uploadingLogo ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Upload className="h-3.5 w-3.5" />
-                )}
-                <span>رفع الشعار</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleUploadImage(e, "logo")}
-                />
-              </label>
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-200 block">
+                  شعار المكتب القانوني
+                </span>
+                <span className="text-[10px] text-slate-400 block leading-relaxed">
+                  يظهر على العقود والتقارير المطبوعة
+                </span>
+              </div>
             </div>
+
+            <label className="flex h-10 px-4 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/10 text-xs font-bold text-[var(--gold-soft)] hover:bg-[var(--gold)]/20 hover:border-[var(--gold)]/50 transition-all duration-300 select-none shadow-sm">
+              {uploadingLogo ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              <span>رفع الشعار</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleUploadImage(e, "logo")}
+              />
+            </label>
           </div>
         </div>
 

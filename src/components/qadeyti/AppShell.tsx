@@ -102,7 +102,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <TopBar />
-      <main className="mx-auto max-w-md px-4 pb-28 pt-4">{children}</main>
+      <main className="mx-auto w-full max-w-md md:max-w-3xl lg:max-w-4xl xl:max-w-5xl px-4 pb-28 pt-4">
+        {children}
+      </main>
       <BottomNav />
 
       {/* Subscription/Billing Drawer Modal Container */}
