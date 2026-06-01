@@ -642,3 +642,145 @@ export const sendPaymentReminderEmail = createServerFn({ method: "POST" })
       };
     }
   });
+
+interface SlaRequestInput {
+  officeName: string;
+  lawyerName: string;
+  lawyerEmail: string;
+  requestType: string;
+  notes: string;
+  requestId: string;
+}
+
+/**
+ * Server function to send SLA and custom request emails to the main administrative email info@qadeyati.com.
+ */
+export const sendSlaRequestEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: SlaRequestInput) => input)
+  .handler(async ({ data }) => {
+    try {
+      const { apiKey, fromEmail } = getEmailConfig();
+      if (!apiKey) {
+        return { success: false, error: "MISSING_API_KEY" };
+      }
+
+      const { officeName, lawyerName, lawyerEmail, requestType, notes, requestId } = data;
+
+      console.log(
+        `[Email Service] Sending SLA Customization Request (${requestId}) to info@qadeyati.com`,
+      );
+
+      const htmlContent = `
+        <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #0f172a; color: #f1f5f9; text-align: right;">
+          <div style="text-align: center; margin-bottom: 24px; border-bottom: 1px solid #334155; padding-bottom: 16px;">
+            <h1 style="color: #fbbf24; margin: 0; font-size: 26px; font-weight: bold; letter-spacing: -0.5px;">طلب ميزة خاصة - منصة قضيتي</h1>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 4px;">إشعار وارد لمدير الحسابات والمهندس المسؤول</p>
+          </div>
+          
+          <div style="background-color: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 20px;">
+            <h2 style="color: #fbbf24; margin-top: 0; margin-bottom: 16px; font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 8px;">تفاصيل طلب العميل الحصري ⚙️</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px;">
+              قام مستشار شريك في منصة قضيتي بإرسال طلب تخصيص أو ميزة جديدة من خلال لوحة حسابه الفائقة:
+            </p>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+              <tbody>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #fbbf24; width: 35%;">رقم الطلب (ID)</td>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #e2e8f0; font-family: monospace;">${requestId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #fbbf24;">المكتب القانوني</td>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #e2e8f0; font-weight: bold;">${officeName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #fbbf24;">المستشار الداعي</td>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #e2e8f0;">${lawyerName} (${lawyerEmail})</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #fbbf24;">نوع الطلب</td>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #e2e8f0; font-weight: bold;">${requestType}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #fbbf24;">تفاصيل وتعليمات الطلب</td>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #e2e8f0; white-space: pre-wrap; line-height: 1.6;">${notes}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #fbbf24;">تاريخ ووقت التقديم</td>
+                  <td style="padding: 10px; border: 1px solid #475569; color: #e2e8f0;">${new Date().toLocaleString("ar-EG")}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="background-color: #1e1b4b; border: 1px solid #312e81; border-radius: 8px; padding: 14px; font-size: 11px; color: #a5b4fc; line-height: 1.6;">
+              <strong>توجيه إداري:</strong> يرجى مراجعة الطلب والتواصل الفوري مع الأستاذ المستشار عبر الواتساب أو البريد الموضح أعلاه لتلبية متطلباته وتحديث حالة الطلب بجدول أعماله الحصري.
+            </div>
+          </div>
+
+          <div style="text-align: center; color: #64748b; font-size: 11px; margin-top: 20px;">
+            <p style="margin: 0;">&copy; ${new Date().getFullYear()} قضيتي - نظام المتابعة السحابي المميز.</p>
+          </div>
+        </div>
+      `;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6500);
+
+      try {
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: ["info@qadeyati.com"],
+            subject: `⚙️ [طلب خاص جديد] ${requestType} - ${officeName}`,
+            html: htmlContent,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          console.error(
+            "[Email Service] Resend sendSlaRequestEmail API failed:",
+            response.status,
+            errData,
+          );
+          const errorMsg =
+            errData?.message || errData?.error?.message || `API Error (${response.status})`;
+          return { success: false, error: errorMsg };
+        }
+
+        const dataResponse = await response.json();
+        console.log(
+          "[Email Service] SLA Custom Request email successfully sent to info@qadeyati.com, ID:",
+          dataResponse.id,
+        );
+        return { success: true };
+      } catch (innerErr) {
+        clearTimeout(timeoutId);
+        const isAbort = innerErr instanceof Error && innerErr.name === "AbortError";
+        console.error("[Email Service] Request error inside sendSlaRequestEmail:", innerErr);
+        return {
+          success: false,
+          error: isAbort
+            ? "انتهت مهلة المزامنة بخوادم البريد الإلكتروني (6.5 ثوانٍ)"
+            : innerErr instanceof Error
+              ? innerErr.message
+              : "تعذر الاتصال بخادم البريد الإلكتروني",
+        };
+      }
+    } catch (error) {
+      console.error("Resend sendSlaRequestEmail main error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء إرسال البريد",
+      };
+    }
+  });

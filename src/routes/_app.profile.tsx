@@ -7,7 +7,7 @@ import { PremiumButton } from "@/components/qadeyti/PremiumButton";
 import { PremiumInput } from "@/components/qadeyti/PremiumInput";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { sendPaymentReminderEmail } from "@/lib/email.functions";
+import { sendPaymentReminderEmail, sendSlaRequestEmail } from "@/lib/email.functions";
 import { cn } from "@/lib/utils";
 import {
   ExternalLink,
@@ -81,6 +81,7 @@ function Profile() {
   const navigate = useNavigate();
   const { plan, isSubscriptionUnpaid, setSubscriptionUnpaid } = useTrial();
   const callSendReminder = useServerFn(sendPaymentReminderEmail);
+  const callSendSlaRequest = useServerFn(sendSlaRequestEmail);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [p, setP] = useState<Profile | null>(null);
@@ -192,7 +193,7 @@ function Profile() {
     );
   };
 
-  const handleAddSlaRequest = () => {
+  const handleAddSlaRequest = async () => {
     if (!reqNotes.trim()) {
       toast.error("يرجى كتابة تفاصيل وتعليمات مساعدة لمدير حسابك");
       return;
@@ -206,8 +207,9 @@ function Profile() {
             ? "جدولة جلسة تدريب وتحضير زووم"
             : "طلب تدقيق أمني وفحص سلامة المستندات";
 
+    const newReqId = "REQ-" + Math.floor(1000 + Math.random() * 9000);
     const newReq = {
-      id: "REQ-" + Math.floor(1000 + Math.random() * 9000),
+      id: newReqId,
       type: typeLabel,
       notes: reqNotes.trim(),
       date:
@@ -219,13 +221,39 @@ function Profile() {
 
     const nextList = [newReq, ...customRequests];
     setCustomRequests(nextList);
+    const currentNotes = reqNotes.trim();
     setReqNotes("");
+
     if (typeof window !== "undefined") {
       localStorage.setItem("qadeyti_firm_sla_requests", JSON.stringify(nextList));
     }
-    toast.success(
-      "تم تسليم طلبك الخاص لمدير حسابات المكتب المهندس حاتم. سيقوم بالتواصل معك حالاً!",
-    );
+
+    try {
+      const res = await callSendSlaRequest({
+        officeName: p?.office_name || "مكتبكم القانوني",
+        lawyerName: p?.full_name || "مستشار شريك",
+        lawyerEmail: user?.email || "",
+        requestType: typeLabel,
+        notes: currentNotes,
+        requestId: newReqId,
+      });
+
+      if (res.success) {
+        toast.success("تم تسجيل الطلب وإرسال إشعار بريدي مباشر إلى info@qadeyati.com بنجاح!");
+      } else if (res.error === "MISSING_API_KEY") {
+        toast.warning(
+          "تم حفظ الطلب محلياً بنجاح! لتصلك رسالة بريدية حقيقية، يرجى ملء مفتاح RESEND_API_KEY في إعدادات المنصة.",
+          { duration: 6000 },
+        );
+      } else {
+        toast.error(`تعذر إرسال البريد الحقيقي: ${res.error}. (تم حفظ الطلب محلياً على المتصفح)`, {
+          duration: 6000,
+        });
+      }
+    } catch (err) {
+      console.error("Error sending SLA request email", err);
+      toast.error("تم حفظ الطلب محلياً، وتعذر إرسال البريد لخطأ فني في الاتصال.");
+    }
   };
 
   const handleDeleteSlaRequest = (id: string) => {
