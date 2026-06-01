@@ -1552,7 +1552,7 @@ function LandingPage() {
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <a
-                  href="https://facebook.com"
+                  href="https://www.facebook.com/Qadeyati"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 border border-slate-850 rounded-xl hover:text-[var(--gold)] hover:border-slate-700 transition-colors"
@@ -1570,7 +1570,7 @@ function LandingPage() {
                   <Linkedin className="h-4 w-4" />
                 </a>
                 <a
-                  href="https://youtube.com"
+                  href="https://www.youtube.com/@Qadeyati"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 border border-slate-850 rounded-xl hover:text-[var(--gold)] hover:border-slate-700 transition-colors"
