@@ -465,29 +465,29 @@ function Profile() {
       <h1 className="font-display text-2xl font-bold text-foreground">الملف الشخصي</h1>
 
       {/* Simulation Controls for Payment/Subscription Status & Emails Alerts */}
-      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6 space-y-6 text-right">
+      <div className="rounded-2xl border border-rose-500/20 bg-gradient-to-br from-rose-950/15 via-rose-950/5 to-rose-950/10 p-5 md:p-6 space-y-5 text-right shadow-lg">
         {/* Header with Title and Badging */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-rose-500/10">
-          <div className="flex items-center gap-2">
-            <Lock className="h-5 w-5 animate-pulse text-rose-400" />
-            <h2 className="font-display text-base font-bold text-rose-400">
+        <div className="flex flex-col gap-3 pb-4 border-b border-rose-500/10">
+          <div className="flex items-start gap-2.5">
+            <Lock className="h-5 w-5 animate-pulse text-rose-400 mt-0.5 shrink-0" />
+            <h2 className="font-display text-sm font-bold text-rose-400 leading-normal">
               لوحة اختبار سياسات سداد الاشتراك والملفات (لأغراض المحاكاة)
             </h2>
           </div>
           {user?.email === "meetozacoin@gmail.com" ? (
-            <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 text-[11px] font-bold text-amber-400 font-sans whitespace-nowrap self-start sm:self-auto">
+            <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 text-[11px] font-bold text-amber-400 font-sans whitespace-nowrap self-start">
               خاص بخصوصية مالك ومطور المنصة 👑
             </span>
           ) : (
-            <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-[11px] font-bold text-blue-400 font-sans whitespace-nowrap self-start sm:self-auto">
+            <span className="rounded-full bg-blue-500/10 border border-blue-500/30 px-3 py-1 text-[11px] font-bold text-blue-400 font-sans whitespace-nowrap self-start">
               بيئة محاكاة تفاعلية للمشتركين 🧪
             </span>
           )}
         </div>
 
-        {/* Content of simulator with top-aligned description and button */}
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
-          <div className="flex-1 space-y-1">
+        {/* Content of simulator with stacked description and button */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 bg-slate-950/35 p-4 rounded-xl border border-rose-500/10">
+          <div className="space-y-1 md:max-w-xl text-right">
             <p className="text-xs text-slate-300 leading-relaxed font-sans">
               {user?.email === "meetozacoin@gmail.com" ? (
                 <span>
@@ -506,7 +506,7 @@ function Profile() {
             </p>
           </div>
 
-          <div className="w-full lg:w-auto shrink-0">
+          <div className="w-full md:w-56 shrink-0">
             <button
               onClick={() => {
                 const nextState = !isSubscriptionUnpaid;
@@ -518,7 +518,7 @@ function Profile() {
                 );
               }}
               className={cn(
-                "w-full lg:w-auto px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md select-none flex items-center justify-center gap-2",
+                "w-full px-5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md select-none flex items-center justify-center gap-2",
                 isSubscriptionUnpaid
                   ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/15"
                   : "bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/15",
@@ -538,7 +538,7 @@ function Profile() {
           <p className="text-xs font-semibold text-slate-400">
             أرسل عينات بريد التذكير الآلي للمحامي (عند توقف الدفع):
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             <button
               onClick={async () => {
                 if (!user) return;
@@ -562,9 +562,9 @@ function Profile() {
                   toast.error("فشل الإرسال التلقائي للبريد الفعلي.");
                 }
               }}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-amber-500/20 transition-all cursor-pointer group"
+              className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-right hover:border-amber-500/20 transition-all cursor-pointer group flex flex-col justify-between gap-1.5"
             >
-              <div className="text-[11px] text-amber-500 font-bold mb-0.5 group-hover:underline">
+              <div className="text-[11px] text-amber-500 font-bold group-hover:underline">
                 تنبيه اليوم 30 ⏳
               </div>
               <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
@@ -586,7 +586,7 @@ function Profile() {
                   });
                   toast.dismiss("email-sim");
                   if (res.success) {
-                    toast.success("تم إرسال إنذار الـ 60 يوماً بنجاح لبريدك!");
+                    toast.success("تم إرسال إنذار الـ 60 يوماً بنجاح لبريدك المسجل!");
                   } else {
                     toast.error(`خطأ: يرجى تزويد RESEND_API_KEY في الإعدادات للبريد الفعلي.`);
                   }
@@ -595,20 +595,20 @@ function Profile() {
                   toast.error("فشل الإرسال التلقائي للبريد الفعلي.");
                 }
               }}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-orange-500/20 transition-all cursor-pointer group"
+              className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-right hover:border-amber-500/20 transition-all cursor-pointer group flex flex-col justify-between gap-1.5"
             >
-              <div className="text-[11px] text-orange-500 font-bold mb-0.5 group-hover:underline">
+              <div className="text-[11px] text-amber-500 font-bold group-hover:underline">
                 إنذار اليوم 60 ⚠️
               </div>
               <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
-                إنذار ثانٍ بمضي 60 يوماً يحث على النسخ الاحتياطي الخارجي أو سداد الفاتورة.
+                تنبيه بمرور 60 يوماً وتذكير هادئ بضرورة المتابعة لتفادي أي قيود على الحساب.
               </p>
             </button>
 
             <button
               onClick={async () => {
                 if (!user) return;
-                toast.loading("جاري إرسال الإنذار النهائي لليوم 80...", { id: "email-sim" });
+                toast.loading("جاري إرسال إنذار اليوم 80...", { id: "email-sim" });
                 try {
                   const res = await callSendReminder({
                     data: {
@@ -619,7 +619,7 @@ function Profile() {
                   });
                   toast.dismiss("email-sim");
                   if (res.success) {
-                    toast.success("تم إرسال الإنذار النهائي الـ 10 أيام الأخيرة لبريدك!");
+                    toast.success("تم إرسال إنذار اليوم 80 بنجاح!");
                   } else {
                     toast.error(`خطأ: يرجى تزويد RESEND_API_KEY في الإعدادات للبريد الفعلي.`);
                   }
@@ -628,31 +628,29 @@ function Profile() {
                   toast.error("فشل الإرسال التلقائي للبريد الفعلي.");
                 }
               }}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-right hover:border-red-500/20 transition-all cursor-pointer group"
+              className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-right hover:border-rose-500/20 transition-all cursor-pointer group flex flex-col justify-between gap-1.5"
             >
-              <div className="text-[11px] text-rose-500 font-bold mb-0.5 group-hover:underline">
-                الإنذار النهائي اليوم 80 🚨
+              <div className="text-[11px] text-rose-500 font-bold group-hover:underline">
+                إنذار اليوم 80 🚨
               </div>
               <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
-                مهلة 10 أيام أخيرة قبل الحذف التلقائي النهائي والكامل للملفات لتوفير مساحة
-                الاستضافة.
+                التنبيه العاجل الأخير قبل حذف الملفات بـ 10 أيام لتسوية الحساب فوراً.
               </p>
             </button>
           </div>
         </div>
       </div>
-
       {plan === "enterprise" && (
         <div className="rounded-2xl border border-[var(--gold)]/40 bg-slate-950/80 p-6 text-right space-y-6 shadow-xl relative overflow-hidden">
           {/* Subtle gold decorative radial background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--gold)]/5 rounded-full blur-3xl pointer-events-none" />
 
           {/* Heading block */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-5">
+          <div className="flex flex-col gap-3 border-b border-slate-800 pb-5">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-[var(--gold)] animate-pulse" />
-                <h2 className="font-display text-lg font-bold text-transparent bg-clip-text bg-gradient-to-l from-white to-[var(--gold-soft)]">
+                <h2 className="font-display text-base font-bold text-transparent bg-clip-text bg-gradient-to-l from-white to-[var(--gold-soft)]">
                   باقة المكاتب والشركات القانونية
                 </h2>
               </div>
@@ -662,7 +660,7 @@ function Profile() {
                 بمكتبكم.
               </p>
             </div>
-            <span className="rounded-xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 px-3.5 py-1.5 text-xs font-bold text-[var(--gold-soft)] self-start sm:self-auto flex items-center gap-1.5 shadow-inner">
+            <span className="rounded-xl bg-[var(--gold)]/10 border border-[var(--gold)]/30 px-3.5 py-1.5 text-xs font-bold text-[var(--gold-soft)] self-start flex items-center gap-1.5 shadow-inner">
               <BadgeCheck className="h-4 w-4" />
               نشط ومفعّل مدى الحياة 👑
             </span>
@@ -698,210 +696,222 @@ function Profile() {
 
           {/* TAB CONTENT: STORAGE */}
           {entTab === "storage" && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                {/* Visual Storage Card */}
-                <div className="rounded-2xl bg-slate-900/80 border border-slate-800/80 p-5 space-y-4 md:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400">
-                      تحليل المساحة الفعلية في قاعدة البيانات
-                    </span>
-                    <span className="text-[10px] font-sans font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                      سعة غير محدودة
-                    </span>
+            <div className="space-y-4 animate-fadeIn">
+              {/* Visual Storage Card */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800/80 p-5 space-y-4 text-right">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-400">
+                    تحليل المساحة الفعلية في قاعدة البيانات
+                  </span>
+                  <span className="text-[10px] font-sans font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full shrink-0">
+                    سعة غير محدودة
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-[var(--gold-soft)] shrink-0" />
+                  <span className="text-2xl font-bold font-sans text-slate-100">
+                    {formatStorageBytes(storageStats.totalSize)}
+                  </span>
+                  <span className="text-[10px] text-slate-400">مستهلكة حالياً / شاملة وحرّة</span>
+                </div>
+
+                {/* Visual distribution bar and detailed values */}
+                <div className="space-y-3 pt-1">
+                  <div className="h-2 w-full rounded-full bg-slate-850 overflow-hidden flex">
+                    <div className="h-full bg-amber-500" style={{ width: "45%" }} />
+                    <div className="h-full bg-blue-500" style={{ width: "30%" }} />
+                    <div className="h-full bg-teal-500" style={{ width: "15%" }} />
+                    <div className="h-full bg-slate-600" style={{ width: "10%" }} />
                   </div>
 
-                  <div className="flex items-baseline gap-2">
-                    <Database className="h-5 w-5 text-[var(--gold-soft)]" />
-                    <span className="text-2xl font-bold font-sans text-slate-100">
-                      {formatStorageBytes(storageStats.totalSize)}
-                    </span>
-                    <span className="text-xs text-slate-500">مستهلكة حالياً / شاملة وحرّة</span>
-                  </div>
-
-                  {/* Visual distribution bar */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden flex">
-                      <div className="h-full bg-amber-500" style={{ width: "45%" }} />
-                      <div className="h-full bg-blue-500" style={{ width: "30%" }} />
-                      <div className="h-full bg-teal-500" style={{ width: "15%" }} />
-                      <div className="h-full bg-slate-600" style={{ width: "10%" }} />
-                    </div>
-                    <div className="flex items-center justify-start gap-4 flex-wrap text-[10px] text-slate-400">
-                      <span className="flex items-center gap-1 font-sans">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 block" /> مستندات
-                        وتوكيلات (٤٥٪) -{" "}
-                        <span className="text-slate-200">
-                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.45))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-400 border-t border-slate-800/40 pt-4 pb-1 font-sans">
+                    <div className="flex flex-col gap-1.5 bg-slate-950/40 p-3 rounded-xl border border-slate-850/50 text-right">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 block" />
+                        <span className="text-slate-400 font-sans text-[11px]">
+                          مستندات وتوكيلات (٤٥٪)
                         </span>
                       </span>
-                      <span className="flex items-center gap-1 font-sans">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 block" /> مذكرات
-                        قضائية وصحف (٣٠٪) -{" "}
-                        <span className="text-slate-200">
-                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.3))}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1 font-sans">
-                        <span className="w-2.5 h-2.5 rounded-full bg-teal-500 block" /> ملفات صور
-                        ومستندات فنية (١٥٪) -{" "}
-                        <span className="text-slate-200">
-                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.15))}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1 font-sans">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-600 block" /> مسودة كاش
-                        وذاكرة (١٠٪) -{" "}
-                        <span className="text-slate-200">
-                          {formatStorageBytes(Math.round(storageStats.totalSize * 0.1))}
-                        </span>
+                      <span className="text-slate-100 font-sans font-bold text-sm block">
+                        {formatStorageBytes(Math.round(storageStats.totalSize * 0.45))}
                       </span>
                     </div>
-                  </div>
 
-                  <p className="text-[11px] text-slate-400 leading-relaxed font-sans border-t border-slate-800/80 pt-3">
-                    🚀 <span className="font-semibold text-slate-200">الرفع آمن وسريع:</span>{" "}
-                    خوادمنا تغطي حماية بمعايير تشفير مصرفية. بصفتك مكتب شريك، فإن سعة الرفع ممددة
-                    حتى مع زيادة أحجام الأوراق، المستندات المرفوعة مرتبطة تلقائياً بالذكاء الاصطناعي
-                    الخاص لقراءة الوثائق.
+                    <div className="flex flex-col gap-1.5 bg-slate-950/40 p-3 rounded-xl border border-slate-850/50 text-right">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 block" />
+                        <span className="text-slate-400 font-sans text-[11px]">
+                          مذكرات قضائية وصحف (٣٠٪)
+                        </span>
+                      </span>
+                      <span className="text-slate-100 font-sans font-bold text-sm block">
+                        {formatStorageBytes(Math.round(storageStats.totalSize * 0.3))}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 bg-slate-950/40 p-3 rounded-xl border border-slate-850/50 text-right">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-teal-500 block" />
+                        <span className="text-slate-400 font-sans text-[11px]">
+                          ملفات صور ومستندات فنية (١٥٪)
+                        </span>
+                      </span>
+                      <span className="text-slate-100 font-sans font-bold text-sm block">
+                        {formatStorageBytes(Math.round(storageStats.totalSize * 0.15))}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 bg-slate-950/40 p-3 rounded-xl border border-slate-850/50 text-right">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-600 block" />
+                        <span className="text-slate-400 font-sans text-[11px]">
+                          مسودة كاش وذاكرة (١٠٪)
+                        </span>
+                      </span>
+                      <span className="text-slate-100 font-sans font-bold text-sm block">
+                        {formatStorageBytes(Math.round(storageStats.totalSize * 0.1))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 leading-relaxed font-sans border-t border-slate-800/80 pt-3">
+                  🚀 <span className="font-semibold text-slate-200">الرفع آمن وسريع:</span> خوادمنا
+                  تغطي حماية بمعايير تشفير مصرفية. بصفتك مكتب شريك، فإن سعة الرفع ممددة حتى مع زيادة
+                  أحجام الأوراق، المستندات المرفوعة مرتبطة تلقائياً بالذكاء الاصطناعي.
+                </p>
+              </div>
+
+              {/* Interactive Action Hub */}
+              <div className="rounded-2xl bg-slate-900/40 border border-slate-800/80 p-5 space-y-4 text-right">
+                <div className="space-y-1">
+                  <h3 className="text-xs font-bold text-slate-300">
+                    أدوات تخزين المكتب الفائقة ⚙️
+                  </h3>
+                  <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+                    تنفيذ إجراءات تشغيلية سحابية مخصصة للتحميل والتأمين.
                   </p>
                 </div>
 
-                {/* Interactive Action Hub */}
-                <div className="rounded-2xl bg-slate-900/40 border border-slate-800/80 p-4 flex flex-col justify-between gap-4 text-right">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-bold text-slate-300">
-                      أدوات تخزين المكتب الفائقة ⚙️
-                    </h3>
-                    <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
-                      تنفيذ إجراءات تشغيلية سحابية على خادم المكتب المخصص.
+                <div className="flex flex-col gap-2.5">
+                  {/* Backup btn */}
+                  <button
+                    onClick={runBackupSimulation}
+                    disabled={backingUp}
+                    className="w-full h-11 px-4 bg-gradient-to-l from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 border border-slate-700/50 hover:border-[var(--gold)]/30 rounded-xl text-xs font-bold text-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none"
+                  >
+                    {backingUp ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--gold)]" />
+                        <span className="truncate text-[10px] text-[var(--gold-soft)]">
+                          جاري الحزم...
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CloudLightning className="h-3.5 w-3.5 text-[var(--gold-soft)]" />
+                        <span>تصدير أرشيف المكتب (TXT/ZIP) 📦</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Optimize btn */}
+                  <button
+                    onClick={runOptimizationSimulation}
+                    disabled={optimizing}
+                    className="w-full h-11 px-4 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer select-none"
+                  >
+                    <RefreshCw
+                      className={cn(
+                        "h-3.5 w-3.5 text-slate-500",
+                        optimizing && "animate-spin text-[var(--gold)]",
+                      )}
+                    />
+                    <span>تنظيف الذاكرة والتحسين الذكي 🧹</span>
+                  </button>
+                </div>
+
+                {backingUp && (
+                  <div className="bg-slate-950/90 border border-slate-800 rounded-lg p-2.5 text-center animate-pulse">
+                    <p className="text-[10px] text-[var(--gold-soft)] font-mono leading-normal">
+                      {backupStage}
                     </p>
                   </div>
-
-                  <div className="space-y-2">
-                    {/* Backup btn */}
-                    <button
-                      onClick={runBackupSimulation}
-                      disabled={backingUp}
-                      className="w-full h-11 px-3 bg-gradient-to-l from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 border border-slate-700/50 hover:border-[var(--gold)]/30 rounded-xl text-xs font-bold text-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none"
-                    >
-                      {backingUp ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--gold)]" />
-                          <span className="truncate text-[10px] text-[var(--gold-soft)]">
-                            جاري الحزم...
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <CloudLightning className="h-3.5 w-3.5 text-[var(--gold-soft)]" />
-                          <span>تصدير أرشيف المكتب (TXT/ZIP) 📦</span>
-                        </>
-                      )}
-                    </button>
-
-                    {/* Optimize btn */}
-                    <button
-                      onClick={runOptimizationSimulation}
-                      disabled={optimizing}
-                      className="w-full h-11 px-3 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer select-none"
-                    >
-                      <RefreshCw
-                        className={cn(
-                          "h-3.5 w-3.5 text-slate-500",
-                          optimizing && "animate-spin text-[var(--gold)]",
-                        )}
-                      />
-                      <span>تنظيف الذاكرة والتحسين الذكي 🧹</span>
-                    </button>
-                  </div>
-
-                  {backingUp && (
-                    <div className="bg-slate-950/90 border border-slate-800 rounded-lg p-2 text-center animate-pulse">
-                      <p className="text-[9px] text-[var(--gold-soft)] font-mono leading-normal">
-                        {backupStage}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           )}
 
           {/* TAB CONTENT: ACCOUNT MANAGER & SLA SUPPORT */}
           {entTab === "manager" && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="space-y-5 animate-fadeIn">
               {/* Manager Card Info */}
-              <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 p-5 md:p-6 text-right">
+              <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 p-5 md:p-6 text-right">
                 {/* Visual Accent glow line */}
                 <div className="absolute top-0 right-0 left-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--gold)]/35 to-transparent" />
 
-                {/* Header row with Avatar + Info & Online indicator */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/60 mb-4">
-                  {/* Avatar & Manager Metadata */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    {/* Manager Avatar Image placeholder */}
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-amber-500/10 to-amber-500/20 border border-[var(--gold)]/30 shrink-0 flex items-center justify-center text-xl font-bold text-[var(--gold-soft)] font-sans">
-                      ح
-                    </div>
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
+                  <div className="lg:col-span-3 space-y-4">
+                    {/* Header row with Avatar + Info & Online indicator */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60 font-sans">
+                      {/* Avatar & Manager Metadata */}
+                      <div className="flex items-center gap-4">
+                        {/* Manager Avatar Image placeholder */}
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-amber-500/10 to-amber-500/20 border border-[var(--gold)]/30 shrink-0 flex items-center justify-center text-xl font-bold text-[var(--gold-soft)]">
+                          ح
+                        </div>
 
-                    <div className="space-y-1.5 text-right w-full">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
-                        <h4 className="text-base font-extrabold text-slate-100">
-                          المهندس: حاتم سرحان 🛡️
-                        </h4>
-                        <span className="inline-block text-[10px] font-bold bg-[var(--gold)]/10 text-[var(--gold-soft)] px-2.5 py-0.5 rounded-full font-sans border border-[var(--gold)]/20 self-start sm:self-center">
-                          كبير مديري الحسابات الشريكة
+                        <div className="space-y-0.5 text-right flex-1">
+                          <h4 className="text-base font-extrabold text-slate-100 flex items-center gap-1.5 flex-wrap">
+                            <span>المهندس: حاتم سرحان</span>
+                            <span className="text-xs">🛡️</span>
+                          </h4>
+                          <div className="text-[10px] font-bold text-[var(--gold-soft)]">
+                            كبير مديري الحسابات الشريكة
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Status Indicator Bar */}
+                      <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full shrink-0 self-start sm:self-auto">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-[10px] text-emerald-400 font-extrabold">
+                          متصل باللوحة
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 leading-normal font-sans">
-                        المدير المسؤول والمستشار التقني المباشر في منصة قضيتي لمكتب:{" "}
-                        <span className="text-[var(--gold-soft)] font-semibold">
-                          {p.office_name?.trim() || "مكتبكم القانوني"}
-                        </span>
-                      </p>
                     </div>
-                  </div>
 
-                  {/* Status Indicator (Not absolute anymore, flows perfectly on mobile!) */}
-                  <div className="flex items-center gap-1.5 self-start lg:self-center bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full shrink-0">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    <span className="text-[10px] text-emerald-400 font-extrabold font-sans">
-                      متصل باللوحة يتابعكم
-                    </span>
+                    {/* Account Details Description */}
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                      مرحباً بكم مستشارينا الأفاضل. بصفتي مدير حسابكم الخاص بـ{" "}
+                      <span className="text-[var(--gold-soft)] font-semibold">
+                        {p.office_name?.trim() || "مكتبكم القانوني"}
+                      </span>{" "}
+                      ، أحرص على متابعة استقرار خادمكم السحابي وتحسين جودة أتمتة مستنداتكم وتقديم
+                      الدعم الهندسي والبرمجي الفوري على مدار الساعة لضمان ريادة أعمالكم القانونية.
+                    </p>
                   </div>
-                </div>
-
-                {/* Account Details Description */}
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-350 leading-relaxed font-sans">
-                    مرحباً بكم مستشارينا الأفاضل. بصفتي مدير حسابكم الخاص بـ{" "}
-                    <span className="text-[var(--gold-soft)] font-semibold">
-                      {p.office_name?.trim() || "مكتبكم القانوني"}
-                    </span>{" "}
-                    ، أحرص على متابعة استقرار خادمكم السحابي وتحسين جودة أتمتة مستنداتكم وتقديم
-                    الدعم الهندسي والبرمجي الفوري على مدار الساعة لضمان ريادة أعمالكم القانونية.
-                  </p>
 
                   {/* WhatsApp & Email Quick Trigger */}
-                  <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+                  <div className="lg:col-span-2 flex flex-col gap-2.5">
                     <a
                       href={`https://wa.me/201035854329?text=${encodeURIComponent(
                         `أهلاً المهندس حاتم سرحان، أنا المستشار ${p.full_name || "محامي شريك"}، مالك ${p.office_name || "المكتب القانوني"} المشترك في الباقة القانونية الفائقة بقضيتي. أحتاج لمساعدة أو استفسار عاجل بخصوص حسابي.`,
                       )}`}
                       target="_blank"
                       rel="noreferrer referrer"
-                      className="h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-700/10 select-none text-right"
+                      className="h-11 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-700/10 select-none text-right"
                     >
                       <PhoneCall className="h-4 w-4" />
                       <span>تواصل لحظي على واتساب الحصري 🌟</span>
                     </a>
                     <a
                       href="mailto:info@qadeyati.com"
-                      className="h-11 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer select-none"
+                      className="h-11 w-full rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer select-none"
                     >
                       <Mail className="h-4 w-4 text-blue-400" />
                       <span>بريد الدعم الحصري VIP</span>
@@ -911,21 +921,21 @@ function Profile() {
               </div>
 
               {/* Console for sending new SLA customization requests */}
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+              <div className="flex flex-col gap-4">
                 {/* Form to submit a request */}
-                <div className="lg:col-span-3 rounded-2xl bg-slate-900/40 border border-slate-800/80 p-5 space-y-4 text-right">
+                <div className="rounded-2xl bg-slate-900/40 border border-slate-800/80 p-5 space-y-4 text-right">
                   <h3 className="text-xs font-bold text-slate-300 border-b border-slate-800 pb-2.5">
                     إرسال طلب خدمة أو تخصيص يدوي لمدير الحسابات ⚡
                   </h3>
 
-                  <div className="space-y-1.5 text-right">
+                  <div className="space-y-1.5 text-right font-sans">
                     <label className="text-[11px] font-bold text-slate-400">
                       نوع الطلب الخاص المطلوب:
                     </label>
                     <select
                       value={reqType}
                       onChange={(e) => setReqType(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-slate-800 bg-[#090e18] px-3.5 text-xs text-slate-200 outline-none focus:border-[var(--gold)] cursor-pointer font-sans"
+                      className="h-11 w-full rounded-xl border border-slate-800 bg-[#090e18] px-3.5 text-xs text-slate-200 outline-none focus:border-[var(--gold)] cursor-pointer"
                     >
                       <option value="import">
                         📂 استيراد وترحيل ملف أرشيف مكتبكم التاريخي القديم
@@ -942,7 +952,7 @@ function Profile() {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5 text-right">
+                  <div className="space-y-1.5 text-right font-sans">
                     <label className="text-[11px] font-bold text-slate-400">
                       تعليمات وتفاصيل الطلب الإضافية:
                     </label>
@@ -951,7 +961,7 @@ function Profile() {
                       value={reqNotes}
                       onChange={(e) => setReqNotes(e.target.value)}
                       placeholder="صف بالتفصيل ما الذي يحتاجه مكتبكم وسيقوم المهندس حاتم والمبرمجون المختصون بمعالجته على الفور..."
-                      className="w-full rounded-xl border border-slate-800 bg-[#090e18] px-4 py-3 text-xs text-slate-200 outline-none focus:border-[var(--gold)] font-sans"
+                      className="w-full rounded-xl border border-slate-800 bg-[#090e18] px-4 py-3 text-xs text-slate-200 outline-none focus:border-[var(--gold)]"
                     />
                   </div>
 
@@ -965,10 +975,10 @@ function Profile() {
                 </div>
 
                 {/* History list of SLA requests */}
-                <div className="lg:col-span-2 space-y-3.5 text-right">
+                <div className="space-y-3.5 text-right font-sans">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <h3 className="text-xs font-bold text-slate-300">طلباتك الحالية النشطة 📜</h3>
-                    <span className="text-[10px] font-sans font-semibold text-slate-500">
+                    <span className="text-[10px] font-semibold text-slate-500">
                       {customRequests.length} طلبات مسجلة
                     </span>
                   </div>
@@ -1042,13 +1052,13 @@ function Profile() {
                   </div>
                 )}
               </div>
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors select-none">
+              <label className="flex h-10 w-32 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--gold)]/25 bg-[var(--gold)]/5 px-3 text-xs font-bold text-[var(--gold-soft)] hover:bg-[var(--gold)]/15 hover:border-[var(--gold)]/45 transition-all select-none shadow-sm">
                 {uploadingAvatar ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Upload className="h-4 w-4" />
+                  <Upload className="h-3.5 w-3.5" />
                 )}
-                <span>رفع</span>
+                <span>رفع الصورة</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1071,13 +1081,13 @@ function Profile() {
                   </div>
                 )}
               </div>
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors select-none">
+              <label className="flex h-10 w-32 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--gold)]/25 bg-[var(--gold)]/5 px-3 text-xs font-bold text-[var(--gold-soft)] hover:bg-[var(--gold)]/15 hover:border-[var(--gold)]/45 transition-all select-none shadow-sm">
                 {uploadingLogo ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Upload className="h-4 w-4" />
+                  <Upload className="h-3.5 w-3.5" />
                 )}
-                <span>رفع</span>
+                <span>رفع الشعار</span>
                 <input
                   type="file"
                   accept="image/*"

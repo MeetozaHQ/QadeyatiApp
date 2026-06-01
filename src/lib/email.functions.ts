@@ -728,6 +728,11 @@ export const sendSlaRequestEmail = createServerFn({ method: "POST" })
       const timeoutId = setTimeout(() => controller.abort(), 6500);
 
       try {
+        const recipients = ["info@qadeyati.com"];
+        if (lawyerEmail && !recipients.includes(lawyerEmail)) {
+          recipients.push(lawyerEmail);
+        }
+
         const response = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -736,7 +741,7 @@ export const sendSlaRequestEmail = createServerFn({ method: "POST" })
           },
           body: JSON.stringify({
             from: fromEmail,
-            to: ["info@qadeyati.com"],
+            to: recipients,
             subject: `⚙️ [طلب خاص جديد] ${requestType} - ${officeName}`,
             html: htmlContent,
           }),
@@ -754,12 +759,44 @@ export const sendSlaRequestEmail = createServerFn({ method: "POST" })
           );
           const errorMsg =
             errData?.message || errData?.error?.message || `API Error (${response.status})`;
+
+          // Auto-healing fallback retry if the sender domain is unverified on onboarding accounts
+          if (
+            fromEmail !== "onboarding@resend.dev" &&
+            (errorMsg.toLowerCase().includes("verified") ||
+              errorMsg.toLowerCase().includes("from") ||
+              response.status === 403)
+          ) {
+            console.log(
+              "[Email Service] Retrying SLA request email using fallback onboarding@resend.dev...",
+            );
+            const retryResponse = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "onboarding@resend.dev",
+                to: [lawyerEmail || "info@qadeyati.com"],
+                subject: `⚙️ [نسخة احتياطية] [طلب خاص جديد] ${requestType} - ${officeName}`,
+                html: htmlContent,
+              }),
+            });
+            if (retryResponse.ok) {
+              console.log(
+                "[Email Service] Successfully sent retry email using onboarding@resend.dev!",
+              );
+              return { success: true };
+            }
+          }
+
           return { success: false, error: errorMsg };
         }
 
         const dataResponse = await response.json();
         console.log(
-          "[Email Service] SLA Custom Request email successfully sent to info@qadeyati.com, ID:",
+          "[Email Service] SLA Custom Request email successfully sent, ID:",
           dataResponse.id,
         );
         return { success: true };
