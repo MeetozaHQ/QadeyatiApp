@@ -793,6 +793,58 @@ export function useTrial() {
     }
   }, []);
 
+  // Sync client subscription if there's a fallback database entry on the server
+  useEffect(() => {
+    if (!user?.email) return;
+
+    let active = true;
+
+    const queryFallbackActivation = async () => {
+      try {
+        const { checkActivationForUser } = await import("@/lib/admin.functions");
+        const act = await checkActivationForUser({ data: user.email });
+        if (act && active) {
+          const currentPlan = safeStorage.getItem("qadeyti_plan");
+          const isUnpaid = safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
+
+          if (currentPlan !== act.plan || isUnpaid) {
+            console.log(
+              "[Fallback Sync] Updating local subscription state to matching plan:",
+              act.plan,
+            );
+            setPlanState(act.plan as QadeytiPlan);
+            setIsSubscriptionUnpaidState(false);
+
+            safeStorage.setItem("qadeyti_plan", act.plan);
+            safeStorage.setItem("qadeyti_premium", act.plan !== "free" ? "true" : "false");
+            safeStorage.setItem("qadeyti_subscription_unpaid", "false");
+
+            await supabase.auth.updateUser({
+              data: {
+                qadeyti_plan: act.plan,
+                qadeyti_subscription_unpaid: false,
+                qadeyti_subscription_expiry: act.expiryDate,
+                qadeyti_subscription_activation: act.activationDate,
+              },
+            });
+
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("storage"));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Failed checking for fallback activation syncing:", err);
+      }
+    };
+
+    queryFallbackActivation();
+
+    return () => {
+      active = false;
+    };
+  }, [user?.email]);
+
   if (!user) {
     return {
       isTrialActive: false,
