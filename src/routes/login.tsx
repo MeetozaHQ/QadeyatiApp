@@ -46,7 +46,9 @@ function LoginPage() {
     setResendMessage(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const emailVal = email.trim().toLowerCase();
+
+    const { error } = await supabase.auth.signInWithPassword({ email: emailVal, password });
     setLoading(false);
 
     if (error) {
@@ -72,11 +74,13 @@ function LoginPage() {
     setError(null);
     setResendMessage(null);
 
+    const emailVal = email.trim().toLowerCase();
+
     try {
       // Use the current domain (Vercel domain) as redirect URL so clicking the link confirms correctly on the live app
       const { error } = await supabase.auth.resend({
         type: "signup",
-        email,
+        email: emailVal,
         options: {
           emailRedirectTo: window.location.origin,
         },

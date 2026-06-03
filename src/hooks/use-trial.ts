@@ -805,7 +805,10 @@ export function useTrial() {
     const queryFallbackActivation = async () => {
       try {
         const { checkActivationForUser } = await import("@/lib/activation-check.functions");
-        const act = await checkActivationForUser({ data: user.email });
+        const cleanedEmail = user.email ? user.email.toLowerCase().trim() : "";
+        if (!cleanedEmail) return;
+
+        const act = await checkActivationForUser({ data: cleanedEmail });
         if (act && active) {
           safeStorage.setItem("qadeyti_fallback_plan", act.plan);
           const currentPlan = safeStorage.getItem("qadeyti_plan");

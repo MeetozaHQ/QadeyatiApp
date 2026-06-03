@@ -56,11 +56,15 @@ export async function writeLocalActivation(activation: LocalActivation): Promise
   }
 }
 
-export const checkActivationForUser = createServerFn({ method: "GET" })
+export const checkActivationForUser = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => {
     if (typeof input === "string") return input;
     if (input && typeof input === "object" && "data" in input) {
-      return String((input as { data?: unknown }).data || "");
+      const innerData = (input as { data?: unknown }).data;
+      if (innerData && typeof innerData === "object" && "email" in innerData) {
+        return String((innerData as { email?: unknown }).email || "");
+      }
+      return String(innerData || "");
     }
     return String(input || "");
   })

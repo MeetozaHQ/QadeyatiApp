@@ -55,11 +55,13 @@ function SignupPage() {
     setError(null);
     setLoading(true);
 
+    const emailVal = email.trim().toLowerCase();
+
     // Check if the email has a pre-activated fallback subscription allocation from Admin Page
     let initialMetadata: Record<string, string | boolean> = {};
     try {
       const { checkActivationForUser } = await import("@/lib/activation-check.functions");
-      const act = await checkActivationForUser({ data: email });
+      const act = await checkActivationForUser({ data: emailVal });
       if (act) {
         initialMetadata = {
           qadeyti_plan: act.plan,
@@ -74,7 +76,7 @@ function SignupPage() {
     }
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: emailVal,
       password,
       options: {
         emailRedirectTo: window.location.origin + "/dashboard",
