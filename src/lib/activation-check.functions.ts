@@ -211,11 +211,23 @@ export const completePreActivatedSignup = createServerFn({ method: "POST" })
 
       // Check if user exists and is specially marked as pre_activated from Admin
       if (foundUser && foundUser.user_metadata?.qadeyti_pre_activated === true) {
-        // Claim the account: update password and mark as claimed
+        // Look up fallback activation from server file to get the exact plan details
+        const list = await readLocalActivations();
+        const backupAct = list.find((a) => a.email.toLowerCase() === emailStr);
+
+        const targetPlan = backupAct?.plan || foundUser.user_metadata?.qadeyti_plan || "free";
+        const targetExpiry = backupAct?.expiryDate || foundUser.user_metadata?.qadeyti_subscription_expiry || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        const targetActivation = backupAct?.activationDate || foundUser.user_metadata?.qadeyti_subscription_activation || new Date().toISOString();
+
+        // Claim the account: update password, mark as claimed, and ensure subscription metadata is fully restored/asserted!
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(foundUser.id, {
           password: password,
           user_metadata: {
             ...foundUser.user_metadata,
+            qadeyti_plan: targetPlan,
+            qadeyti_subscription_unpaid: false,
+            qadeyti_subscription_expiry: targetExpiry,
+            qadeyti_subscription_activation: targetActivation,
             qadeyti_pre_activated: false, // Mark it claimed
           },
         });

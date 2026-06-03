@@ -16,7 +16,7 @@ const asyncHooksPlugin = {
   name: "async-hooks-browser-polyfill",
   enforce: "pre" as const,
   resolveId(id: string, importer: string | undefined, options: { ssr?: boolean } | undefined) {
-    if ((id === "node:async_hooks" || id === "async_hooks") && !options?.ssr) {
+    if ((id === "node:async_hooks" || id === "async_hooks") && options?.ssr !== true) {
       return "\0virtual:async_hooks_polyfill";
     }
     return null;
@@ -31,6 +31,22 @@ const asyncHooksPlugin = {
             return callback(...args);
           }
         }
+        export class AsyncResource {
+          static bind(fn) { return fn; }
+          runInAsyncScope(fn, thisArg, ...args) { return fn.call(thisArg, ...args); }
+        }
+        export function createHook() { return { enable() {}, disable() {} }; }
+        export function executionAsyncId() { return 0; }
+        export function triggerAsyncId() { return 0; }
+
+        const defaultExport = {
+          AsyncLocalStorage,
+          AsyncResource,
+          createHook,
+          executionAsyncId,
+          triggerAsyncId,
+        };
+        export default defaultExport;
       `;
     }
     return null;
