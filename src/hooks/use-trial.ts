@@ -626,6 +626,19 @@ export function useTrial() {
           window.dispatchEvent(new Event("storage"));
         }
       }
+
+      // Sync unpaid status from user metadata if set
+      const userMetadataUnpaid = user?.user_metadata?.qadeyti_subscription_unpaid;
+      if (userMetadataUnpaid !== undefined) {
+        const nextUnpaid = userMetadataUnpaid === true;
+        if (isSubscriptionUnpaid !== nextUnpaid) {
+          setIsSubscriptionUnpaidState(nextUnpaid);
+          safeStorage.setItem("qadeyti_subscription_unpaid", nextUnpaid ? "true" : "false");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("storage"));
+          }
+        }
+      }
     }
 
     if (user) {
@@ -706,6 +719,13 @@ export function useTrial() {
   const setSubscriptionUnpaid = (unpaid: boolean) => {
     setIsSubscriptionUnpaidState(unpaid);
     safeStorage.setItem("qadeyti_subscription_unpaid", unpaid ? "true" : "false");
+    if (user && supabase) {
+      supabase.auth
+        .updateUser({
+          data: { qadeyti_subscription_unpaid: unpaid },
+        })
+        .catch((err) => console.error("Error saving unpaid to user metadata:", err));
+    }
     const isPremiumOld = safeStorage.getItem("qadeyti_premium") === "true";
     if (unpaid) {
       // Keep state clean

@@ -509,7 +509,23 @@ function Profile() {
             </p>
           </div>
 
-          <div className="w-full md:w-auto md:min-w-[240px] shrink-0">
+          <div className="w-full md:w-auto md:min-w-[240px] shrink-0 space-y-2">
+            <button
+              onClick={() => navigate({ to: "/payment" })}
+              className="w-full px-5 py-3 rounded-xl text-xs font-bold bg-gradient-to-l from-[var(--gold)] to-[var(--gold-soft)] text-slate-950 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md flex items-center justify-center gap-2 shadow-amber-500/10"
+            >
+              <span>أكمل الاشتراك والدفع اليدوي 💳</span>
+            </button>
+
+            {user?.email?.toLowerCase().trim() === "meetozacoin@gmail.com" && (
+              <button
+                onClick={() => navigate({ to: "/admin" })}
+                className="w-full px-5 py-3 rounded-xl text-xs font-bold bg-gradient-to-l from-indigo-600 to-indigo-500 text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md flex items-center justify-center gap-2 shadow-indigo-600/15"
+              >
+                <span>لوحة تحكم المشرفين (Admin) 👑</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
                 const nextState = !isSubscriptionUnpaid;
@@ -521,16 +537,16 @@ function Profile() {
                 );
               }}
               className={cn(
-                "w-full px-5 py-3.5 rounded-xl text-xs font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md select-none flex items-center justify-center gap-2",
+                "w-full px-5 py-2.5 rounded-xl text-[10px] font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-sm select-none flex items-center justify-center gap-2",
                 isSubscriptionUnpaid
-                  ? "bg-gradient-to-l from-emerald-600 to-emerald-500 text-white hover:from-emerald-500 hover:to-emerald-400 shadow-emerald-600/15"
-                  : "bg-gradient-to-l from-rose-600 to-pink-600 text-white hover:from-rose-500 hover:to-pink-500 shadow-rose-600/15",
+                  ? "bg-rose-950/40 border border-rose-800 text-rose-300 hover:bg-rose-950/60"
+                  : "bg-slate-900 border border-slate-800 text-slate-400 hover:bg-slate-850",
               )}
             >
               {isSubscriptionUnpaid ? (
-                <span>تنشيط وسداد الاشتراك الآن ✅</span>
+                <span>محاكاة: تجميد الحساب (unpaid)</span>
               ) : (
-                <span>إيقاف الدفع وتجميد الحساب 🛑</span>
+                <span>محاكاة: إلغاء التجميد وبدء الخدمة</span>
               )}
             </button>
           </div>

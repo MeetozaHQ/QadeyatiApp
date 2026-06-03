@@ -3,8 +3,10 @@ import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
 import { useTrial, type QadeytiPlan } from "@/hooks/use-trial";
 import { Sparkles, Command, Check, ShieldAlert, X, Users, MessageSquare } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const { isPremium, plan, setPlan, limits, simulatedLawyerId, firmLawyers, cancelImpersonation } =
     useTrial();
   const [showBillingModal, setShowBillingModal] = useState(false);
@@ -268,6 +270,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                   كود الخصم لتفعيل الباقة الأساسية:{" "}
                   <code className="bg-[#090C14] px-1 py-0.5 rounded text-[var(--gold)]">EGYPT</code>
                 </p>
+              </div>
+
+              {/* Manual payment page link */}
+              <div className="pt-4 mt-2 border-t border-slate-900 flex flex-col gap-2">
+                <p className="text-[10px] text-slate-400 text-center">
+                  تريد إتمام الدفع الفعلي وتنشيط حسابك عبر وسائل الدفع الرسمية؟
+                </p>
+                <button
+                  onClick={() => {
+                    setShowBillingModal(false);
+                    navigate({ to: "/payment" });
+                  }}
+                  className="w-full h-10 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-[var(--gold)] to-[var(--gold-soft)] hover:from-[var(--gold-soft)] hover:to-[var(--gold)] text-slate-950 font-bold text-xs shadow-md transition-all active:scale-[0.98] select-none text-center cursor-pointer"
+                >
+                  <span>أكمل السداد والتفعيل اليدوي الآن 💳</span>
+                </button>
               </div>
             </div>
           </div>
