@@ -609,9 +609,24 @@ export function useTrial() {
     } else {
       const fallbackPlan = safeStorage.getItem("qadeyti_fallback_plan") as QadeytiPlan;
       const userMetadataPlan = user?.user_metadata?.qadeyti_plan as QadeytiPlan;
-      const storedPlan = (fallbackPlan ||
-        userMetadataPlan ||
-        safeStorage.getItem("qadeyti_plan")) as QadeytiPlan;
+      const localStoragePlan = safeStorage.getItem("qadeyti_plan") as QadeytiPlan;
+
+      // Prioritize any paid plan found across all sources to avoid resetting to "free"
+      let storedPlan: QadeytiPlan = "free";
+      if (fallbackPlan && fallbackPlan !== "free") {
+        storedPlan = fallbackPlan;
+      } else if (userMetadataPlan && userMetadataPlan !== "free") {
+        storedPlan = userMetadataPlan;
+      } else if (localStoragePlan && localStoragePlan !== "free") {
+        storedPlan = localStoragePlan;
+      } else if (userMetadataPlan) {
+        storedPlan = userMetadataPlan;
+      } else if (fallbackPlan) {
+        storedPlan = fallbackPlan;
+      } else if (localStoragePlan) {
+        storedPlan = localStoragePlan;
+      }
+
       const isPremiumOld = safeStorage.getItem("qadeyti_premium") === "true";
 
       let nextPlan: QadeytiPlan = "free";
@@ -846,6 +861,15 @@ export function useTrial() {
           }
         } else if (!act && active) {
           safeStorage.removeItem("qadeyti_fallback_plan");
+          const currentPlan = safeStorage.getItem("qadeyti_plan");
+          if (currentPlan && currentPlan !== "free") {
+            setPlanState("free");
+            safeStorage.setItem("qadeyti_plan", "free");
+            safeStorage.setItem("qadeyti_premium", "false");
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("storage"));
+            }
+          }
         }
       } catch (err) {
         console.warn("Failed checking for fallback activation syncing:", err);
