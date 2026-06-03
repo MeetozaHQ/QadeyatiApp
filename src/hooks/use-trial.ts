@@ -607,8 +607,11 @@ export function useTrial() {
         }
       }
     } else {
+      const fallbackPlan = safeStorage.getItem("qadeyti_fallback_plan") as QadeytiPlan;
       const userMetadataPlan = user?.user_metadata?.qadeyti_plan as QadeytiPlan;
-      const storedPlan = (userMetadataPlan || safeStorage.getItem("qadeyti_plan")) as QadeytiPlan;
+      const storedPlan = (fallbackPlan ||
+        userMetadataPlan ||
+        safeStorage.getItem("qadeyti_plan")) as QadeytiPlan;
       const isPremiumOld = safeStorage.getItem("qadeyti_premium") === "true";
 
       let nextPlan: QadeytiPlan = "free";
@@ -801,9 +804,10 @@ export function useTrial() {
 
     const queryFallbackActivation = async () => {
       try {
-        const { checkActivationForUser } = await import("@/lib/admin.functions");
+        const { checkActivationForUser } = await import("@/lib/activation-check.functions");
         const act = await checkActivationForUser({ data: user.email });
         if (act && active) {
+          safeStorage.setItem("qadeyti_fallback_plan", act.plan);
           const currentPlan = safeStorage.getItem("qadeyti_plan");
           const isUnpaid = safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
 
@@ -832,6 +836,8 @@ export function useTrial() {
               window.dispatchEvent(new Event("storage"));
             }
           }
+        } else if (!act && active) {
+          safeStorage.removeItem("qadeyti_fallback_plan");
         }
       } catch (err) {
         console.warn("Failed checking for fallback activation syncing:", err);

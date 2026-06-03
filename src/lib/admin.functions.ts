@@ -1,88 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  type LocalActivation,
+  readLocalActivations,
+  writeLocalActivation,
+} from "./activation-check.functions";
 
 interface AdminActivateInput {
   email: string;
   plan: string;
   durationMonths: number;
 }
-
-interface LocalActivation {
-  email: string;
-  plan: string;
-  activationDate: string;
-  expiryDate: string;
-}
-
-// Browser-safe dynamic Node fs/path helper
-async function getFS() {
-  if (typeof window !== "undefined") return null;
-  try {
-    const fs = await import("fs");
-    const path = await import("path");
-    return { fs, path };
-  } catch (err) {
-    console.error("Failed to load node fs components:", err);
-    return null;
-  }
-}
-
-const ACTIVATIONS_FILE_NAME = "supabase_activations_fallback.json";
-
-async function readLocalActivations(): Promise<LocalActivation[]> {
-  const node = await getFS();
-  if (!node) return [];
-  const { fs, path } = node;
-  const filePath = path.join(process.cwd(), ACTIVATIONS_FILE_NAME);
-  try {
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, "utf-8");
-      return JSON.parse(content);
-    }
-  } catch (err) {
-    console.error("Local activations read failed:", err);
-  }
-  return [];
-}
-
-async function writeLocalActivation(activation: LocalActivation): Promise<void> {
-  const node = await getFS();
-  if (!node) return;
-  const { fs, path } = node;
-  const filePath = path.join(process.cwd(), ACTIVATIONS_FILE_NAME);
-  try {
-    const list = await readLocalActivations();
-    const filtered = list.filter((a) => a.email.toLowerCase() !== activation.email.toLowerCase());
-    filtered.push(activation);
-    fs.writeFileSync(filePath, JSON.stringify(filtered, null, 2), "utf-8");
-    console.log(
-      `[Backup Activation] Saved activation for ${activation.email} in fallback database file`,
-    );
-  } catch (err) {
-    console.error("Local activations write failed:", err);
-  }
-}
-
-export const checkActivationForUser = createServerFn({ method: "GET" })
-  .inputValidator((email: unknown) => String(email || ""))
-  .handler(async ({ data: email }) => {
-    const emailStr = String(email || "")
-      .toLowerCase()
-      .trim();
-    if (!emailStr) return null;
-
-    const list = await readLocalActivations();
-    const found = list.find((a) => a.email.toLowerCase() === emailStr);
-
-    if (found) {
-      const hasExpired = new Date(found.expiryDate) <= new Date();
-      if (!hasExpired) {
-        return found;
-      }
-    }
-    return null;
-  });
 
 export const adminActivateSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -148,6 +77,15 @@ export const adminActivateSubscription = createServerFn({ method: "POST" })
       }
 
       dbActivationSuccess = true;
+
+      // Always save to local server file-based activations fallback to trigger instant client-side auto-sync
+      const actObj: LocalActivation = {
+        email: targetEmail.toLowerCase().trim(),
+        plan: targetPlan,
+        activationDate,
+        expiryDate: expiryDate.toISOString(),
+      };
+      await writeLocalActivation(actObj);
     } catch (err: unknown) {
       const errMessage = err instanceof Error ? err.message : String(err);
       console.warn(

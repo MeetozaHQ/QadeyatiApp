@@ -1318,6 +1318,18 @@ function Profile() {
       <PremiumButton
         variant="outline"
         onClick={async () => {
+          try {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("qadeyti_plan");
+              localStorage.removeItem("qadeyti_premium");
+              localStorage.removeItem("qadeyti_subscription_unpaid");
+              localStorage.removeItem("qadeyti_subscription_expiry");
+              localStorage.removeItem("qadeyti_subscription_activation");
+              window.dispatchEvent(new Event("storage"));
+            }
+          } catch (e) {
+            console.warn("Storage cleanup error:", e);
+          }
           await signOut();
           navigate({ to: "/login" });
         }}

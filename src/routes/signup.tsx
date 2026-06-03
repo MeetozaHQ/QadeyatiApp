@@ -58,7 +58,7 @@ function SignupPage() {
     // Check if the email has a pre-activated fallback subscription allocation from Admin Page
     let initialMetadata: Record<string, string | boolean> = {};
     try {
-      const { checkActivationForUser } = await import("@/lib/admin.functions");
+      const { checkActivationForUser } = await import("@/lib/activation-check.functions");
       const act = await checkActivationForUser({ data: email });
       if (act) {
         initialMetadata = {
