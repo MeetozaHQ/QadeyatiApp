@@ -138,7 +138,11 @@ export const checkActivationForUser = createServerFn({ method: "POST" })
         }
       }
 
-      if (foundUser && foundUser.user_metadata?.qadeyti_plan) {
+      if (
+        foundUser &&
+        foundUser.user_metadata?.qadeyti_plan &&
+        foundUser.user_metadata.qadeyti_plan !== "free"
+      ) {
         const expiryStr = foundUser.user_metadata.qadeyti_subscription_expiry;
         const hasExpired = expiryStr ? new Date(expiryStr) <= new Date() : false;
         if (!hasExpired) {

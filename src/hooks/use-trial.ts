@@ -858,8 +858,13 @@ export function useTrial() {
           },
         });
 
-        // Use live metadata plan as primary source of truth, fallback to server activation check
-        const resolvedPlan = liveMetadataPlan || (act?.plan as QadeytiPlan);
+        // Prioritize any active paid plan found from either source to prevent resetting to "free"
+        const resolvedPlan =
+          liveMetadataPlan && liveMetadataPlan !== "free"
+            ? liveMetadataPlan
+            : act?.plan && act.plan !== "free"
+              ? (act.plan as QadeytiPlan)
+              : liveMetadataPlan || "free";
         const resolvedUnpaid =
           liveMetadataUnpaid !== null
             ? liveMetadataUnpaid
