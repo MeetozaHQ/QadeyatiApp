@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
-import { adminActivateSubscription } from "@/lib/admin.functions";
+import { adminActivateSubscription, adminSearchUsers } from "@/lib/admin.functions";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import {
@@ -15,16 +15,37 @@ import {
   Sparkles,
   Search,
   CheckCircle,
+  Users,
+  RefreshCw,
+  Copy,
+  Mail,
+  Plus,
+  Check,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
 });
 
+interface AdminUser {
+  userId: string;
+  email: string;
+  fullName: string;
+  plan: string;
+  expiry: string | null;
+  activation: string | null;
+  whatsapp: string | null;
+  createdAt: string;
+  source: "profile" | "auth" | "both";
+}
+
 export function AdminPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const callActivate = useServerFn(adminActivateSubscription);
+
+  // Strict local safety gate
+  const isAdmin = user?.email?.toLowerCase().trim() === "meetozacoin@gmail.com";
 
   const [email, setEmail] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<"basic" | "pro" | "enterprise">("pro");
@@ -32,8 +53,50 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [successResult, setSuccessResult] = useState<string | null>(null);
 
-  // Strict local safety gate
-  const isAdmin = user?.email?.toLowerCase().trim() === "meetozacoin@gmail.com";
+  const callSearch = useServerFn(adminSearchUsers);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [usersList, setUsersList] = useState<AdminUser[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const loadUsersEx = useCallback(
+    async (q: string) => {
+      if (!isAdmin) return;
+      setSearching(true);
+      try {
+        const resp = await callSearch({ data: { query: q } });
+        if (resp && resp.success) {
+          setUsersList((resp.users as AdminUser[]) || []);
+          setHasSearched(true);
+        } else {
+          toast.error("فشل تحميل قائمة المشتركين.");
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+        toast.error("حدث خطأ أثناء الاتصال بالخادم لجلب قائمة المشتركين.");
+      } finally {
+        setSearching(false);
+      }
+    },
+    [isAdmin, callSearch],
+  );
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadUsersEx("");
+    }
+  }, [isAdmin, loadUsersEx]);
+
+  const handleSelectUserEmail = (userEmail: string) => {
+    setEmail(userEmail);
+    const inputEl = document.getElementById("client-email");
+    if (inputEl) {
+      inputEl.focus();
+      inputEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    toast.success(`تم إدراج البريد الإلكتروني: ${userEmail}`);
+  };
 
   const handleActivateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,6 +450,242 @@ export function AdminPage() {
                 محادثة الدعم الرسمية لواتساب
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* قسم البحث والتحقق من المشتركين */}
+      <div className="rounded-3xl border border-slate-800 bg-[#12151C]/40 p-5 sm:p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-1/2 translate-x-1/2 h-0.5 w-[30%] bg-gradient-to-r from-transparent via-[var(--gold)]/25 to-transparent"></div>
+
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-850 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 w-10 h-10 rounded-xl bg-[var(--gold)]/10 text-[var(--gold)] flex items-center justify-center shrink-0">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white font-display">
+                  دليل المشتركين والبحث عن الحسابات
+                </h3>
+                <p className="text-[10px] text-slate-400">
+                  ابحث عن المشتركين لمطابقة حساباتهم، أو تفقد تفاصيل الباقة وواتساب لتفادي الأخطاء
+                  الإملائية
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Refresh Icon */}
+            <button
+              onClick={() => loadUsersEx(searchQuery)}
+              disabled={searching}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-850 hover:bg-slate-800 text-[10px] text-slate-400 hover:text-white transition-all cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-3 w-3 ${searching ? "animate-spin text-[var(--gold)]" : ""}`}
+              />
+              <span>تحديث القائمة</span>
+            </button>
+          </div>
+
+          {/* Search bar inside Directory */}
+          <div className="flex gap-2.5 max-w-sm">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="ابحث بالاسم، البريد، أو رقم الهاتف..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    loadUsersEx(searchQuery);
+                  }
+                }}
+                className="w-full h-10 rounded-xl border border-border bg-slate-950/40 pr-3 pl-9 text-xs text-foreground outline-none focus:border-[var(--gold)] focus:bg-background transition-all"
+              />
+              <Search className="absolute left-3 top-3.5 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+            </div>
+            <button
+              onClick={() => loadUsersEx(searchQuery)}
+              disabled={searching}
+              className="h-10 px-4 rounded-xl bg-slate-900 border border-slate-850 hover:bg-slate-800 text-xs font-bold text-slate-200 transition-all cursor-pointer flex items-center gap-1"
+            >
+              {searching ? "جاري..." : "ابحث"}
+            </button>
+          </div>
+
+          {/* Users List Table or Grid */}
+          <div className="overflow-x-auto border border-slate-850 rounded-2xl bg-slate-950/20">
+            {searching && usersList.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 text-xs space-y-2">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[var(--gold)]" />
+                <p>جاري جلب قائمة المشتركين المسجلين الآن...</p>
+              </div>
+            ) : usersList.length === 0 ? (
+              <div className="p-10 text-center text-slate-400 text-xs">
+                {hasSearched ? (
+                  <span className="text-amber-400">
+                    لا توجد نتائج مطابقة لبحثك في قاعدة البيانات حالياً.
+                  </span>
+                ) : (
+                  <span className="text-slate-500">اضغط على زر بحث أو تحديث لعرض المشتركين.</span>
+                )}
+              </div>
+            ) : (
+              <table className="w-full text-[11px] text-right" dir="rtl">
+                <thead>
+                  <tr className="border-b border-slate-850 bg-slate-950/50 text-slate-400 font-bold">
+                    <th className="px-4 py-3 text-right">الاسم والمستخدم</th>
+                    <th className="px-4 py-3 text-right font-mono">البريد الإلكتروني</th>
+                    <th className="px-4 py-3 text-center">الباقة / الحالة</th>
+                    <th className="px-4 py-3 text-right">رقم واتساب</th>
+                    <th className="px-4 py-3 text-left">تاريخ التسجيل</th>
+                    <th className="px-4 py-3 text-center w-40">خيارات سريعة</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-850">
+                  {usersList.map((usr, idx) => {
+                    const isPlanPro = usr.plan === "pro";
+                    const isPlanBasic = usr.plan === "basic";
+                    const isPlanEnterprise = usr.plan === "enterprise";
+
+                    let planBadge = (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                        مجانية (Free)
+                      </span>
+                    );
+                    if (isPlanPro) {
+                      planBadge = (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--gold)]/10 text-[var(--gold)] border border-[var(--gold)]/20">
+                          برو (Pro) ⭐
+                        </span>
+                      );
+                    } else if (isPlanBasic) {
+                      planBadge = (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          أساسي (Basic)
+                        </span>
+                      );
+                    } else if (isPlanEnterprise) {
+                      planBadge = (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                          مكاتب (Enterprise) 👑
+                        </span>
+                      );
+                    }
+
+                    const handleCopy = (txt: string, index: number) => {
+                      try {
+                        navigator.clipboard.writeText(txt);
+                        setCopiedIndex(index);
+                        toast.success("تم نسخ البريد الإلكتروني بنجاح!");
+                        setTimeout(() => setCopiedIndex(null), 2000);
+                      } catch (cErr) {
+                        toast.error("فشل النسخ التلقائي.");
+                      }
+                    };
+
+                    const handleWhatsAppOpen = (num: string) => {
+                      try {
+                        const cleanNum = num.replace(/\D/g, "");
+                        window.open(`https://wa.me/${cleanNum}`, "_blank");
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    };
+
+                    return (
+                      <tr
+                        key={usr.userId || idx}
+                        className="hover:bg-slate-900/40 transition-colors"
+                      >
+                        {/* Name and avatar/initial */}
+                        <td className="px-4 py-3 text-right font-bold text-white max-w-[150px] truncate">
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-lg bg-slate-850 text-slate-300 font-display flex items-center justify-center text-[10px] uppercase shrink-0">
+                              {usr.fullName?.slice(0, 1) || "L"}
+                            </div>
+                            <span className="truncate">{usr.fullName}</span>
+                          </div>
+                        </td>
+
+                        {/* Email */}
+                        <td className="px-4 py-3 font-mono text-slate-300 text-right">
+                          {usr.email}
+                        </td>
+
+                        {/* Plan */}
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex flex-col items-center gap-0.5">
+                            {planBadge}
+                            {usr.expiry && (
+                              <span className="text-[9px] text-slate-500 font-sans">
+                                ينتهي: {new Date(usr.expiry).toLocaleDateString("ar-EG")}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* WhatsApp */}
+                        <td className="px-4 py-3 text-right font-sans">
+                          {usr.whatsapp ? (
+                            <button
+                              type="button"
+                              onClick={() => handleWhatsAppOpen(usr.whatsapp)}
+                              className="text-emerald-400 hover:underline hover:text-emerald-300 flex items-center gap-1 transition-colors justify-end w-full"
+                            >
+                              <span>{usr.whatsapp}</span>
+                              <span className="text-[9px] p-0.5 rounded bg-emerald-500/10 text-emerald-400 leading-none">
+                                واتساب
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="text-slate-600 font-sans">-</span>
+                          )}
+                        </td>
+
+                        {/* Joined At */}
+                        <td className="px-4 py-3 text-left text-slate-500">
+                          {usr.createdAt
+                            ? new Date(usr.createdAt).toLocaleDateString("ar-EG")
+                            : "-"}
+                        </td>
+
+                        {/* Select actions button */}
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5 font-sans">
+                            {/* Copy button */}
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(usr.email, idx)}
+                              className="p-1.5 rounded-lg bg-slate-900 border border-slate-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all"
+                              title="نسخ البريد الإلكتروني"
+                            >
+                              {copiedIndex === idx ? (
+                                <Check className="h-3 w-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </button>
+
+                            {/* Select fill email */}
+                            <button
+                              type="button"
+                              onClick={() => handleSelectUserEmail(usr.email)}
+                              className="px-2 py-1 py-1.5 rounded-lg bg-[var(--gold)]/10 text-[var(--gold)] hover:bg-[var(--gold)] hover:text-slate-950 font-bold text-[9px] flex items-center gap-1 transition-all"
+                            >
+                              <Plus className="h-2.5 w-2.5" />
+                              <span>تعبئة وتنشيط</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

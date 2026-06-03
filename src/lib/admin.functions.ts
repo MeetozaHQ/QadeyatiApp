@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { type User } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
@@ -197,5 +198,158 @@ export const adminActivateSubscription = createServerFn({ method: "POST" })
     return {
       success: true,
       message: `تم تنشيط باقة (${targetPlan}) لمدة ${durationMonths} أشهر للمشترك ${targetEmail} بنجاح!${fallbackMessage}`,
+    };
+  });
+
+export const adminSearchUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { query: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    // Authenticate and fetch current user details using service connection
+    const {
+      data: { user: caller },
+      error: callerError,
+    } = await supabase.auth.getUser();
+    if (callerError || !caller) {
+      throw new Error("فشل التحقق من هوية المستخدم الجاري.");
+    }
+
+    // Role gate
+    if (caller.email !== "meetozacoin@gmail.com") {
+      throw new Error("سماح بالوصول لمشرفي النظام فقط (unauthorized access attempt).");
+    }
+
+    const { query } = data;
+    const cleanQuery = query.toLowerCase().trim();
+
+    // 1. Fetch lawyer profiles from database
+    const { data: profiles, error: pError } = await supabaseAdmin
+      .from("lawyer_profiles")
+      .select(
+        "user_id, email, full_name, subscription_plan, subscription_expiry, subscription_activation, whatsapp, created_at",
+      )
+      .order("created_at", { ascending: false });
+
+    if (pError) {
+      console.warn("Error fetching profiles:", pError);
+    }
+
+    // 2. Fetch auth users from Auth Admin API to match, since some users might not have profiles
+    const allAuthUsers: User[] = [];
+    try {
+      let page = 1;
+      const perPage = 100;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage,
+        });
+
+        if (listError) {
+          throw new Error(listError.message);
+        }
+
+        if (!listData?.users || listData.users.length === 0) {
+          break;
+        }
+
+        allAuthUsers.push(...listData.users);
+        page++;
+        hasMore = listData.users.length === perPage && page <= 5; // Fetch up to 500 users
+      }
+    } catch (authErr) {
+      console.warn("Error listing auth users:", authErr);
+    }
+
+    // Combine them!
+    const unifiedAccountsMap = new Map<
+      string,
+      {
+        userId: string;
+        email: string;
+        fullName: string;
+        plan: string;
+        expiry: string | null;
+        activation: string | null;
+        whatsapp: string | null;
+        createdAt: string;
+        source: "profile" | "auth" | "both";
+      }
+    >();
+
+    // Populate with Auth Users
+    for (const u of allAuthUsers) {
+      const emailVal = u.email || "";
+      const planVal = u.user_metadata?.qadeyti_plan || "free";
+      const expiryVal = u.user_metadata?.qadeyti_subscription_expiry || null;
+      const activationVal = u.user_metadata?.qadeyti_subscription_activation || null;
+
+      unifiedAccountsMap.set(u.id, {
+        userId: u.id,
+        email: emailVal,
+        fullName: u.user_metadata?.full_name || emailVal.split("@")[0] || "مستخدم جديد",
+        plan: planVal,
+        expiry: expiryVal,
+        activation: activationVal,
+        whatsapp: u.user_metadata?.whatsapp || null,
+        createdAt: u.created_at || new Date().toISOString(),
+        source: "auth",
+      });
+    }
+
+    // Complement with profiles
+    if (profiles) {
+      for (const p of profiles) {
+        const existing = unifiedAccountsMap.get(p.user_id);
+        if (existing) {
+          existing.email = p.email || existing.email || "";
+          existing.fullName = p.full_name || existing.fullName;
+          existing.plan = p.subscription_plan || existing.plan;
+          existing.expiry = p.subscription_expiry || existing.expiry;
+          existing.activation = p.subscription_activation || existing.activation;
+          existing.whatsapp = p.whatsapp || existing.whatsapp;
+          existing.createdAt = p.created_at || existing.createdAt;
+          existing.source = "both";
+        } else {
+          unifiedAccountsMap.set(p.user_id, {
+            userId: p.user_id,
+            email: p.email || "",
+            fullName: p.full_name || "محامي غير معروف",
+            plan: p.subscription_plan || "free",
+            expiry: p.subscription_expiry || null,
+            activation: p.subscription_activation || null,
+            whatsapp: p.whatsapp || null,
+            createdAt: p.created_at || new Date().toISOString(),
+            source: "profile",
+          });
+        }
+      }
+    }
+
+    const allRecords = Array.from(unifiedAccountsMap.values());
+
+    // Sort by created date descending (newest users first)
+    allRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Filter by query if query is provided
+    let filteredRecords = allRecords;
+    if (cleanQuery) {
+      filteredRecords = allRecords.filter((rec) => {
+        return (
+          rec.email.toLowerCase().includes(cleanQuery) ||
+          rec.fullName.toLowerCase().includes(cleanQuery) ||
+          (rec.whatsapp && rec.whatsapp.toLowerCase().includes(cleanQuery)) ||
+          rec.userId.toLowerCase().includes(cleanQuery)
+        );
+      });
+    }
+
+    return {
+      success: true,
+      users: filteredRecords,
     };
   });
