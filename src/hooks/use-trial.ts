@@ -580,7 +580,7 @@ export function useTrial() {
       (l) => l.email?.toLowerCase().trim() === user?.email?.toLowerCase().trim(),
     );
 
-    if (user?.email === "meetozacoin@gmail.com" || isFirmLawyer) {
+    if (user?.email?.toLowerCase().trim() === "meetozacoin@gmail.com" || isFirmLawyer) {
       if (plan !== "enterprise") {
         setPlanState("enterprise");
         safeStorage.setItem("qadeyti_plan", "enterprise");
@@ -599,7 +599,7 @@ export function useTrial() {
           setSimulatedLawyerId(matchingLawyer.id);
           safeStorage.setItem("qadeyti_simulated_lawyer_id", matchingLawyer.id);
         }
-      } else if (user?.email === "meetozacoin@gmail.com") {
+      } else if (user?.email?.toLowerCase().trim() === "meetozacoin@gmail.com") {
         // Owner can proceed with whatever is stored, default to owner
         const cur = safeStorage.getItem("qadeyti_simulated_lawyer_id") || "owner";
         if (simulatedLawyerId !== cur) {
@@ -823,6 +823,14 @@ export function useTrial() {
         const cleanedEmail = user.email ? user.email.toLowerCase().trim() : "";
         if (!cleanedEmail) return;
 
+        // Skip fallback activation checking/downgrading for admin & firm lawyers to guarantee eternal enterprise access!
+        const isFirmLawyer = firmLawyers.some(
+          (l) => l.email?.toLowerCase().trim() === cleanedEmail,
+        );
+        if (cleanedEmail === "meetozacoin@gmail.com" || isFirmLawyer) {
+          return;
+        }
+
         const act = await checkActivationForUser({
           data: {
             email: cleanedEmail,
@@ -861,13 +869,29 @@ export function useTrial() {
           }
         } else if (!act && active) {
           safeStorage.removeItem("qadeyti_fallback_plan");
-          const currentPlan = safeStorage.getItem("qadeyti_plan");
-          if (currentPlan && currentPlan !== "free") {
-            setPlanState("free");
-            safeStorage.setItem("qadeyti_plan", "free");
-            safeStorage.setItem("qadeyti_premium", "false");
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new Event("storage"));
+
+          // Never perform raw fallback downgrades if the user has a valid paid plan in their auth user_metadata.
+          // This ensures that any admin-assigned or real Supabase subscription metadata takes absolute precedence!
+          const userMetadataPlan = user?.user_metadata?.qadeyti_plan as QadeytiPlan;
+          if (userMetadataPlan && userMetadataPlan !== "free") {
+            const currentPlan = safeStorage.getItem("qadeyti_plan");
+            if (currentPlan !== userMetadataPlan) {
+              setPlanState(userMetadataPlan);
+              safeStorage.setItem("qadeyti_plan", userMetadataPlan);
+              safeStorage.setItem("qadeyti_premium", "true");
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("storage"));
+              }
+            }
+          } else {
+            const currentPlan = safeStorage.getItem("qadeyti_plan");
+            if (currentPlan && currentPlan !== "free") {
+              setPlanState("free");
+              safeStorage.setItem("qadeyti_plan", "free");
+              safeStorage.setItem("qadeyti_premium", "false");
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("storage"));
+              }
             }
           }
         }
@@ -881,7 +905,7 @@ export function useTrial() {
     return () => {
       active = false;
     };
-  }, [user?.email, user?.id]);
+  }, [user?.email, user?.id, firmLawyers]);
 
   if (!user) {
     return {
