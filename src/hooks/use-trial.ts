@@ -699,7 +699,7 @@ export function useTrial() {
       window.addEventListener("storage", handleStorageChange);
       return () => window.removeEventListener("storage", handleStorageChange);
     }
-  }, [user, firmLawyers, plan, simulatedLawyerId, aiCount, getAIChatUsage]);
+  }, [user, firmLawyers, plan, simulatedLawyerId, aiCount, getAIChatUsage, isSubscriptionUnpaid]);
 
   const togglePremium = (val: boolean) => {
     const nextPlan = val ? "pro" : "free";
@@ -831,35 +831,71 @@ export function useTrial() {
           return;
         }
 
+        // 1. Fetch real-time fresh user data from Supabase Auth to bypass cached JWT issues
+        let liveMetadataPlan: QadeytiPlan | null = null;
+        let liveMetadataUnpaid: boolean | null = null;
+        let liveMetadataExpiry: string | null = null;
+        let liveMetadataActivation: string | null = null;
+        try {
+          const {
+            data: { user: freshUser },
+          } = await supabase.auth.getUser();
+          if (freshUser) {
+            liveMetadataPlan = freshUser.user_metadata?.qadeyti_plan as QadeytiPlan;
+            liveMetadataUnpaid = freshUser.user_metadata?.qadeyti_subscription_unpaid === true;
+            liveMetadataExpiry = freshUser.user_metadata?.qadeyti_subscription_expiry || null;
+            liveMetadataActivation =
+              freshUser.user_metadata?.qadeyti_subscription_activation || null;
+          }
+        } catch (freshErr) {
+          console.warn("[Auth Sync] Failed fetching fresh user profile:", freshErr);
+        }
+
         const act = await checkActivationForUser({
           data: {
             email: cleanedEmail,
             userId: user.id,
           },
         });
-        if (act && active) {
-          safeStorage.setItem("qadeyti_fallback_plan", act.plan);
+
+        // Use live metadata plan as primary source of truth, fallback to server activation check
+        const resolvedPlan = liveMetadataPlan || (act?.plan as QadeytiPlan);
+        const resolvedUnpaid =
+          liveMetadataUnpaid !== null
+            ? liveMetadataUnpaid
+            : safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
+
+        if (resolvedPlan && resolvedPlan !== "free" && active) {
+          safeStorage.setItem("qadeyti_fallback_plan", resolvedPlan);
           const currentPlan = safeStorage.getItem("qadeyti_plan");
           const isUnpaid = safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
 
-          if (currentPlan !== act.plan || isUnpaid) {
+          if (currentPlan !== resolvedPlan || isUnpaid !== resolvedUnpaid) {
             console.log(
-              "[Fallback Sync] Updating local subscription state to matching plan:",
-              act.plan,
+              "[Fallback Sync] Updating local subscription state to active plan:",
+              resolvedPlan,
+              "unpaid status:",
+              resolvedUnpaid,
             );
-            setPlanState(act.plan as QadeytiPlan);
-            setIsSubscriptionUnpaidState(false);
+            setPlanState(resolvedPlan);
+            setIsSubscriptionUnpaidState(resolvedUnpaid);
 
-            safeStorage.setItem("qadeyti_plan", act.plan);
-            safeStorage.setItem("qadeyti_premium", act.plan !== "free" ? "true" : "false");
-            safeStorage.setItem("qadeyti_subscription_unpaid", "false");
+            safeStorage.setItem("qadeyti_plan", resolvedPlan);
+            safeStorage.setItem("qadeyti_premium", "true");
+            safeStorage.setItem("qadeyti_subscription_unpaid", resolvedUnpaid ? "true" : "false");
 
             await supabase.auth.updateUser({
               data: {
-                qadeyti_plan: act.plan,
-                qadeyti_subscription_unpaid: false,
-                qadeyti_subscription_expiry: act.expiryDate,
-                qadeyti_subscription_activation: act.activationDate,
+                qadeyti_plan: resolvedPlan,
+                qadeyti_subscription_unpaid: resolvedUnpaid,
+                qadeyti_subscription_expiry:
+                  liveMetadataExpiry ||
+                  act?.expiryDate ||
+                  user.user_metadata?.qadeyti_subscription_expiry,
+                qadeyti_subscription_activation:
+                  liveMetadataActivation ||
+                  act?.activationDate ||
+                  user.user_metadata?.qadeyti_subscription_activation,
               },
             });
 
@@ -867,12 +903,13 @@ export function useTrial() {
               window.dispatchEvent(new Event("storage"));
             }
           }
-        } else if (!act && active) {
+        } else if (!resolvedPlan && active) {
           safeStorage.removeItem("qadeyti_fallback_plan");
 
-          // Never perform raw fallback downgrades if the user has a valid paid plan in their auth user_metadata.
-          // This ensures that any admin-assigned or real Supabase subscription metadata takes absolute precedence!
-          const userMetadataPlan = user?.user_metadata?.qadeyti_plan as QadeytiPlan;
+          // Keep current plan if we are in an offline or query failure state, DO NOT auto-downgrade to free
+          // unless we are certain the user record metadata itself is 'free' (meaning a real administrator action or expiry).
+          const userMetadataPlan =
+            liveMetadataPlan || (user?.user_metadata?.qadeyti_plan as QadeytiPlan);
           if (userMetadataPlan && userMetadataPlan !== "free") {
             const currentPlan = safeStorage.getItem("qadeyti_plan");
             if (currentPlan !== userMetadataPlan) {
@@ -883,7 +920,8 @@ export function useTrial() {
                 window.dispatchEvent(new Event("storage"));
               }
             }
-          } else {
+          } else if (userMetadataPlan === "free") {
+            // Explicitly "free", downgrade safely since the official user record has set it to free
             const currentPlan = safeStorage.getItem("qadeyti_plan");
             if (currentPlan && currentPlan !== "free") {
               setPlanState("free");
@@ -905,7 +943,14 @@ export function useTrial() {
     return () => {
       active = false;
     };
-  }, [user?.email, user?.id, firmLawyers]);
+  }, [
+    user?.email,
+    user?.id,
+    firmLawyers,
+    user?.user_metadata?.qadeyti_plan,
+    user?.user_metadata?.qadeyti_subscription_expiry,
+    user?.user_metadata?.qadeyti_subscription_activation,
+  ]);
 
   if (!user) {
     return {
