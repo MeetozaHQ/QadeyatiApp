@@ -16,8 +16,8 @@ import path from "node:path";
 const asyncHooksPlugin = {
   name: "async-hooks-browser-polyfill",
   enforce: "pre" as const,
-  resolveId(id: string) {
-    if (id === "node:async_hooks" || id === "async_hooks") {
+  resolveId(id: string, importer?: string, options?: { ssr?: boolean }) {
+    if ((id === "node:async_hooks" || id === "async_hooks") && options?.ssr !== true) {
       return path.resolve(process.cwd(), "src/polyfills/async_hooks.ts");
     }
     return null;
