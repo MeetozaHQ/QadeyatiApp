@@ -54,10 +54,32 @@ function SignupPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    // Check if the email has a pre-activated fallback subscription allocation from Admin Page
+    let initialMetadata: Record<string, string | boolean> = {};
+    try {
+      const { checkActivationForUser } = await import("@/lib/admin.functions");
+      const act = await checkActivationForUser({ data: email });
+      if (act) {
+        initialMetadata = {
+          qadeyti_plan: act.plan,
+          qadeyti_subscription_unpaid: false,
+          qadeyti_subscription_expiry: act.expiryDate,
+          qadeyti_subscription_activation: act.activationDate,
+        };
+        console.log("[Signup Sync] Pre-activated plan found, setting on user creation:", act.plan);
+      }
+    } catch (err) {
+      console.warn("Failed checking pre-activation during registration:", err);
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin + "/dashboard" },
+      options: {
+        emailRedirectTo: window.location.origin + "/dashboard",
+        data: initialMetadata,
+      },
     });
     setLoading(false);
     if (error) return setError(error.message);
