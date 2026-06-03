@@ -12,6 +12,31 @@ if (typeof process !== "undefined" && process.env) {
 
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+const asyncHooksPlugin = {
+  name: "async-hooks-browser-polyfill",
+  enforce: "pre" as const,
+  resolveId(id: string, importer: string | undefined, options: { ssr?: boolean } | undefined) {
+    if ((id === "node:async_hooks" || id === "async_hooks") && !options?.ssr) {
+      return "\0virtual:async_hooks_polyfill";
+    }
+    return null;
+  },
+  load(id: string) {
+    if (id === "\0virtual:async_hooks_polyfill") {
+      return `
+        export class AsyncLocalStorage {
+          disable() {}
+          getStore() { return undefined; }
+          run(store, callback, ...args) {
+            return callback(...args);
+          }
+        }
+      `;
+    }
+    return null;
+  },
+};
+
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
@@ -19,6 +44,7 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  plugins: [asyncHooksPlugin],
   vite: {
     server: {
       port: 3000,
