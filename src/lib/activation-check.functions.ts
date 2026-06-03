@@ -56,19 +56,40 @@ export async function writeLocalActivation(activation: LocalActivation): Promise
   }
 }
 
+export interface CheckActivationInput {
+  email: string;
+  userId?: string;
+}
+
 export const checkActivationForUser = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => {
-    if (typeof input === "string") return input;
-    if (input && typeof input === "object" && "data" in input) {
-      const innerData = (input as { data?: unknown }).data;
-      if (innerData && typeof innerData === "object" && "email" in innerData) {
-        return String((innerData as { email?: unknown }).email || "");
-      }
-      return String(innerData || "");
+  .inputValidator((input: unknown): CheckActivationInput => {
+    if (typeof input === "string") {
+      return { email: input };
     }
-    return String(input || "");
+    if (input && typeof input === "object") {
+      const obj = input as Record<string, unknown>;
+      if ("data" in obj) {
+        const inner = obj.data;
+        if (typeof inner === "string") {
+          return { email: inner };
+        }
+        if (inner && typeof inner === "object") {
+          const innerObj = inner as Record<string, unknown>;
+          return {
+            email: String(innerObj.email || ""),
+            userId: innerObj.userId ? String(innerObj.userId) : undefined,
+          };
+        }
+      }
+      return {
+        email: String(obj.email || ""),
+        userId: obj.userId ? String(obj.userId) : undefined,
+      };
+    }
+    return { email: "" };
   })
-  .handler(async ({ data: email }) => {
+  .handler(async ({ data }) => {
+    const { email, userId } = data;
     const emailStr = String(email || "")
       .toLowerCase()
       .trim();
@@ -77,25 +98,57 @@ export const checkActivationForUser = createServerFn({ method: "POST" })
     // 1. Try checking the central database (Supabase Auth) first for real-time accuracy!
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const {
-        data: { users },
-        error: listError,
-      } = await supabaseAdmin.auth.admin.listUsers();
-      if (!listError && users) {
-        const foundUser = users.find((u) => u.email?.toLowerCase().trim() === emailStr);
-        if (foundUser && foundUser.user_metadata?.qadeyti_plan) {
-          const expiryStr = foundUser.user_metadata.qadeyti_subscription_expiry;
-          const hasExpired = expiryStr ? new Date(expiryStr) <= new Date() : false;
-          if (!hasExpired) {
-            return {
-              email: emailStr,
-              plan: foundUser.user_metadata.qadeyti_plan,
-              activationDate:
-                foundUser.user_metadata.qadeyti_subscription_activation || new Date().toISOString(),
-              expiryDate:
-                expiryStr || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            };
+      let foundUser = null;
+
+      if (userId) {
+        console.log(`[Activation Check] Querying getUserById directly for userId: ${userId}`);
+        const {
+          data: { user },
+          error: getErr,
+        } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (!getErr && user && user.email?.toLowerCase().trim() === emailStr) {
+          foundUser = user;
+        }
+      }
+
+      if (!foundUser) {
+        console.log(`[Activation Check] Searching for users page-by-page for email: ${emailStr}`);
+        let page = 1;
+        const perPage = 100;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage,
+          });
+
+          if (listError || !listData?.users || listData.users.length === 0) {
+            break;
           }
+
+          const match = listData.users.find((u) => u.email?.toLowerCase().trim() === emailStr);
+          if (match) {
+            foundUser = match;
+            break;
+          }
+
+          page++;
+          hasMore = listData.users.length === perPage;
+        }
+      }
+
+      if (foundUser && foundUser.user_metadata?.qadeyti_plan) {
+        const expiryStr = foundUser.user_metadata.qadeyti_subscription_expiry;
+        const hasExpired = expiryStr ? new Date(expiryStr) <= new Date() : false;
+        if (!hasExpired) {
+          return {
+            email: emailStr,
+            plan: foundUser.user_metadata.qadeyti_plan,
+            activationDate:
+              foundUser.user_metadata.qadeyti_subscription_activation || new Date().toISOString(),
+            expiryDate: expiryStr || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          };
         }
       }
     } catch (dbErr) {

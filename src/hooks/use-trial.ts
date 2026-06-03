@@ -808,7 +808,12 @@ export function useTrial() {
         const cleanedEmail = user.email ? user.email.toLowerCase().trim() : "";
         if (!cleanedEmail) return;
 
-        const act = await checkActivationForUser({ data: cleanedEmail });
+        const act = await checkActivationForUser({
+          data: {
+            email: cleanedEmail,
+            userId: user.id,
+          },
+        });
         if (act && active) {
           safeStorage.setItem("qadeyti_fallback_plan", act.plan);
           const currentPlan = safeStorage.getItem("qadeyti_plan");
@@ -852,7 +857,7 @@ export function useTrial() {
     return () => {
       active = false;
     };
-  }, [user?.email]);
+  }, [user?.email, user?.id]);
 
   if (!user) {
     return {
