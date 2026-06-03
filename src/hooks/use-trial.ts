@@ -831,7 +831,30 @@ export function useTrial() {
           return;
         }
 
-        // 1. Fetch real-time fresh user data from Supabase Auth to bypass cached JWT issues
+        // 1. Fetch real-time fresh user data from lawyer_profiles table (most reliable database source)
+        let dbPlan: QadeytiPlan | null = null;
+        let dbUnpaid: boolean | null = null;
+        let dbExpiry: string | null = null;
+        let dbActivation: string | null = null;
+
+        try {
+          const { data: profileData } = await supabase
+            .from("lawyer_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (profileData) {
+            dbPlan = profileData.subscription_plan as QadeytiPlan;
+            dbUnpaid = profileData.subscription_unpaid === true;
+            dbExpiry = profileData.subscription_expiry || null;
+            dbActivation = profileData.subscription_activation || null;
+          }
+        } catch (dbTableErr) {
+          console.warn("[Profile DB Sync] Failed fetching lawyer_profiles columns:", dbTableErr);
+        }
+
+        // 2. Fetch real-time fresh user data from Supabase Auth to bypass cached JWT issues
         let liveMetadataPlan: QadeytiPlan | null = null;
         let liveMetadataUnpaid: boolean | null = null;
         let liveMetadataExpiry: string | null = null;
@@ -860,15 +883,19 @@ export function useTrial() {
 
         // Prioritize any active paid plan found from either source to prevent resetting to "free"
         const resolvedPlan =
-          liveMetadataPlan && liveMetadataPlan !== "free"
-            ? liveMetadataPlan
-            : act?.plan && act.plan !== "free"
-              ? (act.plan as QadeytiPlan)
-              : liveMetadataPlan || "free";
+          dbPlan && dbPlan !== "free"
+            ? dbPlan
+            : liveMetadataPlan && liveMetadataPlan !== "free"
+              ? liveMetadataPlan
+              : act?.plan && act.plan !== "free"
+                ? (act.plan as QadeytiPlan)
+                : dbPlan || liveMetadataPlan || "free";
         const resolvedUnpaid =
-          liveMetadataUnpaid !== null
-            ? liveMetadataUnpaid
-            : safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
+          dbUnpaid !== null
+            ? dbUnpaid
+            : liveMetadataUnpaid !== null
+              ? liveMetadataUnpaid
+              : safeStorage.getItem("qadeyti_subscription_unpaid") === "true";
 
         if (resolvedPlan && resolvedPlan !== "free" && active) {
           safeStorage.setItem("qadeyti_fallback_plan", resolvedPlan);
@@ -889,20 +916,61 @@ export function useTrial() {
             safeStorage.setItem("qadeyti_premium", "true");
             safeStorage.setItem("qadeyti_subscription_unpaid", resolvedUnpaid ? "true" : "false");
 
+            const targetExpiry =
+              liveMetadataExpiry ||
+              act?.expiryDate ||
+              user.user_metadata?.qadeyti_subscription_expiry;
+            const targetActivation =
+              liveMetadataActivation ||
+              act?.activationDate ||
+              user.user_metadata?.qadeyti_subscription_activation;
+
             await supabase.auth.updateUser({
               data: {
                 qadeyti_plan: resolvedPlan,
                 qadeyti_subscription_unpaid: resolvedUnpaid,
-                qadeyti_subscription_expiry:
-                  liveMetadataExpiry ||
-                  act?.expiryDate ||
-                  user.user_metadata?.qadeyti_subscription_expiry,
-                qadeyti_subscription_activation:
-                  liveMetadataActivation ||
-                  act?.activationDate ||
-                  user.user_metadata?.qadeyti_subscription_activation,
+                qadeyti_subscription_expiry: targetExpiry,
+                qadeyti_subscription_activation: targetActivation,
               },
             });
+
+            // Also synchronize instantly to public database layer to keep the admin and query table up to date!
+            try {
+              const { data: profileCheck } = await supabase
+                .from("lawyer_profiles")
+                .select("id")
+                .eq("user_id", user.id)
+                .maybeSingle();
+
+              if (profileCheck) {
+                await supabase
+                  .from("lawyer_profiles")
+                  .update({
+                    subscription_plan: resolvedPlan,
+                    subscription_unpaid: resolvedUnpaid,
+                    subscription_expiry: targetExpiry,
+                    subscription_activation: targetActivation,
+                    email: user.email,
+                  })
+                  .eq("user_id", user.id);
+              } else {
+                await supabase.from("lawyer_profiles").insert({
+                  user_id: user.id,
+                  slug: `lawyer-${user.id.slice(0, 8)}`,
+                  full_name: user.email ? user.email.split("@")[0] : "lawyer",
+                  subscription_plan: resolvedPlan,
+                  subscription_unpaid: resolvedUnpaid,
+                  subscription_expiry: targetExpiry,
+                  subscription_activation: targetActivation,
+                  email: user.email,
+                });
+              }
+              console.log(
+                "[Client DB Sync] Successfully synchronized subscription columns to lawyer_profiles.",
+              );
+            } catch (dbSyncErr) {
+              console.warn("[Client DB Sync] Failed updating lawyer_profiles:", dbSyncErr);
+            }
 
             if (typeof window !== "undefined") {
               window.dispatchEvent(new Event("storage"));
