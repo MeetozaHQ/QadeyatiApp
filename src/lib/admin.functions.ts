@@ -44,19 +44,38 @@ export const adminActivateSubscription = createServerFn({ method: "POST" })
     let fallbackMessage = "";
 
     try {
-      // Search for public schema profile / auth user to locate user ID
-      const {
-        data: { users },
-        error: listError,
-      } = await supabaseAdmin.auth.admin.listUsers();
+      // Search for public schema profile / auth user to locate user ID page-by-page
+      let targetUser = null;
+      let page = 1;
+      const perPage = 100;
+      let hasMore = true;
 
-      if (listError) {
-        throw new Error(listError.message);
+      while (hasMore) {
+        const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage,
+        });
+
+        if (listError) {
+          throw new Error(listError.message);
+        }
+
+        if (!listData?.users || listData.users.length === 0) {
+          break;
+        }
+
+        const match = listData.users.find(
+          (u) => u.email?.toLowerCase().trim() === targetEmail.toLowerCase().trim(),
+        );
+
+        if (match) {
+          targetUser = match;
+          break;
+        }
+
+        page++;
+        hasMore = listData.users.length === perPage;
       }
-
-      const targetUser = users.find(
-        (u) => u.email?.toLowerCase().trim() === targetEmail.toLowerCase().trim(),
-      );
 
       if (!targetUser) {
         // If user doesn't exist, we will PRE-CREATE the user account in Supabase directly!
