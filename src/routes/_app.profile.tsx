@@ -65,6 +65,7 @@ type Profile = {
   years_experience: number | null;
   avatar_url: string | null;
   logo_url: string | null;
+  email?: string | null;
 };
 
 function slugify(s: string) {
@@ -276,7 +277,7 @@ function Profile() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
-        setP(data as Profile);
+        setP({ ...(data as Profile), email: data.email || user.email });
       } else {
         setP({
           user_id: user.id,
@@ -293,6 +294,7 @@ function Profile() {
           years_experience: null,
           avatar_url: null,
           logo_url: null,
+          email: user.email,
         });
       }
 
@@ -399,6 +401,7 @@ function Profile() {
         [field]: url,
         user_id: user.id,
         slug: slugify(p.slug) || `lawyer-${user.id.slice(0, 8)}`,
+        email: user.email,
       },
       { onConflict: "user_id" },
     );
@@ -430,7 +433,7 @@ function Profile() {
       return;
     }
     setSaving(true);
-    const payload = { ...p, slug: slugify(p.slug), user_id: user.id };
+    const payload = { ...p, slug: slugify(p.slug), user_id: user.id, email: user.email };
     const { error } = await supabase
       .from("lawyer_profiles")
       .upsert(payload, { onConflict: "user_id" });

@@ -77,11 +77,13 @@ export const adminActivateSubscription = createServerFn({ method: "POST" })
         hasMore = listData.users.length === perPage;
       }
 
+      let activatedUserId: string | null = null;
+
       if (!targetUser) {
         // If user doesn't exist, we will PRE-CREATE the user account in Supabase directly!
         console.log(`[Admin pre-activation] Pre-creating account in database for ${targetEmail}`);
         const tempPassword = "QadeytiPrePaidTempPW!" + Math.random().toString(36).substring(2, 7);
-        const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+        const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: targetEmail.toLowerCase().trim(),
           password: tempPassword,
           email_confirm: true, // Auto-confirm email so they don't get blocked
@@ -98,6 +100,9 @@ export const adminActivateSubscription = createServerFn({ method: "POST" })
           throw new Error(`تعذر إنشاء الحساب المسبق للتفعيل: ${createError.message}`);
         }
         fallbackMessage = " [تم إنشاء حساب مسبق الدفع وتفعيله!]";
+        if (createData?.user) {
+          activatedUserId = createData.user.id;
+        }
       } else {
         // Apply metadata changes bypass using admin client for existing user
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
@@ -115,6 +120,50 @@ export const adminActivateSubscription = createServerFn({ method: "POST" })
 
         if (updateError) {
           throw new Error(updateError.message);
+        }
+        activatedUserId = targetUser.id;
+      }
+
+      // Propagate the subscription details to active public.lawyer_profiles table (instantly visible on client dashboard!)
+      if (activatedUserId) {
+        try {
+          const { data: profileCheck } = await supabaseAdmin
+            .from("lawyer_profiles")
+            .select("id")
+            .eq("user_id", activatedUserId)
+            .maybeSingle();
+
+          if (profileCheck) {
+            await supabaseAdmin
+              .from("lawyer_profiles")
+              .update({
+                subscription_plan: targetPlan,
+                subscription_unpaid: false,
+                subscription_expiry: expiryDate.toISOString(),
+                subscription_activation: activationDate,
+                email: targetEmail.toLowerCase().trim(),
+              })
+              .eq("user_id", activatedUserId);
+          } else {
+            await supabaseAdmin.from("lawyer_profiles").insert({
+              user_id: activatedUserId,
+              slug: `lawyer-${activatedUserId.slice(0, 8)}`,
+              full_name: targetEmail.split("@")[0],
+              subscription_plan: targetPlan,
+              subscription_unpaid: false,
+              subscription_expiry: expiryDate.toISOString(),
+              subscription_activation: activationDate,
+              email: targetEmail.toLowerCase().trim(),
+            });
+          }
+          console.log(
+            `[Admin Profile Sync] Successfully synchronized subscription for user ID: ${activatedUserId}`,
+          );
+        } catch (profileErr) {
+          console.warn(
+            "[Admin Sync] Failed saving to lawyer_profiles table, continuing with auth metadata:",
+            profileErr,
+          );
         }
       }
 
