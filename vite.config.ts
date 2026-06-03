@@ -11,43 +11,14 @@ if (typeof process !== "undefined" && process.env) {
 }
 
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import path from "node:path";
 
 const asyncHooksPlugin = {
   name: "async-hooks-browser-polyfill",
   enforce: "pre" as const,
-  resolveId(id: string, importer: string | undefined, options: { ssr?: boolean } | undefined) {
-    if ((id === "node:async_hooks" || id === "async_hooks") && options?.ssr !== true) {
-      return "\0virtual:async_hooks_polyfill";
-    }
-    return null;
-  },
-  load(id: string) {
-    if (id === "\0virtual:async_hooks_polyfill") {
-      return `
-        export class AsyncLocalStorage {
-          disable() {}
-          getStore() { return undefined; }
-          run(store, callback, ...args) {
-            return callback(...args);
-          }
-        }
-        export class AsyncResource {
-          static bind(fn) { return fn; }
-          runInAsyncScope(fn, thisArg, ...args) { return fn.call(thisArg, ...args); }
-        }
-        export function createHook() { return { enable() {}, disable() {} }; }
-        export function executionAsyncId() { return 0; }
-        export function triggerAsyncId() { return 0; }
-
-        const defaultExport = {
-          AsyncLocalStorage,
-          AsyncResource,
-          createHook,
-          executionAsyncId,
-          triggerAsyncId,
-        };
-        export default defaultExport;
-      `;
+  resolveId(id: string) {
+    if (id === "node:async_hooks" || id === "async_hooks") {
+      return path.resolve(process.cwd(), "src/polyfills/async_hooks.ts");
     }
     return null;
   },
