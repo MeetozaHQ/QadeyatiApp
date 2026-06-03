@@ -33,6 +33,12 @@ export default defineConfig({
   },
   plugins: [asyncHooksPlugin],
   vite: {
+    resolve: {
+      alias: {
+        "node:async_hooks": path.resolve(process.cwd(), "src/polyfills/async_hooks.ts"),
+        async_hooks: path.resolve(process.cwd(), "src/polyfills/async_hooks.ts"),
+      },
+    },
     server: {
       port: 3000,
       strictPort: true,
