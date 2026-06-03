@@ -59,21 +59,44 @@ export const adminActivateSubscription = createServerFn({ method: "POST" })
       );
 
       if (!targetUser) {
-        throw new Error("عذراً، لم يتم العثور على أي حساب مسجل بهذا البريد الإلكتروني.");
-      }
+        // If user doesn't exist, we will PRE-CREATE the user account in Supabase directly!
+        console.log(`[Admin pre-activation] Pre-creating account in database for ${targetEmail}`);
+        const tempPassword = "QadeytiPrePaidTempPW!" + Math.random().toString(36).substring(2, 7);
+        const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: targetEmail.toLowerCase().trim(),
+          password: tempPassword,
+          email_confirm: true, // Auto-confirm email so they don't get blocked
+          user_metadata: {
+            qadeyti_plan: targetPlan,
+            qadeyti_subscription_unpaid: false,
+            qadeyti_subscription_expiry: expiryDate.toISOString(),
+            qadeyti_subscription_activation: activationDate,
+            qadeyti_pre_activated: true, // Marked to be claimed during signup
+          },
+        });
 
-      // Apply metadata changes bypass using admin client
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(targetUser.id, {
-        user_metadata: {
-          qadeyti_plan: targetPlan,
-          qadeyti_subscription_unpaid: false,
-          qadeyti_subscription_expiry: expiryDate.toISOString(),
-          qadeyti_subscription_activation: activationDate,
-        },
-      });
+        if (createError) {
+          throw new Error(`تعذر إنشاء الحساب المسبق للتفعيل: ${createError.message}`);
+        }
+        fallbackMessage = " [تم إنشاء حساب مسبق الدفع وتفعيله!]";
+      } else {
+        // Apply metadata changes bypass using admin client for existing user
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+          targetUser.id,
+          {
+            user_metadata: {
+              qadeyti_plan: targetPlan,
+              qadeyti_subscription_unpaid: false,
+              qadeyti_subscription_expiry: expiryDate.toISOString(),
+              qadeyti_subscription_activation: activationDate,
+              qadeyti_pre_activated: false, // Turn off pre-activated flag if it was ever active
+            },
+          },
+        );
 
-      if (updateError) {
-        throw new Error(updateError.message);
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
       }
 
       dbActivationSuccess = true;

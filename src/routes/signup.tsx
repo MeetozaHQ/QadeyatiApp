@@ -57,6 +57,30 @@ function SignupPage() {
 
     const emailVal = email.trim().toLowerCase();
 
+    // 1. Try to claim a pre-activated/pre-created account if it exists
+    try {
+      const { completePreActivatedSignup } = await import("@/lib/activation-check.functions");
+      const claimResult = await completePreActivatedSignup({ email: emailVal, password: password });
+      if (claimResult && claimResult.success) {
+        console.log("[Signup Sync] Pre-activated account found and claimed! Logging in now...");
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: emailVal,
+          password: password,
+        });
+
+        if (loginError) {
+          setError(loginError.message);
+          setLoading(false);
+          return;
+        }
+
+        navigate({ to: "/dashboard" });
+        return;
+      }
+    } catch (claimErr) {
+      console.warn("Attempt to claim pre-activated account failed/passed:", claimErr);
+    }
+
     // Check if the email has a pre-activated fallback subscription allocation from Admin Page
     let initialMetadata: Record<string, string | boolean> = {};
     try {
