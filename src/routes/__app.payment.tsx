@@ -156,7 +156,7 @@ export function PaymentPage() {
               </span>
               <div className="space-y-0.5">
                 <h4 className="text-xs font-bold text-white">
-                  سيقوم فريق مينوزيا بإرسال بيانات الدفع
+                  سيقوم فريق قضيتي بإرسال بيانات الدفع
                 </h4>
                 <p className="text-[10px] text-slate-400">
                   سنوفر لك حسابات InstaPay، أرقام الكاش، أو رقم الحساب البنكي حسب رغبتك.
@@ -236,7 +236,7 @@ export function PaymentPage() {
         <p className="text-[11px] leading-relaxed">
           <strong>ملاحظة هامة:</strong> هذه المرحلة مؤقتة فقط، وسيتم قريباً تفعيل الدفع الإلكتروني
           المباشر داخل المنصة. ثقتكم تهمنا، والتفعيل اليدوي يخضع لمعايير أمان كاملة ومعتمد بالكامل
-          من فريق مينوزيا لإدارة قضيتي.
+          من فريق منصة قضيتي.
         </p>
       </motion.div>
 
