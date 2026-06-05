@@ -88,20 +88,53 @@ export const chatWithAI = createServerFn({ method: "POST" })
         parts: [{ text: msg.content }],
       }));
 
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents,
-        config: {
-          systemInstruction,
-        },
-      });
-      const content = response.text || "";
-      return { content };
-    } catch (error) {
-      console.error("Gemini API Error:", error);
+    let lastError: unknown = null;
+    const maxAttempts = 4;
+    let attempt = 0;
+
+    while (attempt < maxAttempts) {
+      attempt++;
+      try {
+        const response = await ai.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents,
+          config: {
+            systemInstruction,
+          },
+        });
+        const content = response.text || "";
+        return { content };
+      } catch (error) {
+        lastError = error;
+        console.warn(`[المستشار الذكي] المحاولة رقم ${attempt} من أصل ${maxAttempts} فشلت:`, error);
+
+        if (attempt < maxAttempts) {
+          // الانتظار مع زيادة مهلة المحاولة تدريجياً لتفادي ضغط الاستدعاءات المتكررة (1500ms، 3000ms، 4500ms)
+          const delay = attempt * 1500;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    // إذا فشلت كل المحاولات الأربعة
+    console.error("جميع محاولات الاتصال بالمستشار الذكي باءت بالفشل:", lastError);
+    const errMessage = lastError instanceof Error ? lastError.message : String(lastError || "");
+
+    const isHighDemand =
+      errMessage.includes("503") ||
+      errMessage.includes("UNAVAILABLE") ||
+      errMessage.includes("demand") ||
+      errMessage.includes("429") ||
+      errMessage.includes("ResourceExhausted") ||
+      errMessage.includes("limit");
+
+    if (isHighDemand) {
       throw new Error(
-        `تعذر الاتصال بالمستشار الذكي: ${error instanceof Error ? error.message : "حدث خطأ غير معروف"}`,
+        "المستشار الذكي يواجه حالياً ضغطاً كبيراً ومؤقتاً في معالجة الاستشارات من خوادم Google الرئيسية. يرجى الانتظار بضع ثوانٍ وإعادة إرسال استشارتك مرة أخرى. نحن متواجدون لمساعدتك فور أول فرصة لتخفيف الضغط.",
+      );
+    } else {
+      throw new Error(
+        "عذراً، لم نتمكن من الوصول للمستشار الذكي حالياً بسبب اضطراب مؤقت في الاتصال بخوادم الخدمة الذكية. يرجى التحقق من اتصالك بالإنترنت والضغط على زر الإرسال مرة أخرى لإعادة المحاولة.",
       );
     }
   });
